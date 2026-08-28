@@ -1,34 +1,92 @@
-// Nombre de chambres disponibles
-export function occupationRate(occupiedRooms, totalRooms) {
+import { supabase } from "../../lib/supabase";
+
+// -----------------------------
+// 1. Charger les données
+// -----------------------------
+
+export async function getRooms() {
+  const { data, error } = await supabase.from("rooms").select("*");
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getReservations() {
+  const { data, error } = await supabase.from("reservations").select("*");
+  if (error) throw error;
+  return data || [];
+}
+
+// -----------------------------
+// 2. Calculs RM (sécurisés)
+// -----------------------------
+
+export function occupationRate(rooms = [], reservations = []) {
+  const totalRooms = rooms.length;
+  const occupied = reservations.filter((r) => r.status === "confirmée").length;
   if (totalRooms === 0) return 0;
-  return Math.round((occupiedRooms / totalRooms) * 100);
+  return Math.round((occupied / totalRooms) * 100);
 }
 
-// ADR = Average Daily Rate
-export function adr(totalRevenueRooms, occupiedRooms) {
-  if (occupiedRooms === 0) return 0;
-  return Math.round(totalRevenueRooms / occupiedRooms);
+export function adr(reservations = []) {
+  const confirmed = reservations.filter((r) => r.status === "confirmée");
+  if (confirmed.length === 0) return 0;
+
+  let totalRevenue = 0;
+  let totalNights = 0;
+
+  confirmed.forEach((r) => {
+    const nights =
+      (new Date(r.departure) - new Date(r.arrival)) / (1000 * 60 * 60 * 24);
+    totalRevenue += nights * (Number(r.price) || 0);
+    totalNights += nights;
+  });
+
+  if (totalNights === 0) return 0;
+  return Math.round(totalRevenue / totalNights);
 }
 
-// RevPAR = Revenue Per Available Room
-export function revpar(totalRevenueRooms, totalRooms) {
-  if (totalRooms === 0) return 0;
-  return Math.round(totalRevenueRooms / totalRooms);
+export function revpar(rooms = [], reservations = []) {
+  const adrValue = adr(reservations);
+  const occ = occupationRate(rooms, reservations) / 100;
+  return Math.round(adrValue * occ);
 }
 
-// GOPPAR = Gross Operating Profit Per Available Room
-export function goppar(gop, totalRooms) {
-  if (totalRooms === 0) return 0;
-  return Math.round(gop / totalRooms);
+export function totalRevenue(reservations = []) {
+  const confirmed = reservations.filter((r) => r.status === "confirmée");
+
+  let total = 0;
+  confirmed.forEach((r) => {
+    const nights =
+      (new Date(r.departure) - new Date(r.arrival)) / (1000 * 60 * 60 * 24);
+    total += nights * (Number(r.price) || 0);
+  });
+
+  return Math.round(total);
 }
 
-// Forecast simple basé sur la tendance
-export function forecastRevenue(lastMonthRevenue, growthRatePercent) {
-  return Math.round(lastMonthRevenue * (1 + growthRatePercent / 100));
+// -----------------------------
+// 3. Prévision RM
+// -----------------------------
+
+export function forecastRevenue(currentRevenue = 0, growthRate = 12) {
+  return Math.round(currentRevenue * (1 + growthRate / 100));
 }
 
-// Segmentation (calcul du % par segment)
-export function segmentShare(segmentCount, totalClients) {
-  if (totalClients === 0) return 0;
-  return Math.round((segmentCount / totalClients) * 100);
+// -----------------------------
+// 4. Fonction globale RM
+// -----------------------------
+
+export async function getRMStats() {
+  const rooms = await getRooms();
+  const reservations = await getReservations();
+
+  const revenue = totalRevenue(reservations);
+
+  return {
+    occupancy: occupationRate(rooms, reservations),
+    adr: adr(reservations),
+    revpar: revpar(rooms, reservations),
+    revenue,
+    forecast: forecastRevenue(revenue),
+  };
 }

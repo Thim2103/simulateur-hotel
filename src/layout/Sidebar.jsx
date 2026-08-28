@@ -6,6 +6,7 @@ export default function Sidebar() {
       <h2 className="text-2xl font-bold">Simulateur Hôtel</h2>
 
       <nav className="flex flex-col gap-4">
+        <Link to="/dashboard-rm" className="sidebar-link">Dashboard RM</Link>
         <Link to="/" className="hover:text-blue-400">Dashboard</Link>
         <Link to="/reservations" className="hover:text-blue-400">Réservations</Link>
         <Link to="/rooms" className="hover:text-blue-400">Chambres</Link>

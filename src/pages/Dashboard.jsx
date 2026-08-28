@@ -3,17 +3,36 @@ import LineChart from "../components/charts/LineChart";
 import BarChart from "../components/charts/BarChart";
 import { occupationRate, adr, revpar } from "../lib/calculs/rm";
 
-
 export default function Dashboard() {
-  // Exemple de données (tu peux les remplacer plus tard)
-const totalRooms = 100;
-const occupiedRooms = 78;
-const totalRevenueRooms = 11200;
+  // -----------------------------
+  // Données factices converties en tableaux
+  // -----------------------------
 
-// Calculs RM
-const occ = occupationRate(occupiedRooms, totalRooms);
-const adrValue = adr(totalRevenueRooms, occupiedRooms);
-const revparValue = revpar(totalRevenueRooms, totalRooms);
+  const totalRooms = 100;
+  const occupiedRooms = 78;
+  const totalRevenueRooms = 11200;
+
+  // On crée un tableau de chambres
+  const rooms = Array.from({ length: totalRooms }, (_, i) => ({
+    id: i + 1,
+  }));
+
+  // On crée un tableau de réservations confirmées
+  const reservations = Array.from({ length: occupiedRooms }, (_, i) => ({
+    id: i + 1,
+    status: "confirmée",
+    arrival: "2026-08-01",
+    departure: "2026-08-02",
+    price: totalRevenueRooms / occupiedRooms,
+  }));
+
+  // -----------------------------
+  // Calculs RM
+  // -----------------------------
+
+  const occ = occupationRate(rooms, reservations);
+  const adrValue = adr(reservations);
+  const revparValue = revpar(rooms, reservations);
 
   return (
     <div className="p-6 flex flex-col gap-6">

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./layout/Layout";
 
+import DashboardRM from "./pages/DashboardRM";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -13,6 +14,7 @@ function App() {
     <BrowserRouter>
       <Layout>
         <Routes>
+          <Route path="/dashboard-rm" element={<DashboardRM />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/rooms" element={<Rooms />} />
