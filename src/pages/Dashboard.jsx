@@ -4,20 +4,14 @@ import BarChart from "../components/charts/BarChart";
 import { occupationRate, adr, revpar } from "../lib/calculs/rm";
 
 export default function Dashboard() {
-  // -----------------------------
-  // Données factices converties en tableaux
-  // -----------------------------
-
   const totalRooms = 100;
   const occupiedRooms = 78;
   const totalRevenueRooms = 11200;
 
-  // On crée un tableau de chambres
   const rooms = Array.from({ length: totalRooms }, (_, i) => ({
     id: i + 1,
   }));
 
-  // On crée un tableau de réservations confirmées
   const reservations = Array.from({ length: occupiedRooms }, (_, i) => ({
     id: i + 1,
     status: "confirmée",
@@ -26,32 +20,24 @@ export default function Dashboard() {
     price: totalRevenueRooms / occupiedRooms,
   }));
 
-  // -----------------------------
-  // Calculs RM
-  // -----------------------------
-
   const occ = occupationRate(rooms, reservations);
   const adrValue = adr(reservations);
   const revparValue = revpar(rooms, reservations);
 
   return (
     <div className="p-6 flex flex-col gap-6">
-
-      {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard label="Taux d’occupation" value={`${occ}%`} trend={2.1} />
         <KpiCard label="ADR" value={`${adrValue} €`} trend={1.3} />
         <KpiCard label="RevPAR" value={`${revparValue} €`} trend={4.2} />
       </div>
 
-      {/* Courbe */}
       <LineChart
         title="Occupation (7 derniers jours)"
         labels={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
         data={[72, 80, 78, 85, 90, 88, 82]}
       />
 
-      {/* Bar chart */}
       <BarChart
         title="Revenus par département"
         labels={["Chambres", "Restaurant", "Spa", "Bar"]}
