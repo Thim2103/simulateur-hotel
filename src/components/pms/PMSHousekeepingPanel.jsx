@@ -13,7 +13,7 @@ const STATUS_META = {
   clean: { label: "Clean", tone: "bg-green-100 text-green-700", emoji: "✅" },
 };
 
-export default function PMSHousekeepingPanel({ initialTasks = DEFAULT_TASKS }) {
+export default function PMSHousekeepingPanel({ initialTasks = DEFAULT_TASKS, onStatusChange }) {
   const [tasks, setTasks] = useState(initialTasks);
 
   const summary = useMemo(
@@ -26,7 +26,15 @@ export default function PMSHousekeepingPanel({ initialTasks = DEFAULT_TASKS }) {
   );
 
   const updateStatus = (taskId, status) => {
-    setTasks((current) => current.map((task) => (task.id === taskId ? { ...task, status } : task)));
+    setTasks((current) => {
+      const nextTasks = current.map((task) => (task.id === taskId ? { ...task, status } : task));
+      const nextTask = nextTasks.find((task) => task.id === taskId);
+      onStatusChange?.({ task: nextTask, summary: {
+        dirty: nextTasks.filter((task) => task.status === "dirty").length,
+        inProgress: nextTasks.filter((task) => task.status === "in-progress").length,
+      } });
+      return nextTasks;
+    });
   };
 
   return (

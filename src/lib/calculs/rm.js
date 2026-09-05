@@ -220,6 +220,16 @@ export function revpash(restaurantMetrics = {}) {
   return Math.round(averageTicket * (demand / 100) * 100) / 100;
 }
 
+export function restaurantRevenue(restaurantMetrics = {}) {
+  return Math.round(Number(restaurantMetrics.totalMonthlyRevenue || restaurantMetrics.revenue || 0));
+}
+
+export function integratedHotelReputation(restaurantMetrics = {}) {
+  const satisfaction = Math.max(0, Math.min(5, Number(restaurantMetrics.customerSatisfaction || restaurantMetrics.satisfaction || 0)));
+  const demand = Math.max(0, Math.min(100, Number(restaurantMetrics.demand || 0)));
+  return Math.round(satisfaction * 12 + demand * 0.2);
+}
+
 export function filterReservations(reservations = [], filters = {}) {
   return reservations.filter((reservation) => {
     const arrival = String(reservation.arrival || "").slice(0, 10);
@@ -285,9 +295,13 @@ export async function getRMStats(filters = {}, restaurantMetrics = {}) {
   const restaurantDemand = Number(restaurantMetrics.demand || 0);
 
   const revenue = totalRevenue(reservations);
+  const baseOccupancy = occupationRate(rooms, reservations);
+  const restaurantRevenueValue = restaurantRevenue(restaurantMetrics);
+  const restaurantSatisfaction = Number(restaurantMetrics.customerSatisfaction || restaurantMetrics.satisfaction || 0);
+  const integratedOccupancy = Math.round(Math.max(0, Math.min(100, baseOccupancy + (restaurantDemand - 50) * 0.1)));
 
   return {
-    occupancy: occupationRate(rooms, reservations),
+    occupancy: integratedOccupancy,
     adr: adr(reservations),
     revpar: revpar(rooms, reservations),
     revenue,
@@ -297,8 +311,11 @@ export async function getRMStats(filters = {}, restaurantMetrics = {}) {
     segmentation: segmentation(reservations),
     channelYield: channelYield(reservations),
     restaurantDemand,
+    restaurantRevenue: restaurantRevenueValue,
+    restaurantSatisfaction,
+    reputation: integratedHotelReputation(restaurantMetrics),
     revpash: revpash(restaurantMetrics),
-    combinedDemand: Math.round((occupationRate(rooms, reservations) + restaurantDemand) / 2),
+    combinedDemand: Math.round((integratedOccupancy + restaurantDemand) / 2),
     revenueByRoomType: revenueByRoomType(reservations),
     heatmap: occupancyHeatmap(reservations),
   };

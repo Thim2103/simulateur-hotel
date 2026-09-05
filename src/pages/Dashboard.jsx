@@ -1,9 +1,11 @@
 import KpiCard from "../components/charts/KpiCard";
 import LineChart from "../components/charts/LineChart";
 import BarChart from "../components/charts/BarChart";
-import { occupationRate, adr, revpar } from "../lib/calculs/rm";
+import { occupationRate, adr, revpar, integratedHotelReputation } from "../lib/calculs/rm";
+import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 
 export default function Dashboard() {
+  const { kpis: restaurantKpis } = useRestaurantSimulator();
   const totalRooms = 100;
   const occupiedRooms = 78;
   const totalRevenueRooms = 11200;
@@ -23,25 +25,29 @@ export default function Dashboard() {
   const occ = occupationRate(rooms, reservations);
   const adrValue = adr(reservations);
   const revparValue = revpar(rooms, reservations);
+  const integratedOccupancy = Math.round(Math.max(0, Math.min(100, occ + (restaurantKpis.demand - 50) * 0.1)));
+  const reputation = integratedHotelReputation(restaurantKpis);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Taux d’occupation" value={`${occ}%`} trend={2.1} />
+        <KpiCard label="Taux d’occupation intégré" value={`${integratedOccupancy}%`} trend={2.1} />
         <KpiCard label="ADR" value={`${adrValue} €`} trend={1.3} />
         <KpiCard label="RevPAR" value={`${revparValue} €`} trend={4.2} />
+        <KpiCard label="Réputation hôtel" value={`${reputation}/100`} trend={reputation >= 75 ? 3.4 : -1.2} />
+        <KpiCard label="Satisfaction restaurant" value={`${restaurantKpis.customerSatisfaction.toFixed(1)}/5`} trend={2.5} />
       </div>
 
       <LineChart
         title="Occupation (7 derniers jours)"
         labels={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
-        data={[72, 80, 78, 85, 90, 88, 82]}
+        data={[integratedOccupancy, 80, 78, 85, 90, 88, 82]}
       />
 
       <BarChart
         title="Revenus par département"
         labels={["Chambres", "Restaurant", "Spa", "Bar"]}
-        data={[12000, 8000, 5000, 3000]}
+        data={[totalRevenueRooms, restaurantKpis.restaurantRevenue, 5000, 3000]}
       />
     </div>
   );

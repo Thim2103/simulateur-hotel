@@ -25,6 +25,7 @@ jest.mock('./lib/calculs/rm', () => ({
   occupationRate: jest.fn(() => 78),
   adr: jest.fn(() => 150),
   revpar: jest.fn(() => 117),
+  integratedHotelReputation: jest.fn(() => 72),
   getRMStats: jest.fn(async () => ({
     occupancy: 78,
     adr: 150,

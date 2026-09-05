@@ -40,6 +40,12 @@ create table if not exists public.restaurant_operations (
 alter table public.reservations add column if not exists client_name text;
 alter table public.reservations add column if not exists client text;
 alter table public.reservations add column if not exists room text;
+alter table public.reservations add column if not exists room_id bigint;
+alter table public.reservations add column if not exists room_type text;
+alter table public.reservations add column if not exists price numeric not null default 0;
+alter table public.reservations add column if not exists notes text;
+alter table public.reservations add column if not exists channel text;
+alter table public.reservations add column if not exists segment text;
 alter table public.reservations add column if not exists status text not null default 'en attente';
 alter table public.reservations add column if not exists arrival date;
 alter table public.reservations add column if not exists departure date;

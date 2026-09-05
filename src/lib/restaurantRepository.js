@@ -124,18 +124,34 @@ export async function listReservations() {
   return select("reservations", (builder) => builder.order("arrival"));
 }
 
+function toReservationRow(input) {
+  const clientName = input.client_name ?? input.client;
+  const roomId = input.room_id ?? input.roomId;
+  const room = input.room ?? (roomId === undefined || roomId === null ? undefined : String(roomId));
+  required(clientName, "client_name");
+  required(roomId ?? room, "room");
+  validateItem(input, ["arrival", "departure", "status"]);
+  return {
+    ...input,
+    client_name: clientName,
+    client: clientName,
+    ...(roomId === undefined || roomId === null ? {} : { room_id: Number(roomId) }),
+    ...(room === undefined ? {} : { room }),
+  };
+}
+
 export async function createReservation(input) {
-  validateItem(input, ["client_name", "room", "arrival", "departure", "status"]);
+  const reservation = toReservationRow(input);
   const client = assertSupabaseConfigured();
-  const { data, error } = await client.from("reservations").insert({ ...input, client: input.client_name, client_name: input.client_name }).select().single();
+  const { data, error } = await client.from("reservations").insert(reservation).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function updateReservation(id, input) {
-  validateItem(input, ["client_name", "room", "arrival", "departure", "status"]);
+  const reservation = toReservationRow(input);
   const client = assertSupabaseConfigured();
-  const { data, error } = await client.from("reservations").update({ ...input, client: input.client_name, client_name: input.client_name }).eq("id", id).select().single();
+  const { data, error } = await client.from("reservations").update(reservation).eq("id", id).select().single();
   if (error) throw error;
   return data;
 }

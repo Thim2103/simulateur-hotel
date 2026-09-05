@@ -3,6 +3,8 @@ import {
   forecastAdvanced,
   pickupCurve,
   revpash,
+  integratedHotelReputation,
+  restaurantRevenue,
   segmentation,
 } from "./rm";
 
@@ -50,4 +52,6 @@ test("builds RM forecasts, advanced segments, pickup deltas, and channel yield",
   expect(yieldByChannel.ota.yield).toBe("stable");
   expect(yieldByChannel.ota.recommendedAdr).toBe(90);
   expect(revpash({ avgTicket: 24, demand: 75 })).toBe(18);
+  expect(restaurantRevenue({ totalMonthlyRevenue: 41800 })).toBe(41800);
+  expect(integratedHotelReputation({ customerSatisfaction: 4.5, demand: 80 })).toBe(70);
 });

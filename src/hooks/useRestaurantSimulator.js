@@ -8,63 +8,70 @@ import {
   restaurantTutorialSteps,
 } from "../lib/restaurant";
 import { useSupabaseRestaurant } from "./useSupabaseRestaurant";
-
-const LOCAL_STORAGE_KEY = "restaurant-simulator-state";
-
-function readLocalState() {
-  if (typeof window === "undefined") return null;
-
-  try {
-    const saved = window.localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!saved) return null;
-
-    const parsed = JSON.parse(saved);
-    return {
-      ...defaultRestaurantState,
-      ...parsed,
-      structure: { ...defaultRestaurantState.structure, ...(parsed.structure || {}) },
-      finance: { ...defaultRestaurantState.finance, ...(parsed.finance || {}) },
-      staff: Array.isArray(parsed.staff) ? parsed.staff : defaultRestaurantState.staff,
-      menu: Array.isArray(parsed.menu) ? parsed.menu : defaultRestaurantState.menu,
-      operations: Array.isArray(parsed.operations) ? parsed.operations : defaultRestaurantState.operations,
-      marketing: { ...defaultRestaurantState.marketing, ...(parsed.marketing || {}) },
-      esg: { ...defaultRestaurantState.esg, ...(parsed.esg || {}) },
-      expansion: { ...defaultRestaurantState.expansion, ...(parsed.expansion || {}) },
-      progression: { ...defaultRestaurantState.progression, ...(parsed.progression || {}) },
-    };
-  } catch (loadError) {
-    return null;
-  }
-}
+import { getPmsEvents, subscribeToPmsEvents } from "../lib/pmsRestaurantBridge";
 
 export function useRestaurantSimulator() {
   const { data: persistedState, loading, error, persist } = useSupabaseRestaurant(defaultRestaurantState);
-  const [state, setState] = useState(() => readLocalState() || defaultRestaurantState);
+  const [state, setState] = useState(defaultRestaurantState);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     if (!loading && !error) {
       setState(persistedState);
-      setHydrated(true);
     }
-    if (!loading && error) {
-      setState(readLocalState() || defaultRestaurantState);
-      setHydrated(true);
-    }
+    if (!loading) setHydrated(true);
   }, [persistedState, loading, error]);
+
+  useEffect(() => {
+    if (!hydrated) return undefined;
+
+    const applyPmsEvent = (event) => {
+      if (!event?.id) return;
+      setState((previous) => {
+        const context = previous.pmsContext || defaultRestaurantState.pmsContext;
+        if ((context.processedEventIds || []).includes(event.id)) return previous;
+
+        const nextContext = {
+          ...context,
+          processedEventIds: [...(context.processedEventIds || []), event.id].slice(-100),
+        };
+        const payload = event.payload || {};
+        let task = null;
+
+        if (event.type === "reservation.synced" || event.type === "reservation.updated") {
+          const reservations = payload.reservations || (payload.reservation ? [payload.reservation] : []);
+          const confirmed = reservations.filter((reservation) => String(reservation.status || "").toLowerCase().includes("confirm"));
+          nextContext.activeGuests = confirmed.reduce((sum, reservation) => sum + Number(reservation.guests || reservation.adults || 1), 0);
+          nextContext.hotelOccupancy = Number(payload.occupancy || nextContext.hotelOccupancy || 0);
+          task = { title: "Préparer le service des clients hôtel", type: "service", owner: "Équipe service", priority: "moyenne", dueIn: "Aujourd'hui" };
+        } else if (event.type === "housekeeping.updated") {
+          nextContext.housekeepingIssues = Math.max(0, Number(payload.dirty || 0) + Number(payload.inProgress || 0));
+          task = { title: `Coordonner les chambres ${payload.status === "clean" ? "prêtes" : "à traiter"}`, type: "cleaning", owner: "Équipe service", priority: payload.status === "dirty" ? "haute" : "moyenne", dueIn: "1h" };
+        } else if (event.type === "scheduling.synced") {
+          nextContext.scheduledEvents = Number(payload.count || 0);
+          task = { title: "Préparer les prestations séminaires", type: "service", owner: "Équipe événementiel", priority: "haute", dueIn: "À planifier" };
+        }
+
+        const operations = task
+          ? [...previous.operations, { id: `pms-${event.id}`, status: "à faire", ...task }].slice(-30)
+          : previous.operations;
+        return { ...previous, pmsContext: nextContext, operations };
+      });
+    };
+
+    getPmsEvents().forEach(applyPmsEvent);
+    return subscribeToPmsEvents(applyPmsEvent);
+  }, [hydrated]);
 
   const playerLevel = Math.max(1, Math.floor((state.progression?.xp || 0) / 100) + 1);
   const difficulty = restaurantDifficultyLevels.find((level) => level.id === state.progression?.difficulty) || restaurantDifficultyLevels[0];
   const simulation = useMemo(() => buildRestaurantSimulation(state, difficulty.multiplier), [state, difficulty.multiplier]);
 
   useEffect(() => {
-    if (hydrated) {
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
-      }
+    if (hydrated && !error) {
       persist(state).catch(() => undefined);
     }
-  }, [state, hydrated, persist]);
+  }, [state, hydrated, error, persist]);
 
   const advanceSimulation = (step = 1) => {
     setState((previous) => {
@@ -374,6 +381,7 @@ export function useRestaurantSimulator() {
     staff: state.staff,
     menu: state.menu,
     operations: state.operations,
+    pmsContext: state.pmsContext,
     marketing: state.marketing,
     esg: state.esg,
     expansion: state.expansion,
@@ -415,9 +423,11 @@ export function useRestaurantSimulator() {
       utilization,
       score,
       demand: simulation.demand,
+      restaurantRevenue: totalMonthlyRevenue,
       rushHour: simulation.rushHour,
       staffProductivity: simulation.staffProductivity,
       customerSatisfaction: simulation.customerSatisfaction,
+      reputation: Math.round(simulation.customerSatisfaction * 20),
       menuPopularity: simulation.menuPopularity,
       complaints: simulation.complaints,
       maintenanceRisk: simulation.maintenanceRisk,

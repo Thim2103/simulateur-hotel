@@ -1,4 +1,6 @@
-export default function PMSSchedulingPanel({ events = [] }) {
+import { useEffect } from "react";
+
+export default function PMSSchedulingPanel({ events = [], onEventsVisible }) {
   const defaultEvents = [
     { id: 1, title: 'Board meeting', room: 'Seminar 1', date: '2026-09-08', start: '09:00', end: '11:00' },
     { id: 2, title: 'Regional workshop', room: 'Conference Hall', date: '2026-09-08', start: '13:00', end: '16:00' },
@@ -6,6 +8,10 @@ export default function PMSSchedulingPanel({ events = [] }) {
   ];
 
   const list = events.length ? events : defaultEvents;
+
+  useEffect(() => {
+    onEventsVisible?.(list);
+  }, [list, onEventsVisible]);
 
   return (
     <div className="rounded-xl border bg-white p-4 shadow-sm">

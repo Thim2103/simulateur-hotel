@@ -158,6 +158,13 @@ export const defaultRestaurantState = {
   marketing: restaurantMarketing,
   esg: restaurantEsg,
   expansion: restaurantExpansion,
+  pmsContext: {
+    hotelOccupancy: 0,
+    activeGuests: 0,
+    housekeepingIssues: 0,
+    scheduledEvents: 0,
+    processedEventIds: [],
+  },
   progression: {
     xp: 0,
     completedTutorials: [],
@@ -188,6 +195,7 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
   const marketing = state.marketing || restaurantMarketing;
   const esg = state.esg || restaurantEsg;
   const expansion = state.expansion || restaurantExpansion;
+  const pmsContext = state.pmsContext || {};
   const activeEstablishments = expansion.establishments.filter((establishment) => establishment.status === "active");
   const marketingReach = clamp(
     42 + Number(marketing.budget || 0) / 100 + marketing.channels.filter((channel) => channel.enabled).reduce((sum, channel) => sum + Number(channel.reach || 0), 0) / 12,
@@ -217,8 +225,11 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
       (state.structure.capacity / state.structure.seats) * 24 +
       menuPopularity / 3 -
       state.operations.filter((task) => task.type === "complaint").length * 8 -
-    (100 - marketingReach) / 8 -
-    (difficultyMultiplier - 1) * 20,
+      (100 - marketingReach) / 8 -
+      (difficultyMultiplier - 1) * 20 +
+      Number(pmsContext.hotelOccupancy || 0) * 0.08 +
+      Number(pmsContext.scheduledEvents || 0) * 1.5 -
+      Number(pmsContext.housekeepingIssues || 0) * 2,
     35,
     100
   );
@@ -227,7 +238,8 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
     3.4 +
       staffProductivity / 30 +
       menuPopularity / 35 -
-      state.operations.filter((task) => task.type === "complaint").length * 0.4,
+      state.operations.filter((task) => task.type === "complaint").length * 0.4 -
+      Number(pmsContext.housekeepingIssues || 0) * 0.08,
     2.0,
     5.0
   );

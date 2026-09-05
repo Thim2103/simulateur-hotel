@@ -16,6 +16,8 @@ export default function DashboardRM() {
   const [loading, setLoading] = useState(true);
   const { kpis: restaurantKpis } = useRestaurantSimulator();
   const restaurantDemand = restaurantKpis.demand;
+  const restaurantRevenue = restaurantKpis.totalMonthlyRevenue;
+  const restaurantSatisfaction = restaurantKpis.customerSatisfaction;
 
   // 🔥 Filtres RM
   const [filters, setFilters] = useState({
@@ -31,7 +33,11 @@ export default function DashboardRM() {
   useEffect(() => {
     async function loadStats() {
       try {
-        const data = await getRMStats(filters, { demand: restaurantDemand });
+        const data = await getRMStats(filters, {
+          demand: restaurantDemand,
+          totalMonthlyRevenue: restaurantRevenue,
+          customerSatisfaction: restaurantSatisfaction,
+        });
         setStats(data);
       } catch (err) {
         console.error("Erreur RM :", err);
@@ -40,7 +46,7 @@ export default function DashboardRM() {
     }
 
     loadStats();
-  }, [filters, restaurantDemand]);
+  }, [filters, restaurantDemand, restaurantRevenue, restaurantSatisfaction]);
 
   if (loading || !stats) {
     return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500">Chargement des KPIs…</div>;
@@ -60,7 +66,7 @@ export default function DashboardRM() {
 
       <section aria-labelledby="rm-kpis" className="flex flex-col gap-3">
         <h2 id="rm-kpis" className="text-base font-semibold text-slate-900">Indicateurs clés</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <KpiCard
           label="Occupation"
           value={`${(stats?.occupancy ?? 0).toFixed(1)} %`}
@@ -95,6 +101,16 @@ export default function DashboardRM() {
           label="Demande restaurant"
           value={`${(stats?.restaurantDemand ?? 0).toFixed(0)} %`}
           trend={(stats?.restaurantDemand ?? 0) > 70 ? 3.5 : -1.2}
+        />
+        <KpiCard
+          label="Revenu restaurant"
+          value={`${(stats?.restaurantRevenue ?? 0).toFixed(0)} €`}
+          trend={(stats?.restaurantRevenue ?? 0) > 30000 ? 4.2 : -1.4}
+        />
+        <KpiCard
+          label="Satisfaction restaurant"
+          value={`${(stats?.restaurantSatisfaction ?? 0).toFixed(1)} / 5`}
+          trend={(stats?.restaurantSatisfaction ?? 0) >= 4 ? 3.1 : -2.2}
         />
         </div>
 
@@ -141,7 +157,7 @@ export default function DashboardRM() {
           labels={["Chambres", "Restaurant", "Spa", "Bar"]}
           data={[
             stats?.revenue ?? 0,
-            (stats?.revenue ?? 0) * 0.25,
+            stats?.restaurantRevenue ?? 0,
             (stats?.revenue ?? 0) * 0.15,
             (stats?.revenue ?? 0) * 0.10,
           ]}
