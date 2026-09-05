@@ -8,6 +8,7 @@ import Rooms from "./pages/Rooms";
 import Clients from "./pages/Clients";
 import Finance from "./pages/Finance";
 import Housekeeping from "./pages/Housekeeping";
+import RestaurantSimulator from "./pages/RestaurantSimulator";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/clients" element={<Clients />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/housekeeping" element={<Housekeeping />} />
+          <Route path="/restaurant/*" element={<RestaurantSimulator />} />
         </Routes>
       </Layout>
     </BrowserRouter>

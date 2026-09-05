@@ -13,6 +13,7 @@ export default function Sidebar() {
         <Link to="/clients" className="hover:text-blue-400">Clients</Link>
         <Link to="/finance" className="hover:text-blue-400">Finance</Link>
         <Link to="/housekeeping" className="hover:text-blue-400">Housekeeping</Link>
+        <Link to="/restaurant" className="hover:text-amber-400">Restaurant Simulator</Link>
       </nav>
     </div>
   );
