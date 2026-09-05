@@ -1,5 +1,14 @@
 # Getting Started with Create React App
 
+## Supabase
+
+Restaurant Simulator and PMS reservations require a Supabase project configured with:
+
+- `REACT_APP_SUPABASE_URL`
+- `REACT_APP_SUPABASE_ANON_KEY`
+
+Run `supabase/migrations/202609060001_restaurant_and_pms.sql` in the Supabase SQL editor before starting the app. The migration creates and seeds the restaurant, staff, menu, finance, operations, and reservation schema. The current policies are intentionally public for this simulator; add authentication and replace them with user-scoped RLS policies before production use.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

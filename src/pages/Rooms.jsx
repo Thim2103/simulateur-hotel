@@ -81,7 +81,7 @@ export default function Rooms() {
   }, []);
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
 
       {/* Header */}
       <div className="flex justify-between items-center">

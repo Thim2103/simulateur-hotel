@@ -6,7 +6,19 @@ import TableRow from "../components/tables/TableRow";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 
 export default function RestaurantFinance() {
-  const { finance, kpis } = useRestaurantSimulator();
+  const { finance, kpis, updateFinance } = useRestaurantSimulator();
+
+  const updateRevenueValue = (index, value) => {
+    const nextRevenue = [...finance.revenue];
+    nextRevenue[index] = Number(value || 0);
+    updateFinance({ revenue: nextRevenue });
+  };
+
+  const updateCostValue = (index, value) => {
+    const nextCosts = [...finance.costs];
+    nextCosts[index] = Number(value || 0);
+    updateFinance({ costs: nextCosts });
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -30,7 +42,76 @@ export default function RestaurantFinance() {
         />
       </div>
 
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+        <h3 className="text-lg font-semibold mb-4">Paramètres financiers</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="font-medium">Taxes (%)</label>
+            <input
+              type="number"
+              className="border rounded-md px-3 py-2"
+              value={finance.taxes}
+              onChange={(event) => updateFinance({ taxes: Number(event.target.value || 0) })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-medium">Coûts fixes</label>
+            <input
+              type="number"
+              className="border rounded-md px-3 py-2"
+              value={finance.fixedCosts}
+              onChange={(event) => updateFinance({ fixedCosts: Number(event.target.value || 0) })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-medium">Loyer</label>
+            <input
+              type="number"
+              className="border rounded-md px-3 py-2"
+              value={finance.rent}
+              onChange={(event) => updateFinance({ rent: Number(event.target.value || 0) })}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="font-medium">Salaire équipe</label>
+            <input
+              type="number"
+              className="border rounded-md px-3 py-2"
+              value={finance.payroll}
+              onChange={(event) => updateFinance({ payroll: Number(event.target.value || 0) })}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+        <h3 className="text-lg font-semibold mb-4">Évolution mensuelle</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {finance.months.map((month, index) => (
+            <div key={month} className="border rounded-lg p-3 flex flex-col gap-2">
+              <div className="font-medium">{month}</div>
+              <div className="flex flex-col gap-2">
+                <label className="text-sm">Revenu</label>
+                <input
+                  type="number"
+                  className="border rounded-md px-3 py-2"
+                  value={finance.revenue[index]}
+                  onChange={(event) => updateRevenueValue(index, event.target.value)}
+                />
+                <label className="text-sm">Coût</label>
+                <input
+                  type="number"
+                  className="border rounded-md px-3 py-2"
+                  value={finance.costs[index]}
+                  onChange={(event) => updateCostValue(index, event.target.value)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <h3 className="text-lg font-semibold mb-4">Synthèse financière</h3>
         <Table columns={["Poste", "Montant", "Détail"]}>
           <TableRow>

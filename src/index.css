@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+	:root {
+		color: #172033;
+		background: #eef2f6;
+		font-family: "Aptos", "Segoe UI", sans-serif;
+	}
+
+	body {
+		min-width: 320px;
+		background: #eef2f6;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	button,
+	input,
+	select {
+		font: inherit;
+	}
+
+	:focus-visible {
+		outline: 3px solid rgba(14, 116, 144, 0.35);
+		outline-offset: 2px;
+	}
+}
+
+@layer components {
+	.page-header {
+		@apply flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between;
+	}
+
+	.eyebrow {
+		@apply text-xs font-semibold uppercase tracking-wider text-slate-500;
+	}
+}

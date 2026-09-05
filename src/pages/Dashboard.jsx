@@ -25,7 +25,7 @@ export default function Dashboard() {
   const revparValue = revpar(rooms, reservations);
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard label="Taux d’occupation" value={`${occ}%`} trend={2.1} />
         <KpiCard label="ADR" value={`${adrValue} €`} trend={1.3} />

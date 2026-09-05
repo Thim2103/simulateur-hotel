@@ -3,41 +3,32 @@ import Table from "../components/tables/Table";
 import TableRow from "../components/tables/TableRow";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { supabase } from "../lib/supabase";
+import { createReservation, deleteReservation as removeReservation, listReservations, updateReservation as saveReservation } from "../lib/restaurantRepository";
 
 export default function Reservations() {
   const [reservations, setReservations] = useState([]);
 
   // Charger les réservations depuis Supabase
   async function fetchReservations() {
-    const { data, error } = await supabase.from("reservations").select("*");
-
-    if (error) {
+    try {
+      setReservations(await listReservations());
+    } catch (error) {
       console.error("Erreur fetchReservations :", error);
-      return;
     }
-
-    setReservations(data);
   }
 
   // ➕ Ajouter une réservation
   async function addReservation() {
     const newRes = {
-      client: prompt("Nom du client :"),
+      client_name: prompt("Nom du client :"),
       room: prompt("Chambre :"),
       arrival: prompt("Date d'arrivée (YYYY-MM-DD) :"),
       departure: prompt("Date de départ (YYYY-MM-DD) :"),
       status: "en attente",
     };
 
-    const { error } = await supabase.from("reservations").insert([newRes]);
-
-    if (error) {
-      console.error("Erreur addReservation :", error);
-      return;
-    }
-
-    fetchReservations();
+    try { await createReservation(newRes); fetchReservations(); }
+    catch (error) { console.error("Erreur addReservation :", error); }
   }
 
   // ✏️ Modifier une réservation
@@ -45,36 +36,21 @@ export default function Reservations() {
     const res = reservations.find((r) => r.id === id);
 
     const updated = {
-      client: prompt("Nom du client :", res.client),
+      client_name: prompt("Nom du client :", res.client_name || res.client),
       room: prompt("Chambre :", res.room),
       arrival: prompt("Arrivée :", res.arrival),
       departure: prompt("Départ :", res.departure),
       status: prompt("Statut (confirmée, annulée, en attente) :", res.status),
     };
 
-    const { error } = await supabase
-      .from("reservations")
-      .update(updated)
-      .eq("id", id);
-
-    if (error) {
-      console.error("Erreur updateReservation :", error);
-      return;
-    }
-
-    fetchReservations();
+    try { await saveReservation(id, updated); fetchReservations(); }
+    catch (error) { console.error("Erreur updateReservation :", error); }
   }
 
   // ❌ Supprimer une réservation
   async function deleteReservation(id) {
-    const { error } = await supabase.from("reservations").delete().eq("id", id);
-
-    if (error) {
-      console.error("Erreur deleteReservation :", error);
-      return;
-    }
-
-    fetchReservations();
+    try { await removeReservation(id); fetchReservations(); }
+    catch (error) { console.error("Erreur deleteReservation :", error); }
   }
 
   // Charger les réservations au montage
@@ -83,7 +59,7 @@ export default function Reservations() {
   }, []);
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
 
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -95,7 +71,7 @@ export default function Reservations() {
       <Table columns={["Client", "Chambre", "Arrivée", "Départ", "Statut", "Actions"]}>
         {reservations.map((res) => (
           <TableRow key={res.id}>
-            <td className="px-4 py-2">{res.client}</td>
+            <td className="px-4 py-2">{res.client_name || res.client}</td>
             <td className="px-4 py-2">{res.room}</td>
             <td className="px-4 py-2">{res.arrival}</td>
             <td className="px-4 py-2">{res.departure}</td>

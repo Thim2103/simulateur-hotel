@@ -23,7 +23,7 @@ export default function Finance() {
   const gop = totalRevenue - totalExpenses;
 
   return (
-    <div className="p-6 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
 
       {/* Header */}
       <h1 className="text-2xl font-bold">Finance</h1>

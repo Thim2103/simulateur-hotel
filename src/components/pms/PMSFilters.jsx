@@ -1,15 +1,18 @@
+import Card from "../ui/Card";
+
 export default function PMSFilters({ filters, setFilters }) {
   return (
-    <div className="bg-white p-4 rounded-xl shadow flex gap-4">
+    <Card title="Filtres du planning">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 
-      <div className="flex flex-col">
-        <label className="text-sm">Type de chambre</label>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-slate-700">Type de chambre</label>
         <select
           value={filters.roomType}
           onChange={(e) =>
             setFilters({ ...filters, roomType: e.target.value })
           }
-          className="border p-2 rounded"
+          className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-cyan-600 focus:outline-none focus:ring-4 focus:ring-cyan-100"
         >
           <option value="">Toutes</option>
           <option value="standard">Standard</option>
@@ -18,14 +21,14 @@ export default function PMSFilters({ filters, setFilters }) {
         </select>
       </div>
 
-      <div className="flex flex-col">
-        <label className="text-sm">Statut</label>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-semibold text-slate-700">Statut</label>
         <select
           value={filters.status}
           onChange={(e) =>
             setFilters({ ...filters, status: e.target.value })
           }
-          className="border p-2 rounded"
+          className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-cyan-600 focus:outline-none focus:ring-4 focus:ring-cyan-100"
         >
           <option value="">Tous</option>
           <option value="confirmée">Confirmée</option>
@@ -33,6 +36,7 @@ export default function PMSFilters({ filters, setFilters }) {
           <option value="option">Option</option>
         </select>
       </div>
-    </div>
+      </div>
+    </Card>
   );
 }

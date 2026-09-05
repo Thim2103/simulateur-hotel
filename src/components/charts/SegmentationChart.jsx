@@ -12,11 +12,12 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 export default function SegmentationChart({ segmentation }) {
   if (!segmentation) return null;
 
-  const labels = ["Loisir", "Business", "Groupes"];
+  const labels = ["Corporate", "Loisir", "OTA", "Groupes"];
   const values = [
-    segmentation.loisir ?? 0,
-    segmentation.business ?? 0,
-    segmentation.groupes ?? 0,
+    segmentation.corporate ?? segmentation.business ?? 0,
+    segmentation.leisure ?? segmentation.loisir ?? 0,
+    segmentation.ota ?? 0,
+    segmentation.groups ?? segmentation.groupes ?? 0,
   ];
 
   const data = {
@@ -28,11 +29,13 @@ export default function SegmentationChart({ segmentation }) {
           "rgba(79, 70, 229, 0.7)",
           "rgba(16, 185, 129, 0.7)",
           "rgba(244, 114, 182, 0.7)",
+          "rgba(245, 158, 11, 0.7)",
         ],
         borderColor: [
           "rgba(79, 70, 229, 1)",
           "rgba(16, 185, 129, 1)",
           "rgba(244, 114, 182, 1)",
+          "rgba(245, 158, 11, 1)",
         ],
         borderWidth: 2,
       },

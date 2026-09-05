@@ -8,6 +8,7 @@ import Rooms from "./pages/Rooms";
 import Clients from "./pages/Clients";
 import Finance from "./pages/Finance";
 import Housekeeping from "./pages/Housekeeping";
+import PMS from "./pages/PMS";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
           <Route path="/clients" element={<Clients />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/housekeeping" element={<Housekeeping />} />
+          <Route path="/pms" element={<PMS />} />
           <Route path="/restaurant/*" element={<RestaurantSimulator />} />
         </Routes>
       </Layout>

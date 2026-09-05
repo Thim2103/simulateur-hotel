@@ -1,6 +1,15 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = "https://xamogkxhaztadvxpxeyt.supabase.co";
-const supabaseKey = "sb_publishable_e15ur1Jg3W5eDDNy1Rs-jQ_htc4Uie7";
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = supabaseUrl && supabaseKey
+	? createClient(supabaseUrl, supabaseKey)
+	: null;
+
+export function assertSupabaseConfigured() {
+	if (!supabase) {
+		throw new Error("Supabase n'est pas configure. Definissez REACT_APP_SUPABASE_URL et REACT_APP_SUPABASE_ANON_KEY.");
+	}
+	return supabase;
+}
