@@ -14,6 +14,7 @@ import RMFilters from "../components/rm/RMFilters";
 export default function DashboardRM() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const { kpis: restaurantKpis } = useRestaurantSimulator();
   const restaurantDemand = restaurantKpis.demand;
   const restaurantRevenue = restaurantKpis.totalMonthlyRevenue;
@@ -32,6 +33,8 @@ export default function DashboardRM() {
   // 🔥 Recalcul des stats à chaque changement de filtre
   useEffect(() => {
     async function loadStats() {
+      setLoading(true);
+      setError(null);
       try {
         const data = await getRMStats(filters, {
           demand: restaurantDemand,
@@ -41,16 +44,20 @@ export default function DashboardRM() {
         setStats(data);
       } catch (err) {
         console.error("Erreur RM :", err);
+        setError(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     loadStats();
   }, [filters, restaurantDemand, restaurantRevenue, restaurantSatisfaction]);
 
-  if (loading || !stats) {
+  if (loading) {
     return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500">Chargement des KPIs…</div>;
   }
+  if (error) return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Impossible de charger les indicateurs RM : {error.message}</div>;
+  if (!stats) return <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Aucune donnée RM disponible pour ces filtres.</div>;
 
   return (
     <div className="flex flex-col gap-6">
@@ -69,20 +76,20 @@ export default function DashboardRM() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <KpiCard
           label="Occupation"
-          value={`${(stats?.occupancy ?? 0).toFixed(1)} %`}
-          trend={(stats?.occupancy ?? 0) > 70 ? 3.2 : -1.1}
+          value={`${(stats?.kpis?.occupancy ?? 0).toFixed(1)} %`}
+          trend={(stats?.kpis?.occupancy ?? 0) > 70 ? 3.2 : -1.1}
         />
 
         <KpiCard
           label="ADR"
-          value={`${(stats?.adr ?? 0).toFixed(2)} €`}
-          trend={(stats?.adr ?? 0) > 100 ? 2.8 : -0.5}
+          value={`${(stats?.kpis?.adr ?? 0).toFixed(2)} €`}
+          trend={(stats?.kpis?.adr ?? 0) > 100 ? 2.8 : -0.5}
         />
 
         <KpiCard
           label="RevPAR"
-          value={`${(stats?.revpar ?? 0).toFixed(2)} €`}
-          trend={(stats?.revpar ?? 0) > 80 ? 4.1 : -2.3}
+          value={`${(stats?.kpis?.revpar ?? 0).toFixed(2)} €`}
+          trend={(stats?.kpis?.revpar ?? 0) > 80 ? 4.1 : -2.3}
         />
 
         <KpiCard
@@ -93,7 +100,7 @@ export default function DashboardRM() {
 
         <KpiCard
           label="Prévision"
-          value={`${(stats?.forecastAdvanced?.next30 ?? 0).toFixed(0)} €`}
+          value={stats?.forecast?.next30 == null ? "À venir" : `${stats.forecast.next30.toFixed(0)} €`}
           trend={(stats?.forecastAdvanced?.next30 ?? 0) > (stats?.revenue ?? 0) ? 4.8 : -2.1}
         />
 
@@ -115,7 +122,7 @@ export default function DashboardRM() {
         </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Prévision 90 jours" value={`${(stats?.forecastAdvanced?.next90 ?? 0).toFixed(0)} €`} trend={2.6} />
+        <KpiCard label="Prévision 90 jours" value={stats?.forecast?.next90 == null ? "À venir" : `${stats.forecast.next90.toFixed(0)} €`} trend={2.6} />
         <KpiCard label="Demande combinée" value={`${(stats?.combinedDemand ?? 0).toFixed(0)} %`} trend={2.1} />
         <KpiCard label="RevPASH restaurant" value={`${(stats?.revpash ?? 0).toFixed(2)} €`} trend={1.4} />
       </div>
@@ -148,9 +155,13 @@ export default function DashboardRM() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <LineChart
-          title="Occupation (7 derniers jours)"
-          labels={["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]}
-          data={[stats?.occupancy ?? 0, stats?.combinedDemand ?? 0, restaurantKpis.demand ?? 0]}
+          title="KPIs RM depuis Supabase"
+          labels={["Occupation", "ADR", "RevPAR"]}
+          data={[
+            stats?.kpis?.occupancy ?? 0,
+            stats?.kpis?.adr ?? 0,
+            stats?.kpis?.revpar ?? 0,
+          ]}
         />
         <BarChart
           title="Revenus par département"

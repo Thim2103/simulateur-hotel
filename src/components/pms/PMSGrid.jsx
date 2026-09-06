@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import PMSReservationBlock from "./PMSReservationBlock";
 
 const DAY_IN_MS = 1000 * 60 * 60 * 24;
+const EMPTY_ROOMS = [];
+const EMPTY_RESERVATIONS = [];
 
 function toDateString(date) {
   return new Date(date).toISOString().split("T")[0];
@@ -9,18 +11,22 @@ function toDateString(date) {
 
 export default function PMSGrid({ rooms = [], reservations = [], filters = {}, onReservationMove, onSelectReservation }) {
   const filteredRooms = useMemo(
-    () =>
-      rooms.filter((room) =>
+    () => {
+      const safeRooms = Array.isArray(rooms) ? rooms : EMPTY_ROOMS;
+      return safeRooms.filter((room) =>
         filters.roomType ? String(room.type || "").toLowerCase() === String(filters.roomType).toLowerCase() : true
-      ),
+      );
+    },
     [rooms, filters.roomType]
   );
 
   const filteredReservations = useMemo(
-    () =>
-      reservations.filter((res) =>
+    () => {
+      const safeReservations = Array.isArray(reservations) ? reservations : EMPTY_RESERVATIONS;
+      return safeReservations.filter((res) =>
         filters.status ? String(res.status || "").toLowerCase() === String(filters.status).toLowerCase() : true
-      ),
+      );
+    },
     [reservations, filters.status]
   );
 
@@ -44,7 +50,8 @@ export default function PMSGrid({ rooms = [], reservations = [], filters = {}, o
   const handleDrop = (roomId, day) => {
     if (!draggedId) return;
 
-    const reservation = reservations.find((item) => Number(item.id) === Number(draggedId));
+    const safeReservations = Array.isArray(reservations) ? reservations : EMPTY_RESERVATIONS;
+    const reservation = safeReservations.find((item) => Number(item.id) === Number(draggedId));
     if (!reservation) return;
 
     const currentArrival = new Date(`${reservation.arrival}T12:00:00`);
@@ -82,7 +89,9 @@ export default function PMSGrid({ rooms = [], reservations = [], filters = {}, o
         </thead>
 
         <tbody>
-          {filteredRooms.map((room) => (
+          {filteredRooms.length === 0 ? (
+            <tr><td colSpan={days.length + 1} className="px-4 py-12 text-center text-sm text-slate-500">Aucune chambre ne correspond aux filtres sélectionnés.</td></tr>
+          ) : filteredRooms.map((room) => (
             <tr key={room.id} className="border">
               <td className="border bg-gray-50 p-2 font-semibold">
                 {room.number || room.name || `Room ${room.id}`}

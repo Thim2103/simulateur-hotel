@@ -1,18 +1,32 @@
-import { assertSupabaseConfigured } from "../../lib/supabase";
-import { listReservations } from "../../lib/restaurantRepository";
+import { listReservations, listRooms } from "../pmsRepository";
 
 // -----------------------------
 // 1. Charger les données
 // -----------------------------
 
 export async function getRooms() {
-  const { data, error } = await assertSupabaseConfigured().from("rooms").select("*");
-  if (error) throw error;
-  return Array.isArray(data) ? data : [];
+  return listRooms();
 }
 
 export async function getReservations() {
   return listReservations();
+}
+
+export function normalizeReservation(reservation = {}) {
+  return {
+    ...reservation,
+    arrival: reservation.arrival ?? reservation.check_in ?? reservation.checkIn,
+    departure: reservation.departure ?? reservation.check_out ?? reservation.checkOut,
+    price: Number(reservation.price ?? reservation.rate ?? reservation.room_rate ?? 0),
+    room_id: reservation.room_id ?? reservation.roomId ?? reservation.room_number ?? reservation.room,
+  };
+}
+
+export function normalizeRMData(data = {}) {
+  return {
+    rooms: Array.isArray(data.rooms) ? data.rooms : [],
+    reservations: Array.isArray(data.reservations) ? data.reservations.map(normalizeReservation) : [],
+  };
 }
 
 // -----------------------------
@@ -128,6 +142,26 @@ export function totalRevenue(reservations = []) {
   });
 
   return Math.round(total);
+}
+
+export function forecastPlaceholder() {
+  return {
+    next30: null,
+    next90: null,
+    daily: [],
+    source: "supabase",
+    status: "pending",
+  };
+}
+
+export function buildRMKpis(rooms = [], reservations = []) {
+  return {
+    adr: adr(reservations),
+    revpar: revpar(rooms, reservations),
+    occupancy: occupationRate(rooms, reservations),
+    currency: "EUR",
+    source: "supabase",
+  };
 }
 
 // -----------------------------
@@ -290,8 +324,12 @@ export function occupancyHeatmap(reservations = []) {
 // -----------------------------
 
 export async function getRMStats(filters = {}, restaurantMetrics = {}) {
-  const rooms = await getRooms();
-  const reservations = filterReservations(await getReservations(), filters);
+  const data = normalizeRMData({
+    rooms: await listRooms(),
+    reservations: await listReservations(),
+  });
+  const rooms = data.rooms;
+  const reservations = filterReservations(data.reservations, filters);
   const restaurantDemand = Number(restaurantMetrics.demand || 0);
 
   const revenue = totalRevenue(reservations);
@@ -299,11 +337,14 @@ export async function getRMStats(filters = {}, restaurantMetrics = {}) {
   const restaurantRevenueValue = restaurantRevenue(restaurantMetrics);
   const restaurantSatisfaction = Number(restaurantMetrics.customerSatisfaction || restaurantMetrics.satisfaction || 0);
   const integratedOccupancy = Math.round(Math.max(0, Math.min(100, baseOccupancy + (restaurantDemand - 50) * 0.1)));
+  const kpis = buildRMKpis(rooms, reservations);
 
   return {
+    kpis: { ...kpis, occupancy: integratedOccupancy },
+    forecast: forecastPlaceholder(),
     occupancy: integratedOccupancy,
-    adr: adr(reservations),
-    revpar: revpar(rooms, reservations),
+    adr: kpis.adr,
+    revpar: kpis.revpar,
     revenue,
     forecastAdvanced: forecastAdvanced(reservations, restaurantDemand),
     pickup: pickup(reservations),

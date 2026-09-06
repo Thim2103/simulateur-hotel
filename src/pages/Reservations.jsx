@@ -1,107 +1,91 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Table from "../components/tables/Table";
 import TableRow from "../components/tables/TableRow";
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
-import { createReservation, deleteReservation as removeReservation, listReservations, updateReservation as saveReservation } from "../lib/restaurantRepository";
+import ReservationForm from "../components/pms/ReservationForm";
+import { deleteReservation, listReservations, listRooms, saveReservation } from "../lib/pmsRepository";
 
 export default function Reservations() {
   const [reservations, setReservations] = useState([]);
+  const [rooms, setRooms] = useState([]);
+  const [editingReservation, setEditingReservation] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Charger les réservations depuis Supabase
-  async function fetchReservations() {
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setReservations(await listReservations());
-    } catch (error) {
-      console.error("Erreur fetchReservations :", error);
+      const [reservationRows, roomRows] = await Promise.all([listReservations(), listRooms()]);
+      setReservations(reservationRows);
+      setRooms(roomRows);
+      setError(null);
+    } catch (loadError) {
+      setError(loadError);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  // ➕ Ajouter une réservation
-  async function addReservation() {
-    const newRes = {
-      client_name: prompt("Nom du client :"),
-      room: prompt("Chambre :"),
-      arrival: prompt("Date d'arrivée (YYYY-MM-DD) :"),
-      departure: prompt("Date de départ (YYYY-MM-DD) :"),
-      status: "en attente",
-    };
+  useEffect(() => { fetchData(); }, []);
 
-    try { await createReservation(newRes); fetchReservations(); }
-    catch (error) { console.error("Erreur addReservation :", error); }
-  }
+  const handleSave = async (reservation) => {
+    try {
+      await saveReservation(reservation);
+      setEditingReservation(null);
+      setShowForm(false);
+      await fetchData();
+    } catch (saveError) {
+      setError(saveError);
+    }
+  };
 
-  // ✏️ Modifier une réservation
-  async function updateReservation(id) {
-    const res = reservations.find((r) => r.id === id);
-
-    const updated = {
-      client_name: prompt("Nom du client :", res.client_name || res.client),
-      room: prompt("Chambre :", res.room),
-      arrival: prompt("Arrivée :", res.arrival),
-      departure: prompt("Départ :", res.departure),
-      status: prompt("Statut (confirmée, annulée, en attente) :", res.status),
-    };
-
-    try { await saveReservation(id, updated); fetchReservations(); }
-    catch (error) { console.error("Erreur updateReservation :", error); }
-  }
-
-  // ❌ Supprimer une réservation
-  async function deleteReservation(id) {
-    try { await removeReservation(id); fetchReservations(); }
-    catch (error) { console.error("Erreur deleteReservation :", error); }
-  }
-
-  // Charger les réservations au montage
-  useEffect(() => {
-    fetchReservations();
-  }, []);
+  const handleDelete = async (id) => {
+    try {
+      await deleteReservation(id);
+      await fetchData();
+    } catch (deleteError) {
+      setError(deleteError);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6">
-
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Réservations</h1>
-        <Button onClick={addReservation}>Nouvelle réservation</Button>
+      <div className="page-header">
+        <div>
+          <p className="eyebrow">Hébergement</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Réservations</h1>
+          <p className="mt-1 text-sm text-slate-500">Suivez les séjours, les sources de réservation et les statuts.</p>
+        </div>
+        <Button onClick={() => { setEditingReservation(null); setShowForm(true); }}>Nouvelle réservation</Button>
       </div>
 
-      {/* Table */}
-      <Table columns={["Client", "Chambre", "Arrivée", "Départ", "Statut", "Actions"]}>
-        {reservations.map((res) => (
-          <TableRow key={res.id}>
-            <td className="px-4 py-2">{res.client_name || res.client}</td>
-            <td className="px-4 py-2">{res.room}</td>
-            <td className="px-4 py-2">{res.arrival}</td>
-            <td className="px-4 py-2">{res.departure}</td>
+      {error && <p className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error.message}</p>}
+      {showForm && <ReservationForm reservation={editingReservation} rooms={rooms} onSave={handleSave} onCancel={() => setShowForm(false)} />}
 
-            <td className="px-4 py-2">
-              <Badge
-                type={
-                  res.status === "confirmée"
-                    ? "success"
-                    : res.status === "annulée"
-                    ? "danger"
-                    : "warning"
-                }
-              >
-                {res.status}
-              </Badge>
-            </td>
-
-            {/* Actions */}
-            <td className="px-4 py-2 flex gap-2">
-              <Button variant="secondary" onClick={() => updateReservation(res.id)}>
-                Modifier
-              </Button>
-              <Button variant="danger" onClick={() => deleteReservation(res.id)}>
-                Supprimer
-              </Button>
-            </td>
-          </TableRow>
-        ))}
-      </Table>
+      <Table columns={["Client", "Chambre", "Arrivée", "Départ", "Source", "Statut", "Actions"]} loading={loading} error={error ? error.message : ""} empty={reservations.length === 0} emptyMessage="Aucune réservation n'est disponible pour le moment.">
+          {reservations.map((reservation) => (
+            <TableRow key={reservation.id}>
+              <td className="max-w-[220px] truncate px-4 py-3 text-sm font-medium text-slate-900" title={reservation.client_name}>{reservation.client_name}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{reservation.room || reservation.room_id}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{reservation.arrival}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{reservation.departure}</td>
+              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{reservation.source}</td>
+              <td className="whitespace-nowrap px-4 py-3">
+                <Badge type={reservation.status === "confirmée" ? "success" : reservation.status === "annulée" ? "danger" : "warning"}>
+                  {reservation.status}
+                </Badge>
+              </td>
+              <td className="px-4 py-3"><div className="flex min-w-max gap-2">
+                <Button variant="secondary" onClick={() => { setEditingReservation(reservation); setShowForm(true); }}>Modifier</Button>
+                <Button variant="danger" onClick={() => handleDelete(reservation.id)}>Supprimer</Button>
+              </div>
+              </td>
+            </TableRow>
+          ))}
+        </Table>
     </div>
   );
 }

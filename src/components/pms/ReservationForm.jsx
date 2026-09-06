@@ -1,0 +1,71 @@
+import Button from "../ui/Button";
+import Input from "../ui/Input";
+import { RESERVATION_STATUSES, ROOM_TYPES, createReservation } from "../../lib/pmsModels";
+
+export default function ReservationForm({ reservation, rooms = [], onSave, onCancel }) {
+  const initial = createReservation(reservation || {});
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const roomId = form.get("room_id");
+    const selectedRoom = rooms.find((room) => String(room.id) === String(roomId));
+    onSave(createReservation({
+      ...initial,
+      client_id: form.get("client_id") || initial.client_id,
+      client_name: form.get("client_name"),
+      client_email: form.get("client_email"),
+      client_phone: form.get("client_phone"),
+      room_id: roomId,
+      room: selectedRoom?.number || form.get("room"),
+      room_type: form.get("room_type"),
+      arrival: form.get("arrival"),
+      departure: form.get("departure"),
+      status: form.get("status"),
+      price: form.get("price"),
+      source: form.get("source"),
+      segment: form.get("segment"),
+      notes: form.get("notes"),
+    }));
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="rounded-xl border bg-white p-4 shadow-sm">
+      <h2 className="mb-4 text-lg font-semibold">{initial.id ? "Edit reservation" : "New reservation"}</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input label="Client name" name="client_name" required defaultValue={initial.client_name} />
+        <Input label="Client ID" name="client_id" defaultValue={initial.client_id ?? ""} placeholder="Supabase client UUID" />
+        <Input label="Email" name="client_email" type="email" defaultValue={initial.client_email} />
+        <Input label="Phone" name="client_phone" defaultValue={initial.client_phone} />
+        <label className="flex flex-col gap-1 text-sm font-medium">Room
+          <select name="room_id" required defaultValue={initial.room_id ?? ""} className="rounded-md border px-3 py-2">
+            <option value="">Select a room</option>
+            {rooms.map((room) => <option key={room.id} value={room.id}>{room.number} · {room.type}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-sm font-medium">Room type
+          <select name="room_type" defaultValue={initial.room_type} className="rounded-md border px-3 py-2">
+            {ROOM_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+          </select>
+        </label>
+        <Input label="Arrival" name="arrival" type="date" required defaultValue={initial.arrival} />
+        <Input label="Departure" name="departure" type="date" required defaultValue={initial.departure} />
+        <Input label="Price / night" name="price" type="number" min="0" step="0.01" defaultValue={initial.price} />
+        <label className="flex flex-col gap-1 text-sm font-medium">Status
+          <select name="status" defaultValue={initial.status} className="rounded-md border px-3 py-2">
+            {RESERVATION_STATUSES.map((status) => <option key={status} value={status}>{status}</option>)}
+          </select>
+        </label>
+        <Input label="Source" name="source" defaultValue={initial.source} placeholder="direct, OTA, agency" />
+        <Input label="Segment" name="segment" defaultValue={initial.segment} placeholder="leisure, corporate, groups" />
+      </div>
+      <label className="mt-4 flex flex-col gap-1 text-sm font-medium">Notes
+        <textarea name="notes" rows="3" defaultValue={initial.notes} className="rounded-md border px-3 py-2" />
+      </label>
+      <div className="mt-4 flex justify-end gap-2">
+        {onCancel && <Button type="button" variant="secondary" onClick={onCancel}>Cancel</Button>}
+        <Button type="submit">Save reservation</Button>
+      </div>
+    </form>
+  );
+}

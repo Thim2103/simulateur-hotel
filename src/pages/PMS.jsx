@@ -65,8 +65,8 @@ export default function PMS() {
     publishPmsEvent("scheduling.synced", { count: events.length, events });
   };
 
-  if (loading) return <div className="p-6">Chargement du planning…</div>;
-  if (error) return <div className="p-6 text-red-600">Erreur de chargement du planning : {error.message}</div>;
+  if (loading) return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500"><span className="inline-flex items-center gap-2" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-cyan-700" />Chargement du planning…</span></div>;
+  if (error) return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Erreur de chargement du planning : {error.message}</div>;
 
   return (
     <div className="flex flex-col gap-6">

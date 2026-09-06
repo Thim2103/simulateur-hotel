@@ -118,6 +118,12 @@ export const restaurantRepository = {
     update: (finance) => upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, months: finance.months, revenue: finance.revenue, costs: finance.costs, payroll: finance.payroll, fixed_costs: finance.fixedCosts, rent: finance.rent, taxes: finance.taxes }]).then((rows) => rows[0]),
     remove: () => remove("restaurant_finance", RESTAURANT_ID, "restaurant_id"),
   },
+  financeHistory: {
+    list: () => select("restaurant_finance_periods", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("period_start")),
+  },
+  esg: {
+    list: () => select("restaurant_esg_metrics", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("period_start")),
+  },
 };
 
 export async function listReservations() {

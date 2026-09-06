@@ -1,6 +1,6 @@
 export default function TableHeader({ children }) {
   return (
-    <th className="text-left px-4 py-2 border-b font-semibold">
+    <th scope="col" className="whitespace-nowrap border-b border-slate-200 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
       {children}
     </th>
   );
