@@ -81,3 +81,56 @@ test("random events can push profit down without crashing the pipeline", async (
   expect(report.events.length).toBeGreaterThan(0);
   expect(Number.isFinite(report.profit)).toBe(true);
 });
+
+describe("lib/events integration", () => {
+  test("a day with no triggered events reports an empty events list", async () => {
+    const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    expect(report.events).toEqual([]);
+  });
+
+  test("triggered events' costs are folded into today's expenses", async () => {
+    const withoutEvents = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    const withEvents = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0, persist: false });
+
+    expect(withEvents.events.length).toBeGreaterThan(0);
+    expect(withEvents.expenses.eventCosts).toBeGreaterThan(withoutEvents.expenses.eventCosts);
+  });
+
+  test("a multi-day event persists into hotelState.progression.activeEvents for tomorrow's run", async () => {
+    let savedHotelState = null;
+    mockSaveDailyState.mockImplementationOnce(async ({ hotelState }) => {
+      savedHotelState = hotelState;
+      return { hotel: null, restaurant: null, pms: { rooms: [], reservations: [] } };
+    });
+
+    await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0 }); // triggers every event
+
+    expect(Array.isArray(savedHotelState.progression.activeEvents)).toBe(true);
+    // Every triggered event has duration >= 1; anything with duration > 1
+    // must still show up with a decremented remainingDays for tomorrow.
+    const multiDay = savedHotelState.progression.activeEvents.filter((event) => event.totalDays > 1);
+    expect(multiDay.length).toBeGreaterThan(0);
+    multiDay.forEach((event) => expect(event.remainingDays).toBeGreaterThan(0));
+  });
+
+  test("a multi-day event started yesterday continues today without needing to re-roll", async () => {
+    const state = baseState();
+    const day1 = await runDailyCycle({ ...state, referenceDate: REFERENCE_DATE, rng: () => 0, persist: false });
+    const ongoingFromDay1 = day1.events.find((event) => event.totalDays > 1);
+    expect(ongoingFromDay1).toBeDefined();
+
+    const tomorrow = new Date(REFERENCE_DATE);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const day2 = await runDailyCycle({
+      ...state,
+      hotelState: { ...state.hotelState, progression: { activeEvents: [ongoingFromDay1] } },
+      referenceDate: tomorrow,
+      rng: () => 0.999, // fires nothing new
+      persist: false,
+    });
+
+    const continuing = day2.events.find((event) => event.id === ongoingFromDay1.id);
+    expect(continuing).toBeDefined();
+    expect(continuing.remainingDays).toBe(ongoingFromDay1.remainingDays - 1);
+  });
+});

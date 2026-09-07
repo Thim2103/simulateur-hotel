@@ -35,6 +35,36 @@ test("lists today's events", () => {
   expect(screen.getByText(/client VIP séjourne/i)).toBeInTheDocument();
 });
 
+test("shows the event's category and financial impact", () => {
+  render(
+    <DailyReportModal
+      report={sampleReport({
+        events: [
+          { id: "vip_guest", category: "guest", severity: "low", message: "Un client VIP séjourne à l'hôtel.", impact: { revenue: 200, reputation: 2 } },
+        ],
+      })}
+      onClose={() => {}}
+    />
+  );
+
+  expect(screen.getByText("Client")).toBeInTheDocument();
+  expect(screen.getByText(/\+200 € CA/)).toBeInTheDocument();
+  expect(screen.getByText(/\+2 pts réputation/)).toBeInTheDocument();
+});
+
+test("shows the day progress for a still-ongoing multi-day event", () => {
+  render(
+    <DailyReportModal
+      report={sampleReport({
+        events: [{ id: "weather", category: "environment", severity: "medium", message: "Météo du jour : canicule.", totalDays: 3, remainingDays: 2 }],
+      })}
+      onClose={() => {}}
+    />
+  );
+
+  expect(screen.getByText("jour 2/3")).toBeInTheDocument();
+});
+
 test("shows a fallback message when there are no events", () => {
   render(<DailyReportModal report={sampleReport({ events: [] })} onClose={() => {}} />);
   expect(screen.getByText(/aucun événement notable/i)).toBeInTheDocument();

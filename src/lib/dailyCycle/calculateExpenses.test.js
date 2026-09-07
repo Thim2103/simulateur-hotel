@@ -25,7 +25,7 @@ test("adds today's event costs on top of the prorated variable costs", () => {
   const withEvents = calculateExpenses({
     hotelState: { finance: {} },
     restaurantState: { finance: {}, staff: [] },
-    events: [{ impact: { cost: 450 } }, { impact: { cost: 90 } }],
+    events: [{ impact: { expenses: 450 } }, { impact: { expenses: 90 } }],
   });
 
   expect(withEvents.eventCosts).toBe(540);
