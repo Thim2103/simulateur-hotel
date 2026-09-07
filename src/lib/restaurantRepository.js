@@ -345,6 +345,13 @@ export async function saveRestaurantState(state) {
   ]);
 }
 
+// Persists the restaurant's state after a simulated day (see
+// lib/dailyCycle/saveDailyState.js). Currently an alias for
+// saveRestaurantState: the daily cycle folds its results (finance, staff
+// changes) into the existing restaurant tables rather than a table of its
+// own.
+export const saveDailyState = saveRestaurantState;
+
 export const restaurantRepository = {
   restaurant: {
     get: async () => {
@@ -363,6 +370,7 @@ export const restaurantRepository = {
   },
   getRestaurantState,
   saveRestaurantState,
+  saveDailyState,
   staff: {
     list: async () => {
       const userId = await ensureAuthSession();
