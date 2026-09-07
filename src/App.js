@@ -4,6 +4,7 @@ import Layout from "./layout/Layout";
 import DashboardRM from "./pages/DashboardRM";
 import RMDashboard from "./pages/RMDashboard";
 import ProgressionDashboard from "./pages/ProgressionDashboard";
+import ChainDashboard from "./pages/ChainDashboard";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -24,6 +25,7 @@ function App() {
           <Route path="/dashboard-rm" element={<DashboardRM />} />
           <Route path="/rm-dashboard" element={<RMDashboard />} />
           <Route path="/progression" element={<ProgressionDashboard />} />
+          <Route path="/chain" element={<ChainDashboard />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/rooms" element={<Rooms />} />

@@ -58,8 +58,24 @@ test("returns a DailyReport with the documented shape", async () => {
         rewards: expect.any(Array),
         storylineEvents: expect.any(Array),
       }),
+      nextState: expect.objectContaining({
+        hotelState: expect.any(Object),
+        restaurantState: expect.any(Object),
+        rooms: expect.any(Array),
+        reservations: expect.any(Array),
+      }),
     })
   );
+});
+
+test("nextState exposes the resulting hotel/restaurant/PMS state for a caller to chain in memory", async () => {
+  const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+
+  expect(report.nextState.hotelState.finance).toBeDefined();
+  expect(report.nextState.hotelState.progression.cycles).toBe(1);
+  expect(report.nextState.restaurantState.finance).toBeDefined();
+  expect(report.nextState.rooms.find((room) => room.id === 1).status).toBe("occupée");
+  expect(report.nextState.reservations).toHaveLength(1);
 });
 
 test("checks in today's arrival as part of the run and reports it", async () => {

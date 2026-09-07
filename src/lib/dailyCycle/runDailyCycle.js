@@ -37,7 +37,7 @@ async function loadDailyCycleState({ hotelState, restaurantState, rooms, reserva
 
 // Step 10: shape the pipeline's results into the DailyReport contract
 // consumed by the UI.
-function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport, progressionReport }) {
+function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport, progressionReport, nextState }) {
   return {
     date: toDateOnly(referenceDate),
     hotelRevenue,
@@ -49,6 +49,12 @@ function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expe
     reservationsChanges,
     rmReport,
     progressionReport,
+    // Not part of the original DailyReport contract, but additive and
+    // backward-compatible: the resulting state, for a caller that wants to
+    // chain multiple days in memory without a Supabase round-trip (see
+    // lib/multiHotel/chainEngine.js, which runs this once per hotel in a
+    // chain -- the DB only supports one hotel per user today).
+    nextState,
   };
 }
 
@@ -174,5 +180,11 @@ export async function runDailyCycle(options = {}) {
     referenceDate,
     ...dailyReportSoFar,
     progressionReport: progression.report,
+    nextState: {
+      hotelState: nextHotelState,
+      restaurantState: nextRestaurantState,
+      rooms: reservationUpdate.rooms,
+      reservations: reservationUpdate.reservations,
+    },
   });
 }
