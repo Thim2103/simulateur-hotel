@@ -2,6 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const primaryLinks = [
   ["/", "Dashboard", true],
+  ["/chain", "Chaîne d'hôtels"],
   ["/dashboard-rm", "Revenue management"],
   ["/rm-dashboard", "RM avancé"],
   ["/pms", "Planning PMS"],
