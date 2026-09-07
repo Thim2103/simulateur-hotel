@@ -7,7 +7,7 @@ import { useRestaurantSimulator } from "./useRestaurantSimulator";
 // data (e.g. DashboardRM.jsx) feed it in instead of relying on the restaurant
 // hook's own numbers (e.g. to inject real PMS occupancy).
 export function useHotelSimulator(restaurantMetricsOverride) {
-  const { data: persistedState, loading, error, persist } = useSupabaseHotel(defaultHotelState);
+  const { data: persistedState, loading, error, persist, reload } = useSupabaseHotel(defaultHotelState);
   const [state, setState] = useState(defaultHotelState);
   const [hydrated, setHydrated] = useState(false);
   const [difficultyId, setDifficultyId] = useState("normal");
@@ -183,6 +183,10 @@ export function useHotelSimulator(restaurantMetricsOverride) {
     state,
     loading,
     error,
+    // Re-fetches the hotel state from Supabase (e.g. after another process,
+    // such as the daily cycle, persisted changes directly through the
+    // repository rather than through this hook's own setState/persist).
+    reload,
     structure: state.structure,
     finance: state.finance,
     marketing: state.marketing,

@@ -3,13 +3,22 @@ import LineChart from "../components/charts/LineChart";
 import BarChart from "../components/charts/BarChart";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
+import DailyReportModal from "../components/DailyReportModal";
 import { occupationRate, adr, revpar, integratedHotelReputation } from "../lib/calculs/rm";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 import { useHotelSimulator } from "../hooks/useHotelSimulator";
+import { useDailyCycle } from "../hooks/useDailyCycle";
 
 export default function Dashboard() {
-  const { kpis: restaurantKpis } = useRestaurantSimulator();
-  const { kpis: hotelKpis, advanceSimulation } = useHotelSimulator();
+  const { kpis: restaurantKpis, reload: reloadRestaurant } = useRestaurantSimulator();
+  const { kpis: hotelKpis, advanceSimulation, reload: reloadHotel } = useHotelSimulator();
+  const {
+    advanceDay,
+    dailyReport,
+    dismissReport,
+    isRunning: isAdvancingDay,
+    error: dailyCycleError,
+  } = useDailyCycle({ reloadHotel, reloadRestaurant });
   const totalRooms = 100;
   const occupiedRooms = 78;
   const totalRevenueRooms = 11200;
@@ -43,13 +52,23 @@ export default function Dashboard() {
       </header>
 
       <Card className="border-cyan-100 bg-gradient-to-br from-white to-cyan-50/60">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="eyebrow">Cycle de simulation</p>
             <p className="mt-1 text-xl font-bold text-slate-900">Jour {hotelKpis.cycles}</p>
           </div>
-          <Button onClick={() => advanceSimulation(1)}>Avancer d'un cycle</Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => advanceSimulation(1)}>Avancer d'un cycle</Button>
+            <Button onClick={() => { advanceDay().catch(() => undefined); }} disabled={isAdvancingDay}>
+              {isAdvancingDay ? "Calcul en cours…" : "Jour suivant"}
+            </Button>
+          </div>
         </div>
+        {dailyCycleError && (
+          <p className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            Impossible de calculer la journée : {dailyCycleError.message}
+          </p>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -91,6 +110,16 @@ export default function Dashboard() {
         labels={["Chambres", "Restaurant", "Spa", "Bar"]}
         data={[totalRevenueRooms, restaurantKpis.restaurantRevenue, 5000, 3000]}
       />
+
+      {dailyReport && (
+        <BarChart
+          title={`Revenus, dépenses et profit du jour — ${dailyReport.date}`}
+          labels={["Revenu hôtel", "Revenu restaurant", "Dépenses", "Profit"]}
+          data={[dailyReport.hotelRevenue.netRevenue, dailyReport.restaurantRevenue.netRevenue, dailyReport.expenses.total, dailyReport.profit]}
+        />
+      )}
+
+      <DailyReportModal report={dailyReport} onClose={dismissReport} />
     </div>
   );
 }
