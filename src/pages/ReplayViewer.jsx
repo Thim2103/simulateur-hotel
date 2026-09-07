@@ -49,7 +49,10 @@ export default function ReplayViewer() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{run.ownerLabel}</h1>
           <p className="mt-1 text-sm text-slate-500">{run.scenarioTitle} · Source : {run.source} · Statut : {run.status}</p>
         </div>
-        <Link to={`/replay/${runId}/export`} className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">Exporter →</Link>
+        <div className="flex gap-3">
+          <Link to={`/analytics/${runId}`} className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">Analyser →</Link>
+          <Link to={`/replay/${runId}/export`} className="text-sm font-semibold text-cyan-700 hover:text-cyan-800">Exporter →</Link>
+        </div>
       </header>
 
       <section aria-labelledby="replay-timeline" className="flex flex-col gap-3">

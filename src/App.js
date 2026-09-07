@@ -20,6 +20,10 @@ import CompetitionReview from "./pages/CompetitionReview";
 import ReplayViewer from "./pages/ReplayViewer";
 import ReplayCompare from "./pages/ReplayCompare";
 import ReplayExport from "./pages/ReplayExport";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import AnalyticsRun from "./pages/AnalyticsRun";
+import AnalyticsCompare from "./pages/AnalyticsCompare";
+import AnalyticsReport from "./pages/AnalyticsReport";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -56,6 +60,10 @@ function App() {
                 <Route path="/replay/compare/:runIdA/:runIdB" element={<ReplayCompare />} />
                 <Route path="/replay/:runId/export" element={<ReplayExport />} />
                 <Route path="/replay/:runId" element={<ReplayViewer />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
+                <Route path="/analytics/compare/:runIdA/:runIdB" element={<AnalyticsCompare />} />
+                <Route path="/analytics/:runId/report" element={<AnalyticsReport />} />
+                <Route path="/analytics/:runId" element={<AnalyticsRun />} />
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/reservations" element={<Reservations />} />
                 <Route path="/rooms" element={<Rooms />} />

@@ -91,6 +91,14 @@ export default function CompetitionReview() {
                   </li>
                 ))}
               </ol>
+              {ranking.length >= 2 && (
+                <Link
+                  to={`/analytics/compare/competition-${matchId}-${ranking[0].playerId}/competition-${matchId}-${ranking[ranking.length - 1].playerId}`}
+                  className="mt-3 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800"
+                >
+                  Comparer le 1er et le dernier joueur (Analytics) →
+                </Link>
+              )}
             </Card>
           </section>
 

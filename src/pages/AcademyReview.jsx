@@ -87,6 +87,14 @@ export default function AcademyReview() {
                   </li>
                 ))}
               </ol>
+              {finalReport.ranking.length >= 2 && (
+                <Link
+                  to={`/analytics/compare/academie-${classId}-${finalReport.ranking[0].groupId}/academie-${classId}-${finalReport.ranking[finalReport.ranking.length - 1].groupId}`}
+                  className="mt-3 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800"
+                >
+                  Comparer le 1er et le dernier groupe (Analytics) →
+                </Link>
+              )}
             </Card>
           </section>
 
