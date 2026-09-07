@@ -42,6 +42,13 @@ test("returns a DailyReport with the documented shape", async () => {
       events: expect.any(Array),
       staffChanges: expect.any(Object),
       reservationsChanges: expect.any(Object),
+      rmReport: expect.objectContaining({
+        forecast: expect.objectContaining({ next7: expect.any(Number), next30: expect.any(Number), next90: expect.any(Number) }),
+        pickup: expect.any(Object),
+        pricing: expect.objectContaining({ recommendedADR: expect.any(Number), minPrice: expect.any(Number), maxPrice: expect.any(Number) }),
+        segmentation: expect.any(Object),
+        recommendations: expect.any(Array),
+      }),
     })
   );
 });
@@ -132,5 +139,24 @@ describe("lib/events integration", () => {
     const continuing = day2.events.find((event) => event.id === ongoingFromDay1.id);
     expect(continuing).toBeDefined();
     expect(continuing.remainingDays).toBe(ongoingFromDay1.remainingDays - 1);
+  });
+});
+
+describe("lib/rm integration", () => {
+  test("rmReport.pricing reacts to today's active events", async () => {
+    const withoutEvents = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    const withEvents = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0, persist: false });
+
+    expect(withoutEvents.rmReport.pricing.weatherAdjustment).toBe(0);
+    expect(withoutEvents.rmReport.pricing.eventAdjustment).toBe(0);
+    // rng: () => 0 triggers every event, including the demand-boosting
+    // local_event/vip_guest that dynamicPricing.js reacts to.
+    expect(withEvents.rmReport.pricing.eventAdjustment).toBeGreaterThan(0);
+  });
+
+  test("rmReport.pickup and segmentation reflect the same reservations the rest of the cycle used", async () => {
+    const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    expect(report.rmReport.segmentation.mix.leisure).toBeGreaterThanOrEqual(0);
+    expect(typeof report.rmReport.pickup.daily).toBe("object");
   });
 });

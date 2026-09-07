@@ -4,6 +4,7 @@ export { calculateRestaurantRevenue } from "./calculateRestaurantRevenue";
 export { calculateExpenses } from "./calculateExpenses";
 export { updateStaff } from "./updateStaff";
 export { generateEvents, eventEngine } from "../events";
+export { runRM, rmEngine } from "../rm";
 export { updateReservations } from "./updateReservations";
 export { updateFinance } from "./updateFinance";
 export { saveDailyState } from "./saveDailyState";

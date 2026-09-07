@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./layout/Layout";
 
 import DashboardRM from "./pages/DashboardRM";
+import RMDashboard from "./pages/RMDashboard";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -20,6 +21,7 @@ function App() {
       <Layout>
         <Routes>
           <Route path="/dashboard-rm" element={<DashboardRM />} />
+          <Route path="/rm-dashboard" element={<RMDashboard />} />
           <Route path="/" element={<Dashboard />} />
           <Route path="/reservations" element={<Reservations />} />
           <Route path="/rooms" element={<Rooms />} />
