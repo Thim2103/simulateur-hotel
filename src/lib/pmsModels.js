@@ -99,7 +99,9 @@ export function createReservation(values = {}) {
     status: String(values.status ?? "en attente"),
     price: Number(values.price) || 0,
     notes: String(values.notes ?? ""),
-    source: String(values.source ?? "direct"),
+    // The DB column is `channel` (see supabase/migrations/202609070007_pms_schema_alignment.sql);
+    // `source` is the field name used throughout the rest of the app.
+    source: String(firstValue(values.source, values.channel, "direct")),
     segment: String(values.segment ?? "leisure"),
     metadata: values.metadata ?? {},
     created_at: values.created_at ?? null,
@@ -147,7 +149,7 @@ export function toReservationPayload(reservation) {
     status: normalized.status,
     price: normalized.price,
     notes: normalized.notes,
-    source: normalized.source,
+    channel: normalized.source, // see createReservation()'s comment: `channel` is the real column
     segment: normalized.segment,
     external_id: normalized.external_id,
     metadata: normalized.metadata,
