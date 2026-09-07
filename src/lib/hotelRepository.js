@@ -1,11 +1,13 @@
 // Persistence layer for the hotel-level simulation, modeled on restaurantRepository.js.
 // Order of resilience: Supabase -> localStorage cache -> in-memory mock (see hotel.mock.js).
-import { assertSupabaseConfigured } from "./supabase";
+import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
 import { safeLoad } from "./safeLoad";
 import { safeObject } from "./safe";
 import { defaultHotelState } from "./hotel";
 
-const HOTEL_ID = "00000000-0000-0000-0000-000000000002";
+// Pre-auth seed row: only referenced so the first signed-in user can claim it
+// (see claimLegacyHotel()). Every other hotel gets a fresh id from the DB.
+const LEGACY_HOTEL_ID = "00000000-0000-0000-0000-000000000002";
 const LOCAL_STORAGE_KEY = "hotel-simulator-state";
 
 export function readHotelLocalStorage() {
@@ -30,10 +32,10 @@ export function writeHotelLocalStorage(state) {
   }
 }
 
-function hotelPayload(state = {}) {
+function hotelPayload(state = {}, userId) {
   const source = safeObject(state);
   return {
-    id: HOTEL_ID,
+    user_id: userId,
     structure: { ...defaultHotelState.structure, ...(source.structure || {}) },
     finance: { ...defaultHotelState.finance, ...(source.finance || {}) },
     marketing: { ...defaultHotelState.marketing, ...(source.marketing || {}) },
@@ -43,11 +45,11 @@ function hotelPayload(state = {}) {
   };
 }
 
-async function selectHotel() {
+async function selectOwnHotel(userId) {
   return safeLoad(
     async () => {
       const client = assertSupabaseConfigured();
-      const { data, error } = await client.from("hotels").select("*").eq("id", HOTEL_ID).limit(1);
+      const { data, error } = await client.from("hotels").select("*").eq("user_id", userId).limit(1);
       if (error) throw error;
       return Array.isArray(data) ? data : [];
     },
@@ -56,19 +58,49 @@ async function selectHotel() {
   );
 }
 
-async function insertHotel(state) {
+// One-time claim of the pre-auth seed row (user_id IS NULL) for whichever
+// signed-in user loads the simulator first; a no-op once it has been claimed
+// by someone (the update then matches zero rows).
+async function claimLegacyHotel(userId) {
+  return safeLoad(
+    async () => {
+      const client = assertSupabaseConfigured();
+      const { data, error } = await client
+        .from("hotels")
+        .update({ user_id: userId })
+        .eq("id", LEGACY_HOTEL_ID)
+        .is("user_id", null)
+        .select("*");
+      if (error) throw error;
+      return Array.isArray(data) ? data : [];
+    },
+    [],
+    { label: "claim:hotels" }
+  );
+}
+
+async function insertHotel(state, userId) {
   const client = assertSupabaseConfigured();
-  const { data, error } = await client.from("hotels").insert(hotelPayload(state)).select("*");
+  const { data, error } = await client.from("hotels").insert(hotelPayload(state, userId)).select("*");
   if (error) throw error;
   return Array.isArray(data) ? data[0] : data;
 }
 
 export async function getHotelState() {
-  const rows = await selectHotel();
+  const userId = await ensureAuthSession();
+  if (!userId) {
+    // No authenticated session yet (Supabase not configured, or anonymous
+    // sign-in not enabled/reachable): fall back to the cached snapshot.
+    const cached = readHotelLocalStorage();
+    if (cached) return cached;
+    throw new Error("Supabase indisponible (session non authentifiee) et aucune sauvegarde locale trouvée.");
+  }
+
+  let rows = await selectOwnHotel(userId);
+  if (!rows.length) rows = await claimLegacyHotel(userId);
+
   let profile = rows[0];
   if (!profile) {
-    // Supabase not configured/reachable: safeLoad already returned [] silently,
-    // fall back to the cached localStorage snapshot if we have one.
     const cached = readHotelLocalStorage();
     if (cached) return cached;
     throw new Error("Supabase indisponible et aucune sauvegarde locale trouvée.");
@@ -86,13 +118,16 @@ export async function getHotelState() {
 
 export async function saveHotelState(state) {
   writeHotelLocalStorage(state);
+  const userId = await requireUserId();
   const client = assertSupabaseConfigured();
-  const existing = await selectHotel();
+
+  let existing = await selectOwnHotel(userId);
+  if (!existing.length) existing = await claimLegacyHotel(userId);
   if (!existing.length) {
-    await insertHotel(state);
+    await insertHotel(state, userId);
     return;
   }
-  const { error } = await client.from("hotels").update(hotelPayload(state)).eq("id", HOTEL_ID);
+  const { error } = await client.from("hotels").update(hotelPayload(state, userId)).eq("user_id", userId);
   if (error) throw error;
 }
 
