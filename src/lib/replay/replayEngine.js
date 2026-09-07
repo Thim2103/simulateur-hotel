@@ -41,6 +41,22 @@ export function buildReplayRunFromScenarioRun({ runId, ownerLabel, runState, fin
   return createReplayRun({ id: runId, source, ownerRefs: {}, ownerLabel: ownerLabel || runId, runState, finalReport });
 }
 
+// A Solo/Career run: unlike the other three sources, Career drives
+// runDailyCycle() directly rather than going through scenarioEngine, so
+// there is no ScenarioRunState to normalize -- lib/career/careerEngine.js
+// builds its own replay log with lib/scenario/scenarioReplay.js's generic
+// createReplayLog()/recordCycle() (those aren't scenario-specific in
+// implementation) and passes it in here as `replayLog`.
+export function buildReplayRunFromCareerRun({ playerId, replayLog, scoreHistory = [], status = "running", day = 0, ownerLabel }) {
+  return createReplayRun({
+    id: `career-${playerId}`,
+    source: "career",
+    ownerRefs: { playerId },
+    ownerLabel: ownerLabel || `Carrière de ${playerId}`,
+    runState: { replayLog, scoreHistory, status, totalCycles: day, scenario: null },
+  });
+}
+
 // Loads a run into the replay state (already-built ReplayRun in -- the
 // hook is responsible for fetching the raw run/report from whichever
 // repository owns it and building it with the adapters above).
@@ -75,6 +91,7 @@ export const replayEngine = {
   buildReplayRunFromAcademyGroup,
   buildReplayRunFromCompetitionPlayer,
   buildReplayRunFromScenarioRun,
+  buildReplayRunFromCareerRun,
   loadReplayRun,
   getCycleForRun,
   reconstructStateAtCycle,

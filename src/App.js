@@ -3,6 +3,7 @@ import Layout from "./layout/Layout";
 import { ChainProvider } from "./context/ChainContext";
 import { AcademyProvider } from "./context/AcademyContext";
 import { CompetitionProvider } from "./context/CompetitionContext";
+import { CareerProvider } from "./context/CareerContext";
 
 import DashboardRM from "./pages/DashboardRM";
 import RMDashboard from "./pages/RMDashboard";
@@ -24,6 +25,12 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AnalyticsRun from "./pages/AnalyticsRun";
 import AnalyticsCompare from "./pages/AnalyticsCompare";
 import AnalyticsReport from "./pages/AnalyticsReport";
+import CareerDashboard from "./pages/CareerDashboard";
+import CareerMissions from "./pages/CareerMissions";
+import CareerStory from "./pages/CareerStory";
+import CareerSkills from "./pages/CareerSkills";
+import CareerRewards from "./pages/CareerRewards";
+import CareerNextDay from "./pages/CareerNextDay";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -42,41 +49,49 @@ function App() {
       <ChainProvider>
         <AcademyProvider>
           <CompetitionProvider>
-            <Layout>
-              <Routes>
-                <Route path="/dashboard-rm" element={<DashboardRM />} />
-                <Route path="/rm-dashboard" element={<RMDashboard />} />
-                <Route path="/progression" element={<ProgressionDashboard />} />
-                <Route path="/chain" element={<ChainDashboard />} />
-                <Route path="/staff" element={<StaffDashboard />} />
-                <Route path="/academy" element={<AcademyDashboard />} />
-                <Route path="/academy/:classId" element={<AcademyClass />} />
-                <Route path="/academy/:classId/group/:groupId" element={<AcademyGroup />} />
-                <Route path="/academy/:classId/review" element={<AcademyReview />} />
-                <Route path="/competition" element={<CompetitionDashboard />} />
-                <Route path="/competition/:matchId" element={<CompetitionMatch />} />
-                <Route path="/competition/:matchId/player/:playerId" element={<CompetitionPlayer />} />
-                <Route path="/competition/:matchId/review" element={<CompetitionReview />} />
-                <Route path="/replay/compare/:runIdA/:runIdB" element={<ReplayCompare />} />
-                <Route path="/replay/:runId/export" element={<ReplayExport />} />
-                <Route path="/replay/:runId" element={<ReplayViewer />} />
-                <Route path="/analytics" element={<AnalyticsDashboard />} />
-                <Route path="/analytics/compare/:runIdA/:runIdB" element={<AnalyticsCompare />} />
-                <Route path="/analytics/:runId/report" element={<AnalyticsReport />} />
-                <Route path="/analytics/:runId" element={<AnalyticsRun />} />
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/reservations" element={<Reservations />} />
-                <Route path="/rooms" element={<Rooms />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/finance" element={<Finance />} />
-                <Route path="/housekeeping" element={<Housekeeping />} />
-                <Route path="/pms" element={<PMS />} />
-                <Route path="/marketing" element={<Marketing />} />
-                <Route path="/esg" element={<ESG />} />
-                <Route path="/expansion" element={<Expansion />} />
-                <Route path="/restaurant/*" element={<RestaurantSimulator />} />
-              </Routes>
-            </Layout>
+            <CareerProvider>
+              <Layout>
+                <Routes>
+                  <Route path="/career" element={<CareerDashboard />} />
+                  <Route path="/career/missions" element={<CareerMissions />} />
+                  <Route path="/career/story" element={<CareerStory />} />
+                  <Route path="/career/skills" element={<CareerSkills />} />
+                  <Route path="/career/rewards" element={<CareerRewards />} />
+                  <Route path="/career/next-day" element={<CareerNextDay />} />
+                  <Route path="/dashboard-rm" element={<DashboardRM />} />
+                  <Route path="/rm-dashboard" element={<RMDashboard />} />
+                  <Route path="/progression" element={<ProgressionDashboard />} />
+                  <Route path="/chain" element={<ChainDashboard />} />
+                  <Route path="/staff" element={<StaffDashboard />} />
+                  <Route path="/academy" element={<AcademyDashboard />} />
+                  <Route path="/academy/:classId" element={<AcademyClass />} />
+                  <Route path="/academy/:classId/group/:groupId" element={<AcademyGroup />} />
+                  <Route path="/academy/:classId/review" element={<AcademyReview />} />
+                  <Route path="/competition" element={<CompetitionDashboard />} />
+                  <Route path="/competition/:matchId" element={<CompetitionMatch />} />
+                  <Route path="/competition/:matchId/player/:playerId" element={<CompetitionPlayer />} />
+                  <Route path="/competition/:matchId/review" element={<CompetitionReview />} />
+                  <Route path="/replay/compare/:runIdA/:runIdB" element={<ReplayCompare />} />
+                  <Route path="/replay/:runId/export" element={<ReplayExport />} />
+                  <Route path="/replay/:runId" element={<ReplayViewer />} />
+                  <Route path="/analytics" element={<AnalyticsDashboard />} />
+                  <Route path="/analytics/compare/:runIdA/:runIdB" element={<AnalyticsCompare />} />
+                  <Route path="/analytics/:runId/report" element={<AnalyticsReport />} />
+                  <Route path="/analytics/:runId" element={<AnalyticsRun />} />
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/reservations" element={<Reservations />} />
+                  <Route path="/rooms" element={<Rooms />} />
+                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/finance" element={<Finance />} />
+                  <Route path="/housekeeping" element={<Housekeeping />} />
+                  <Route path="/pms" element={<PMS />} />
+                  <Route path="/marketing" element={<Marketing />} />
+                  <Route path="/esg" element={<ESG />} />
+                  <Route path="/expansion" element={<Expansion />} />
+                  <Route path="/restaurant/*" element={<RestaurantSimulator />} />
+                </Routes>
+              </Layout>
+            </CareerProvider>
           </CompetitionProvider>
         </AcademyProvider>
       </ChainProvider>
