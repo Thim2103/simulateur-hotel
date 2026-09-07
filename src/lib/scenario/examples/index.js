@@ -37,4 +37,17 @@ export const academyScenario = createScenarioTemplate("academie", {
   metadata: { tags: ["academie"], difficulty: "intermediaire", version: 1, language: "fr", status: "published" },
 });
 
+export const competitionScenario = createScenarioTemplate("competition", {
+  id: "competition-saison-30-jours",
+  title: "Saison — 30 jours",
+  description: "Un marché identique pour tous : mêmes événements, même formule de score.",
+  objectives: [
+    { id: "profit", label: "Profit total le plus élevé", kpi: "profit", comparator: "gte", target: 0, weight: 1, required: true },
+  ],
+  duration: { unit: "days", value: 30 },
+  scoring: { weights: { finance: 1 }, maxScore: 100 },
+  metadata: { tags: ["competition"], difficulty: "intermediaire", version: 1, language: "fr", status: "published" },
+});
+
 export const academyExampleScenarios = [demoScenario, academyScenario];
+export const competitionExampleScenarios = [competitionScenario];
