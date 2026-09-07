@@ -4,6 +4,7 @@ const primaryLinks = [
   ["/", "Dashboard", true],
   ["/chain", "Chaîne d'hôtels"],
   ["/staff", "Personnel"],
+  ["/academy", "Académie"],
   ["/dashboard-rm", "Revenue management"],
   ["/rm-dashboard", "RM avancé"],
   ["/pms", "Planning PMS"],
