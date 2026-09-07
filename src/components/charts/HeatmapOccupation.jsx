@@ -8,6 +8,7 @@ import {
   Legend
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
+import Card from "../ui/Card";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -67,9 +68,8 @@ export default function HeatmapOccupation({ heatmap }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow">
-      <h3 className="text-lg font-semibold mb-3">Heatmap d’occupation</h3>
-      <Bar data={data} options={options} />
-    </div>
+    <Card title="Heatmap d’occupation">
+      <div className="overflow-x-auto"><Bar data={data} options={options} /></div>
+    </Card>
   );
 }

@@ -111,6 +111,25 @@ export function normalizeReservation(row = {}) {
   return createReservation(row);
 }
 
+function toDateOnly(value) {
+  return String(value || "").slice(0, 10);
+}
+
+export function reservationsOverlap(a, b) {
+  return toDateOnly(a.arrival) < toDateOnly(b.departure) && toDateOnly(b.arrival) < toDateOnly(a.departure);
+}
+
+// Same room, overlapping stay, not cancelled = a double-booking conflict.
+export function findReservationConflicts(reservations = [], candidate) {
+  return (Array.isArray(reservations) ? reservations : []).filter(
+    (reservation) =>
+      Number(reservation.id) !== Number(candidate.id) &&
+      Number(reservation.room_id) === Number(candidate.room_id) &&
+      !String(reservation.status || "").toLowerCase().includes("annul") &&
+      reservationsOverlap(reservation, candidate)
+  );
+}
+
 export function toReservationPayload(reservation) {
   const normalized = createReservation(reservation);
   return {

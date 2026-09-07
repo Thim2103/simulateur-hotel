@@ -1,5 +1,6 @@
 import React from "react";
 import { Line } from "react-chartjs-2";
+import Card from "../ui/Card";
 
 export default function PickupChart({ pickup, pickupCurve }) {
   if (!pickup) return null;
@@ -45,9 +46,8 @@ export default function PickupChart({ pickup, pickupCurve }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow">
-      <h3 className="text-lg font-semibold mb-3">Pick-up (créations de réservations)</h3>
+    <Card title="Pick-up (créations de réservations)">
       <Line data={data} options={options} />
-    </div>
+    </Card>
   );
 }

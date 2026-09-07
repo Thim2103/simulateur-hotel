@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRooms, getReservations, occupationRate } from "../lib/calculs/rm";
-import { updateReservation } from "../lib/restaurantRepository";
+import { saveReservation, saveRoom } from "../lib/pmsRepository";
+import { applyTurnover, turnedOverRooms } from "../lib/housekeeping";
 import PMSGrid from "../components/pms/PMSGrid";
 import PMSFilters from "../components/pms/PMSFilters";
 import PMSLegend from "../components/pms/PMSLegend";
@@ -15,6 +16,7 @@ export default function PMS() {
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [conflictNotice, setConflictNotice] = useState(null);
 
   const [filters, setFilters] = useState({
     roomType: "",
@@ -25,12 +27,22 @@ export default function PMS() {
     async function load() {
       try {
         const [r, res] = await Promise.all([getRooms(), getReservations()]);
-        setRooms(Array.isArray(r) ? r : []);
-        setReservations(Array.isArray(res) ? res : []);
-        setSelectedReservation((previous) => previous ?? (Array.isArray(res) ? res[0] : null));
+        const loadedRooms = Array.isArray(r) ? r : [];
+        const loadedReservations = Array.isArray(res) ? res : [];
+
+        const roomsAfterTurnover = applyTurnover(loadedRooms, loadedReservations);
+        const changedRooms = turnedOverRooms(loadedRooms, roomsAfterTurnover);
+        if (changedRooms.length) {
+          await Promise.all(changedRooms.map((room) => saveRoom(room)));
+          publishPmsEvent("housekeeping.turnover", { rooms: changedRooms });
+        }
+
+        setRooms(roomsAfterTurnover);
+        setReservations(loadedReservations);
+        setSelectedReservation((previous) => previous ?? loadedReservations[0] ?? null);
         publishPmsEvent("reservation.synced", {
-          reservations: Array.isArray(res) ? res : [],
-          occupancy: occupationRate(Array.isArray(r) ? r : [], Array.isArray(res) ? res : []),
+          reservations: loadedReservations,
+          occupancy: occupationRate(roomsAfterTurnover, loadedReservations),
         });
         setError(null);
       } catch (loadError) {
@@ -43,13 +55,14 @@ export default function PMS() {
     load();
   }, []);
 
-  const saveReservation = async (updatedReservation) => {
+  const persistReservation = async (updatedReservation) => {
     try {
-      const savedReservation = await updateReservation(updatedReservation.id, updatedReservation);
+      const savedReservation = await saveReservation(updatedReservation);
       setReservations((current) =>
         current.map((reservation) => (Number(reservation.id) === Number(savedReservation.id) ? savedReservation : reservation))
       );
       setSelectedReservation(savedReservation);
+      setConflictNotice(null);
       setError(null);
       publishPmsEvent("reservation.updated", { reservation: savedReservation });
     } catch (saveError) {
@@ -57,8 +70,20 @@ export default function PMS() {
     }
   };
 
-  const handleHousekeepingStatus = ({ task, summary }) => {
-    publishPmsEvent("housekeeping.updated", { ...summary, status: task?.status, room: task?.room });
+  const handleReservationConflict = ({ reservation, conflicts }) => {
+    setConflictNotice(`Impossible de déplacer la réservation de ${reservation.client_name} : chevauchement avec ${conflicts[0].client_name}.`);
+  };
+
+  const handleHousekeepingStatus = async ({ roomId, status, task }) => {
+    const room = rooms.find((item) => Number(item.id) === Number(roomId));
+    if (!room) return;
+    try {
+      const savedRoom = await saveRoom({ ...room, housekeeping_status: status });
+      setRooms((current) => current.map((item) => (Number(item.id) === Number(savedRoom.id) ? savedRoom : item)));
+      publishPmsEvent("housekeeping.updated", { room: savedRoom, status, task: task?.task });
+    } catch (statusError) {
+      setError(statusError);
+    }
   };
 
   const handleSchedulingVisible = (events) => {
@@ -82,21 +107,26 @@ export default function PMS() {
 
       <PMSLegend />
 
+      {conflictNotice && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{conflictNotice}</div>
+      )}
+
       <div className="grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
         <div className="space-y-6">
           <PMSGrid
             rooms={rooms}
             reservations={reservations}
             filters={filters}
-            onReservationMove={saveReservation}
+            onReservationMove={persistReservation}
+            onReservationConflict={handleReservationConflict}
             onSelectReservation={setSelectedReservation}
           />
         </div>
 
         <div className="space-y-6">
-          <PMSHousekeepingPanel onStatusChange={handleHousekeepingStatus} />
-          <PMSSchedulingPanel onEventsVisible={handleSchedulingVisible} />
-          <PMSReservationEditor reservation={selectedReservation} rooms={rooms} onSave={saveReservation} />
+          <PMSHousekeepingPanel rooms={rooms} reservations={reservations} onStatusChange={handleHousekeepingStatus} />
+          <PMSSchedulingPanel rooms={rooms} onEventsVisible={handleSchedulingVisible} />
+          <PMSReservationEditor reservation={selectedReservation} rooms={rooms} onSave={persistReservation} />
         </div>
       </div>
     </div>

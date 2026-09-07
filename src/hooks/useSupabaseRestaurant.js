@@ -2,6 +2,19 @@ import { useCallback, useEffect, useState } from "react";
 import { getRestaurantState, restaurantRepository, saveRestaurantState } from "../lib/restaurantRepository";
 import { normalizeRestaurant } from "../lib/normalizers";
 import { mockRestaurantState } from "../mock/restaurant.mock";
+import { runRestaurantSchemaDiagnostics } from "../lib/restaurantSchemaSync";
+
+let schemaDiagnosticsPromise;
+
+function startSchemaDiagnostics() {
+  if (!schemaDiagnosticsPromise) {
+    schemaDiagnosticsPromise = runRestaurantSchemaDiagnostics().catch((diagnosticError) => {
+      console.warn("[useSupabaseRestaurant] Unable to inspect restaurant schema:", diagnosticError);
+      return null;
+    });
+  }
+  return schemaDiagnosticsPromise;
+}
 
 export function useSupabaseRestaurant(initialState) {
   const [data, setData] = useState(initialState);
@@ -29,6 +42,7 @@ export function useSupabaseRestaurant(initialState) {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
+  useEffect(() => { startSchemaDiagnostics(); }, []);
 
   const persist = useCallback(async (nextState) => {
     setData(nextState);

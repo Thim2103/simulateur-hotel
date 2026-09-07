@@ -11,6 +11,14 @@ import {
   restaurantExpansion,
   defaultRestaurantState,
 } from "./restaurant";
+import {
+  hotelStructure,
+  hotelFinancials,
+  hotelMarketing,
+  hotelEsg,
+  hotelExpansion,
+  defaultHotelState,
+} from "./hotel";
 
 function safeStringArray(value, fallback) {
   return safeArray(value, fallback).map((item) => safeString(item, ""));
@@ -189,6 +197,126 @@ function normalizePmsContext(input) {
     housekeepingIssues: safeNumber(source.housekeepingIssues, 0),
     scheduledEvents: safeNumber(source.scheduledEvents, 0),
     processedEventIds: safeArray(source.processedEventIds, []),
+  };
+}
+
+export function normalizeHotelStructure(input) {
+  const source = safeObject(input);
+  const roomCount = safeNumber(source.roomCount ?? source.room_count, hotelStructure.roomCount);
+
+  return {
+    name: safeString(source.name, hotelStructure.name),
+    location: safeString(source.location, hotelStructure.location),
+    roomCount,
+    starRating: safeNumber(source.starRating ?? source.star_rating, hotelStructure.starRating),
+    amenities: safeStringArray(source.amenities, hotelStructure.amenities),
+  };
+}
+
+export function normalizeHotelFinance(input) {
+  const source = safeObject(input);
+  const revenue = safeArray(source.revenue, hotelFinancials.revenue).map((value) => safeNumber(value, 0));
+  const costs = safeArray(source.costs, hotelFinancials.costs).map((value) => safeNumber(value, 0));
+  const rawTaxes = source.taxes;
+  const taxes = Array.isArray(rawTaxes) || (typeof rawTaxes === "string" && rawTaxes.trim().startsWith("["))
+    ? safeArray(rawTaxes, []).map((value) => safeNumber(value, 0))
+    : safeNumber(rawTaxes, hotelFinancials.taxes);
+
+  return {
+    months: normalizeFinanceMonths(source.months ?? hotelFinancials.months),
+    revenue: revenue.length ? revenue : [...hotelFinancials.revenue],
+    costs: costs.length ? costs : [...hotelFinancials.costs],
+    fixedCosts: safeNumber(source.fixedCosts ?? source.fixed_costs, hotelFinancials.fixedCosts),
+    payroll: safeNumber(source.payroll, hotelFinancials.payroll),
+    taxes,
+  };
+}
+
+export function normalizeHotelMarketing(input) {
+  const source = safeObject(input);
+  const channels = safeArray(source.channels, hotelMarketing.channels).map((channel) => {
+    const channelSource = safeObject(channel);
+    return {
+      id: channelSource.id ?? Date.now() + Math.random(),
+      name: safeString(channelSource.name, "Canal"),
+      enabled: Boolean(channelSource.enabled),
+      budget: safeNumber(channelSource.budget, 0),
+      reach: safeNumber(channelSource.reach, 0),
+    };
+  });
+  const campaigns = safeArray(source.campaigns, hotelMarketing.campaigns).map((campaign) => {
+    const campaignSource = safeObject(campaign);
+    return {
+      id: campaignSource.id ?? Date.now() + Math.random(),
+      name: safeString(campaignSource.name, "Campagne"),
+      objective: safeString(campaignSource.objective, "Acquisition"),
+      status: safeString(campaignSource.status, "draft"),
+      budget: safeNumber(campaignSource.budget, 0),
+      conversion: safeNumber(campaignSource.conversion, 0),
+      roi: safeNumber(campaignSource.roi, 0),
+      demandUplift: safeNumber(campaignSource.demandUplift ?? campaignSource.demand_uplift, 0),
+    };
+  });
+
+  return {
+    budget: safeNumber(source.budget, hotelMarketing.budget),
+    positioning: safeString(source.positioning, hotelMarketing.positioning),
+    channels: channels.length ? channels : hotelMarketing.channels,
+    campaigns,
+  };
+}
+
+export function normalizeHotelESG(input) {
+  const source = safeObject(input);
+
+  return {
+    energyConsumption: safeNumber(source.energyConsumption ?? source.energy_consumption, hotelEsg.energyConsumption),
+    waterUsage: safeNumber(source.waterUsage ?? source.water_usage, hotelEsg.waterUsage),
+    wasteReduction: safeNumber(source.wasteReduction, hotelEsg.wasteReduction),
+    sustainabilityScore: safeNumber(source.sustainabilityScore, hotelEsg.sustainabilityScore),
+    certifications: safeStringArray(source.certifications, hotelEsg.certifications),
+    monthlyInvestment: safeNumber(source.monthlyInvestment, hotelEsg.monthlyInvestment),
+  };
+}
+
+export function normalizeHotelExpansion(input) {
+  const source = safeObject(input);
+  const establishments = safeArray(source.establishments, hotelExpansion.establishments).map((establishment) => {
+    const establishmentSource = safeObject(establishment);
+    return {
+      id: establishmentSource.id ?? Date.now() + Math.random(),
+      name: safeString(establishmentSource.name, "Établissement"),
+      city: safeString(establishmentSource.city, ""),
+      roomCount: safeNumber(establishmentSource.roomCount ?? establishmentSource.room_count, 0),
+      status: safeString(establishmentSource.status, "planned"),
+      manager: safeString(establishmentSource.manager, ""),
+      sharedStaffPool: Boolean(establishmentSource.sharedStaffPool ?? establishmentSource.shared_staff_pool),
+    };
+  });
+
+  return {
+    establishments: establishments.length ? establishments : hotelExpansion.establishments,
+    availableCapital: safeNumber(source.availableCapital ?? source.available_capital, hotelExpansion.availableCapital),
+  };
+}
+
+function normalizeHotelProgression(input) {
+  const source = safeObject(input);
+  return {
+    cycles: safeNumber(source.cycles, 0),
+  };
+}
+
+export function normalizeHotel(input) {
+  const source = safeObject(input);
+
+  return {
+    structure: normalizeHotelStructure(source.structure),
+    finance: normalizeHotelFinance(source.finance),
+    marketing: normalizeHotelMarketing(source.marketing),
+    esg: normalizeHotelESG(source.esg),
+    expansion: normalizeHotelExpansion(source.expansion),
+    progression: normalizeHotelProgression(source.progression ?? defaultHotelState.progression),
   };
 }
 

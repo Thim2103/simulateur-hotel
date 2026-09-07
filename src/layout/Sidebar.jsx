@@ -14,6 +14,12 @@ const operationsLinks = [
   ["/housekeeping", "Housekeeping"],
 ];
 
+const growthLinks = [
+  ["/marketing", "Marketing"],
+  ["/esg", "ESG"],
+  ["/expansion", "Expansion"],
+];
+
 function NavigationLink({ to, label, end = false }) {
   return (
     <NavLink
@@ -57,6 +63,7 @@ export default function Sidebar() {
         <nav className="flex flex-1 flex-col gap-5" aria-label="Navigation principale">
           <NavigationGroup label="Vue d'ensemble" links={primaryLinks} />
           <NavigationGroup label="Opérations" links={operationsLinks} />
+          <NavigationGroup label="Croissance" links={growthLinks} />
           <NavigationGroup label="Restaurant" links={[["/restaurant", "Restaurant Simulator", true]]} />
         </nav>
       </div>

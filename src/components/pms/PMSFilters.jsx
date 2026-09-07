@@ -18,6 +18,8 @@ export default function PMSFilters({ filters, setFilters }) {
           <option value="standard">Standard</option>
           <option value="deluxe">Deluxe</option>
           <option value="suite">Suite</option>
+          <option value="seminar">Seminar</option>
+          <option value="conference">Conference</option>
         </select>
       </div>
 

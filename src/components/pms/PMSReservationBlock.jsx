@@ -4,6 +4,7 @@ export default function PMSReservationBlock({
   draggable,
   onDragStart,
   onDragEnd,
+  onResizeStart,
 }) {
   const colors = {
     confirmée: "bg-green-500",
@@ -27,6 +28,16 @@ export default function PMSReservationBlock({
       onDragEnd={onDragEnd}
     >
       {label}
+      {onResizeStart && (
+        <div
+          className="absolute right-0 top-0 h-full w-2 cursor-ew-resize bg-black/20"
+          draggable
+          title="Drag to adjust departure date"
+          onDragStart={(event) => { event.stopPropagation(); onResizeStart(); }}
+          onDragEnd={(event) => { event.stopPropagation(); onDragEnd?.(); }}
+          onClick={(event) => event.stopPropagation()}
+        />
+      )}
     </div>
   );
 }

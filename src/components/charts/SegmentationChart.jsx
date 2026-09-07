@@ -6,6 +6,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import Card from "../ui/Card";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -53,9 +54,8 @@ export default function SegmentationChart({ segmentation }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow">
-      <h3 className="text-lg font-semibold mb-3">Segmentation des réservations</h3>
+    <Card title="Segmentation des réservations">
       <Pie data={data} options={options} />
-    </div>
+    </Card>
   );
 }

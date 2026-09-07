@@ -1,17 +1,17 @@
 import KpiCard from "../components/charts/KpiCard";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
-import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
+import { useHotelSimulator } from "../hooks/useHotelSimulator";
 
 const metrics = [
+  ["energyConsumption", "Consommation énergétique"],
+  ["waterUsage", "Consommation d'eau"],
   ["wasteReduction", "Réduction des déchets"],
-  ["localSourcing", "Approvisionnement local"],
-  ["energyEfficiency", "Efficacité énergétique"],
-  ["staffWellbeing", "Bien-être de l'équipe"],
+  ["sustainabilityScore", "Score de durabilité"],
 ];
 
-export default function RestaurantESG() {
-  const { esg, kpis, updateEsg } = useRestaurantSimulator();
+export default function ESG() {
+  const { esg, kpis, updateEsg } = useHotelSimulator();
 
   const updateCertification = (value) => {
     const certifications = esg.certifications.includes(value)
@@ -22,10 +22,18 @@ export default function RestaurantESG() {
 
   return (
     <div className="flex flex-col gap-6">
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">Responsabilité environnementale</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">ESG</h1>
+          <p className="mt-1 text-sm text-slate-500">Pilotez la durabilité et les engagements de l'établissement.</p>
+        </div>
+      </header>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KpiCard label="Impact ESG" value={`${kpis.esgImpact}%`} trend={1.8} />
-        <KpiCard label="Maturité ESG" value={`${kpis.esgReadiness}%`} trend={2.1} />
+        <KpiCard label="Score de durabilité global" value={`${kpis.sustainabilityScore.toFixed(0)}%`} trend={1.8} />
         <KpiCard label="Investissement mensuel" value={`${Number(esg.monthlyInvestment).toLocaleString()} €`} trend={0.6} />
+        <KpiCard label="Certifications" value={`${esg.certifications.length}`} trend={0.4} />
       </div>
 
       <Card title="Feuille de route ESG">
@@ -42,7 +50,7 @@ export default function RestaurantESG() {
 
       <Card title="Engagements vérifiables">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {["Label anti-gaspillage", "Fournisseur local", "Plan énergie"].map((certification) => (
+          {["Écolabel Européen", "Green Key", "Plan énergie renouvelable"].map((certification) => (
             <label key={certification} className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm font-medium text-slate-700 transition-colors duration-150 hover:border-cyan-300 hover:bg-cyan-50/40"><input type="checkbox" checked={esg.certifications.includes(certification)} onChange={() => updateCertification(certification)} className="accent-cyan-700" />{certification}</label>
           ))}
         </div>

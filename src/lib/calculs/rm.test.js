@@ -1,11 +1,16 @@
 import {
   channelYield,
   forecastAdvanced,
+  forecastEngine,
   pickupCurve,
+  bookingPace,
+  pickupTrend,
   revpash,
   integratedHotelReputation,
   restaurantRevenue,
   segmentation,
+  segmentPerformance,
+  segmentMixImpact,
   buildRMKpis,
   forecastPlaceholder,
   normalizeRMData,
@@ -81,4 +86,38 @@ test("normalizes Supabase rows and exposes structured KPI placeholders", () => {
     next90: null,
     status: "pending",
   });
+});
+
+test("forecast engine builds 30/90-day demand curves with seasonality and occupancy adjustment", () => {
+  const rooms = [{ id: 1 }, { id: 2 }];
+  const forecast = forecastEngine(reservations, rooms, 80);
+
+  expect(forecast.status).toBe("ready");
+  expect(forecast.daily30).toHaveLength(30);
+  expect(forecast.daily90).toHaveLength(90);
+  expect(forecast.next90).toBeGreaterThanOrEqual(forecast.next30);
+  expect(Object.keys(forecast.seasonality)).toEqual(["dim", "lun", "mar", "mer", "jeu", "ven", "sam"]);
+});
+
+test("segment mix impact reports revenue share and ADR delta per segment", () => {
+  const performance = segmentPerformance(reservations);
+  const mixImpact = segmentMixImpact(reservations);
+
+  expect(performance.corporate.mixShare).toBeGreaterThan(0);
+  expect(mixImpact.bySegment.corporate.adr).toBe(performance.corporate.adr);
+  expect(mixImpact.blendedAdr).toBeGreaterThan(0);
+});
+
+test("channel yield exposes BAR logic, OTA uplift, corporate negotiated rate, and dynamic pricing", () => {
+  const yieldByChannel = channelYield(reservations, 85);
+
+  expect(yieldByChannel.direct.barRate).toBe(yieldByChannel.direct.adr);
+  expect(yieldByChannel.ota.strategyRate).toBe(Math.round(yieldByChannel.direct.adr * 1.15));
+  expect(yieldByChannel.agency.strategyRate).toBe(Math.round(yieldByChannel.direct.adr * 0.92));
+  expect(yieldByChannel.ota.dynamicRate).toBe(Math.round(yieldByChannel.ota.strategyRate * 1.08));
+});
+
+test("booking pace and pickup trend summarize reservation creation velocity", () => {
+  expect(bookingPace(reservations)).toMatchObject({ cumulative: 3, days: 2 });
+  expect(["up", "down", "stable"]).toContain(pickupTrend(reservations));
 });

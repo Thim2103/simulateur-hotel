@@ -30,12 +30,14 @@ const tasks = [
 export default function Housekeeping() {
   return (
     <div className="flex flex-col gap-6">
-
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Housekeeping</h1>
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">Entretien des chambres</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Housekeeping</h1>
+          <p className="mt-1 text-sm text-slate-500">Suivez les tâches de nettoyage et leur avancement.</p>
+        </div>
         <Button>Nouvelle tâche</Button>
-      </div>
+      </header>
 
       {/* Table */}
       <Table columns={["Chambre", "Tâche", "Assignée à", "Statut"]}>

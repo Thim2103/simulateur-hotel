@@ -8,6 +8,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
+import Card from "../ui/Card";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -56,9 +57,8 @@ export default function RevenueRoomTypeChart({ revenueByRoomType }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded-xl shadow">
-      <h3 className="text-lg font-semibold mb-3">Revenus par type de chambre</h3>
+    <Card title="Revenus par type de chambre">
       <Bar data={data} options={options} />
-    </div>
+    </Card>
   );
 }

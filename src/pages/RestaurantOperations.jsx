@@ -1,45 +1,47 @@
 import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Input from "../components/ui/Input";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 
 export default function RestaurantOperations() {
   const { operations, updateOperation, addOperation, removeOperation } = useRestaurantSimulator();
+  const selectClass = "rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-cyan-600 focus:outline-none focus:ring-4 focus:ring-cyan-100";
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-          <div className="text-sm text-gray-500">Nettoyage</div>
-          <div className="text-2xl font-bold">{operations.filter((task) => task.type === "cleaning").length} tâches</div>
-        </div>
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-          <div className="text-sm text-gray-500">Maintenance</div>
-          <div className="text-2xl font-bold">{operations.filter((task) => task.type === "maintenance").length} planifiées</div>
-        </div>
-        <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
-          <div className="text-sm text-gray-500">Réclamations</div>
-          <div className="text-2xl font-bold">{operations.filter((task) => task.type === "complaint").length} ouverte(s)</div>
-        </div>
+        <Card>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Nettoyage</div>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{operations.filter((task) => task.type === "cleaning").length} tâches</div>
+        </Card>
+        <Card>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Maintenance</div>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{operations.filter((task) => task.type === "maintenance").length} planifiées</div>
+        </Card>
+        <Card>
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Réclamations</div>
+          <div className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{operations.filter((task) => task.type === "complaint").length} ouverte(s)</div>
+        </Card>
       </div>
 
-      <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
+      <Card>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">Suivi opérationnel</h3>
+          <h3 className="text-base font-semibold text-slate-900">Suivi opérationnel</h3>
           <Button onClick={addOperation}>Ajouter</Button>
         </div>
 
         <div className="space-y-4">
           {operations.map((task) => (
-            <div key={task.id} className="border border-gray-200 rounded-lg p-4">
+            <div key={task.id} className="rounded-lg border border-slate-200 p-4 transition-colors duration-150 hover:border-slate-300">
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3 mb-3">
-                <input
-                  className="border rounded-md px-3 py-2"
+                <Input
                   value={task.title}
                   onChange={(event) => updateOperation(task.id, { title: event.target.value })}
                   placeholder="Titre"
                 />
                 <select
-                  className="border rounded-md px-3 py-2"
+                  className={selectClass}
                   value={task.type}
                   onChange={(event) => updateOperation(task.id, { type: event.target.value })}
                 >
@@ -48,7 +50,7 @@ export default function RestaurantOperations() {
                   <option value="complaint">Réclamation</option>
                 </select>
                 <select
-                  className="border rounded-md px-3 py-2"
+                  className={selectClass}
                   value={task.status}
                   onChange={(event) => updateOperation(task.id, { status: event.target.value })}
                 >
@@ -57,14 +59,13 @@ export default function RestaurantOperations() {
                   <option value="ouverte">Ouverte</option>
                   <option value="terminée">Terminée</option>
                 </select>
-                <input
-                  className="border rounded-md px-3 py-2"
+                <Input
                   value={task.owner}
                   onChange={(event) => updateOperation(task.id, { owner: event.target.value })}
                   placeholder="Responsable"
                 />
                 <select
-                  className="border rounded-md px-3 py-2"
+                  className={selectClass}
                   value={task.priority}
                   onChange={(event) => updateOperation(task.id, { priority: event.target.value })}
                 >
@@ -72,13 +73,9 @@ export default function RestaurantOperations() {
                   <option value="moyenne">Moyenne</option>
                   <option value="haute">Haute</option>
                 </select>
-                <button
-                  type="button"
-                  className="bg-red-500 text-white rounded-md px-3 py-2"
-                  onClick={() => removeOperation(task.id)}
-                >
+                <Button type="button" variant="danger" onClick={() => removeOperation(task.id)}>
                   Supprimer
-                </button>
+                </Button>
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -96,8 +93,7 @@ export default function RestaurantOperations() {
                   {task.status}
                 </Badge>
                 <Badge type="info">{task.priority}</Badge>
-                <input
-                  className="border rounded-md px-3 py-2"
+                <Input
                   value={task.dueIn}
                   onChange={(event) => updateOperation(task.id, { dueIn: event.target.value })}
                   placeholder="Délai"
@@ -106,7 +102,7 @@ export default function RestaurantOperations() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

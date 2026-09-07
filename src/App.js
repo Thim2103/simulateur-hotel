@@ -9,6 +9,9 @@ import Clients from "./pages/Clients";
 import Finance from "./pages/Finance";
 import Housekeeping from "./pages/Housekeeping";
 import PMS from "./pages/PMS";
+import Marketing from "./pages/Marketing";
+import ESG from "./pages/ESG";
+import Expansion from "./pages/Expansion";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 
 function App() {
@@ -24,6 +27,9 @@ function App() {
           <Route path="/finance" element={<Finance />} />
           <Route path="/housekeeping" element={<Housekeeping />} />
           <Route path="/pms" element={<PMS />} />
+          <Route path="/marketing" element={<Marketing />} />
+          <Route path="/esg" element={<ESG />} />
+          <Route path="/expansion" element={<Expansion />} />
           <Route path="/restaurant/*" element={<RestaurantSimulator />} />
         </Routes>
       </Layout>

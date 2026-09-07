@@ -1,11 +1,15 @@
 import KpiCard from "../components/charts/KpiCard";
 import LineChart from "../components/charts/LineChart";
 import BarChart from "../components/charts/BarChart";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
 import { occupationRate, adr, revpar, integratedHotelReputation } from "../lib/calculs/rm";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
+import { useHotelSimulator } from "../hooks/useHotelSimulator";
 
 export default function Dashboard() {
   const { kpis: restaurantKpis } = useRestaurantSimulator();
+  const { kpis: hotelKpis, advanceSimulation } = useHotelSimulator();
   const totalRooms = 100;
   const occupiedRooms = 78;
   const totalRevenueRooms = 11200;
@@ -30,13 +34,51 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col gap-6">
+      <header className="page-header">
+        <div>
+          <p className="eyebrow">Vue d'ensemble</p>
+          <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Tableau de bord</h1>
+          <p className="mt-1 text-sm text-slate-500">Suivez la performance intégrée de l'hôtel et du restaurant.</p>
+        </div>
+      </header>
+
+      <Card className="border-cyan-100 bg-gradient-to-br from-white to-cyan-50/60">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="eyebrow">Cycle de simulation</p>
+            <p className="mt-1 text-xl font-bold text-slate-900">Jour {hotelKpis.cycles}</p>
+          </div>
+          <Button onClick={() => advanceSimulation(1)}>Avancer d'un cycle</Button>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard label="Taux d’occupation intégré" value={`${integratedOccupancy}%`} trend={2.1} />
         <KpiCard label="ADR" value={`${adrValue} €`} trend={1.3} />
         <KpiCard label="RevPAR" value={`${revparValue} €`} trend={4.2} />
         <KpiCard label="Réputation hôtel" value={`${reputation}/100`} trend={reputation >= 75 ? 3.4 : -1.2} />
         <KpiCard label="Satisfaction restaurant" value={`${restaurantKpis.customerSatisfaction.toFixed(1)}/5`} trend={2.5} />
+        <KpiCard label="Demande restaurant" value={`${restaurantKpis.demand}%`} trend={1.8} />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <KpiCard label="Revenu hôtel (simulé)" value={`${hotelKpis.simulationRevenue.toLocaleString()} €`} trend={3.6} />
+        <KpiCard label="Demande hôtel" value={`${hotelKpis.demand}%`} trend={2.4} />
+        <KpiCard label="Satisfaction / réputation hôtel" value={`${hotelKpis.satisfaction.toFixed(1)}/5 · ${hotelKpis.reputation.toFixed(0)}/100`} trend={hotelKpis.reputation >= 70 ? 2.9 : -1.4} />
+        <KpiCard label="ROI marketing" value={`${hotelKpis.marketingRoi.toFixed(2)}x`} trend={hotelKpis.marketingRoi >= 1 ? 3.2 : -2.1} />
+        <KpiCard label="Score de durabilité (ESG)" value={`${hotelKpis.sustainabilityScore.toFixed(0)}%`} trend={hotelKpis.sustainabilityScore >= 60 ? 2.2 : -1.1} />
+        {hotelKpis.activeEstablishments > 1 && (
+          <KpiCard label="Chambres réseau (multi-sites)" value={`${hotelKpis.aggregateRoomCount}`} trend={1.6} />
+        )}
+      </div>
+
+      {hotelKpis.activeEstablishments > 1 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <KpiCard label="Revenu réseau agrégé" value={`${hotelKpis.aggregateRevenue.toLocaleString()} €`} trend={2.8} />
+          <KpiCard label="Établissements actifs" value={`${hotelKpis.activeEstablishments}`} trend={0} />
+          <KpiCard label="Mutualisation du personnel" value={`${hotelKpis.sharedStaffPoolUtilization}%`} trend={1.2} />
+        </div>
+      )}
 
       <LineChart
         title="Occupation (7 derniers jours)"
@@ -52,3 +94,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

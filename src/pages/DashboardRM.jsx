@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getRMStats } from "../lib/calculs/rm";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
+import { useHotelSimulator } from "../hooks/useHotelSimulator";
 
 import KpiCard from "../components/charts/KpiCard";
 import LineChart from "../components/charts/LineChart";
@@ -10,15 +11,19 @@ import SegmentationChart from "../components/charts/SegmentationChart";
 import RevenueRoomTypeChart from "../components/charts/RevenueRoomTypeChart";
 import HeatmapOccupation from "../components/charts/HeatmapOccupation";
 import RMFilters from "../components/rm/RMFilters";
+import Card from "../components/ui/Card";
 
 export default function DashboardRM() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { kpis: restaurantKpis } = useRestaurantSimulator();
+  const { kpis: hotelKpis } = useHotelSimulator();
   const restaurantDemand = restaurantKpis.demand;
   const restaurantRevenue = restaurantKpis.totalMonthlyRevenue;
   const restaurantSatisfaction = restaurantKpis.customerSatisfaction;
+  const hotelMarketingReach = hotelKpis.marketingReach;
+  const hotelSustainabilityScore = hotelKpis.sustainabilityScore;
 
   // 🔥 Filtres RM
   const [filters, setFilters] = useState({
@@ -36,11 +41,18 @@ export default function DashboardRM() {
       setLoading(true);
       setError(null);
       try {
-        const data = await getRMStats(filters, {
-          demand: restaurantDemand,
-          totalMonthlyRevenue: restaurantRevenue,
-          customerSatisfaction: restaurantSatisfaction,
-        });
+        const data = await getRMStats(
+          filters,
+          {
+            demand: restaurantDemand,
+            totalMonthlyRevenue: restaurantRevenue,
+            customerSatisfaction: restaurantSatisfaction,
+          },
+          {
+            marketingReach: hotelMarketingReach,
+            sustainabilityScore: hotelSustainabilityScore,
+          }
+        );
         setStats(data);
       } catch (err) {
         console.error("Erreur RM :", err);
@@ -51,7 +63,7 @@ export default function DashboardRM() {
     }
 
     loadStats();
-  }, [filters, restaurantDemand, restaurantRevenue, restaurantSatisfaction]);
+  }, [filters, restaurantDemand, restaurantRevenue, restaurantSatisfaction, hotelMarketingReach, hotelSustainabilityScore]);
 
   if (loading) {
     return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500">Chargement des KPIs…</div>;
@@ -126,6 +138,12 @@ export default function DashboardRM() {
         <KpiCard label="Demande combinée" value={`${(stats?.combinedDemand ?? 0).toFixed(0)} %`} trend={2.1} />
         <KpiCard label="RevPASH restaurant" value={`${(stats?.revpash ?? 0).toFixed(2)} €`} trend={1.4} />
       </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <KpiCard label="Rythme des réservations" value={`${stats?.bookingPace?.averagePerDay ?? 0} / jour`} trend={stats?.pickupTrend === "up" ? 2.4 : stats?.pickupTrend === "down" ? -2.4 : 0} />
+        <KpiCard label="Tendance pick-up" value={stats?.pickupTrend === "up" ? "Hausse" : stats?.pickupTrend === "down" ? "Baisse" : "Stable"} trend={stats?.pickupTrend === "up" ? 1.8 : stats?.pickupTrend === "down" ? -1.8 : 0} />
+        <KpiCard label="ADR mix pondéré" value={`${(stats?.segmentMixImpact?.blendedAdr ?? 0).toFixed(0)} €`} trend={1.2} />
+      </div>
       </section>
 
       <section aria-labelledby="rm-analysis" className="flex flex-col gap-4">
@@ -136,33 +154,51 @@ export default function DashboardRM() {
           <RevenueRoomTypeChart revenueByRoomType={stats.revenueByRoomType} />
           <HeatmapOccupation heatmap={stats.heatmap} />
 
-          <div className="bg-white p-4 rounded-xl shadow">
-            <h3 className="text-lg font-semibold mb-3">Yield par canal</h3>
+          <Card title="Yield par canal">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {Object.entries(stats.channelYield || {}).map(([channel, values]) => (
-                <div key={channel} className="border rounded-lg p-3">
-                  <div className="font-semibold capitalize">{channel}</div>
-                  <div className="text-sm text-gray-600">ADR {values.adr} €</div>
-                  <div className="text-sm text-gray-600">Prix conseillé {values.recommendedAdr} €</div>
-                  <div className="text-sm text-gray-600">Net {values.netRevenue} €</div>
-                  <div className="text-xs uppercase mt-2">{values.yield}</div>
+                <div key={channel} className="rounded-lg border border-slate-200 p-3 transition-colors duration-150 hover:border-slate-300">
+                  <div className="font-semibold capitalize text-slate-900">{channel}</div>
+                  <div className="text-sm text-slate-500">ADR {values.adr} €</div>
+                  <div className="text-sm text-slate-500">BAR {values.barRate} €</div>
+                  <div className="text-sm text-slate-500">Tarif stratégie {values.strategyRate} €</div>
+                  <div className="text-sm text-slate-500">Prix dynamique {values.dynamicRate} €</div>
+                  <div className="text-sm text-slate-500">Net {values.netRevenue} €</div>
+                  <div className="mt-2 text-xs uppercase text-slate-500">{values.yield}</div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
+
+          <Card title="Impact du mix segments sur l'ADR">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {Object.entries(stats.segmentMixImpact?.bySegment || {}).map(([segment, values]) => (
+                <div key={segment} className="rounded-lg border border-slate-200 p-3 transition-colors duration-150 hover:border-slate-300">
+                  <div className="font-semibold capitalize text-slate-900">{segment}</div>
+                  <div className="text-sm text-slate-500">Part du mix {values.mixShare}%</div>
+                  <div className="text-sm text-slate-500">ADR {values.adr} €</div>
+                  <div className={`mt-2 text-xs ${values.adrDelta >= 0 ? "text-emerald-600" : "text-rose-600"}`}>{values.adrDelta >= 0 ? "+" : ""}{values.adrDelta}% vs ADR moyen</div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </div>
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <LineChart
-          title="KPIs RM depuis Supabase"
-          labels={["Occupation", "ADR", "RevPAR"]}
-          data={[
-            stats?.kpis?.occupancy ?? 0,
-            stats?.kpis?.adr ?? 0,
-            stats?.kpis?.revpar ?? 0,
-          ]}
+          title="Courbe de demande (prévision 30 jours)"
+          labels={(stats?.forecast?.daily30 ?? []).map((point) => point.date.slice(5))}
+          data={(stats?.forecast?.daily30 ?? []).map((point) => point.value)}
         />
+        <LineChart
+          title="Occupation quotidienne (feed PMS)"
+          labels={(stats?.dailyOccupancy ?? []).map((point) => point.date.slice(5))}
+          data={(stats?.dailyOccupancy ?? []).map((point) => point.occupancy)}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <BarChart
           title="Revenus par département"
           labels={["Chambres", "Restaurant", "Spa", "Bar"]}
