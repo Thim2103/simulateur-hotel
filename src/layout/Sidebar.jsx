@@ -19,6 +19,7 @@ const growthLinks = [
   ["/marketing", "Marketing"],
   ["/esg", "ESG"],
   ["/expansion", "Expansion"],
+  ["/progression", "Progression"],
 ];
 
 function NavigationLink({ to, label, end = false }) {

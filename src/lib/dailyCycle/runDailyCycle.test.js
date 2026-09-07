@@ -49,6 +49,15 @@ test("returns a DailyReport with the documented shape", async () => {
         segmentation: expect.any(Object),
         recommendations: expect.any(Array),
       }),
+      progressionReport: expect.objectContaining({
+        reputation: expect.any(Number),
+        xp: expect.any(Number),
+        level: expect.objectContaining({ level: expect.any(Number), title: expect.any(String) }),
+        objectivesCompleted: expect.any(Array),
+        newAchievements: expect.any(Array),
+        rewards: expect.any(Array),
+        storylineEvents: expect.any(Array),
+      }),
     })
   );
 });
@@ -158,5 +167,77 @@ describe("lib/rm integration", () => {
     const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
     expect(report.rmReport.segmentation.mix.leisure).toBeGreaterThanOrEqual(0);
     expect(typeof report.rmReport.pickup.daily).toBe("object");
+  });
+});
+
+describe("lib/progression integration", () => {
+  // baseState() alone runs at a loss (fixed costs with no matching room
+  // rate) -- these tests need a day that actually closes in the black.
+  function profitableState() {
+    const state = baseState();
+    return { ...state, reservations: state.reservations.map((reservation) => ({ ...reservation, price: 500 })) };
+  }
+
+  test("a profitable day awards the profitable_day objective and some XP", async () => {
+    const report = await runDailyCycle({ ...profitableState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    expect(report.profit).toBeGreaterThan(0);
+    expect(report.progressionReport.objectivesCompleted.some((o) => o.id === "profitable_day")).toBe(true);
+    expect(report.progressionReport.xp).toBeGreaterThan(0);
+  });
+
+  test("first_profit unlocks the first time a day closes with a positive profit", async () => {
+    const report = await runDailyCycle({ ...profitableState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    expect(report.progressionReport.newAchievements.some((a) => a.id === "first_profit")).toBe(true);
+  });
+
+  test("hotelState.progression.cycles/player are persisted for tomorrow's run", async () => {
+    let savedHotelState = null;
+    mockSaveDailyState.mockImplementationOnce(async ({ hotelState }) => {
+      savedHotelState = hotelState;
+      return { hotel: null, restaurant: null, pms: { rooms: [], reservations: [] } };
+    });
+
+    await runDailyCycle({ ...profitableState(), referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+
+    expect(savedHotelState.progression.cycles).toBe(1);
+    expect(savedHotelState.progression.player).toMatchObject({
+      xp: expect.any(Number),
+      level: expect.any(Number),
+      reputation: expect.any(Number),
+      unlockedAchievements: expect.arrayContaining(["first_profit"]),
+    });
+  });
+
+  test("an achievement already unlocked yesterday does not fire again today", async () => {
+    const state = profitableState();
+    const day1 = await runDailyCycle({ ...state, referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+    expect(day1.progressionReport.newAchievements.some((a) => a.id === "first_profit")).toBe(true);
+
+    const tomorrow = new Date(REFERENCE_DATE);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const day2 = await runDailyCycle({
+      ...state,
+      hotelState: { ...state.hotelState, progression: { cycles: 1, player: { xp: 20, level: 1, reputation: 60, unlockedAchievements: ["first_profit"] } } },
+      referenceDate: tomorrow,
+      rng: () => 0.999,
+      persist: false,
+    });
+
+    expect(day2.progressionReport.newAchievements.some((a) => a.id === "first_profit")).toBe(false);
+  });
+
+  test("cycles increments across consecutive days instead of resetting", async () => {
+    let savedHotelState = null;
+    mockSaveDailyState.mockImplementation(async ({ hotelState }) => {
+      savedHotelState = hotelState;
+      return { hotel: null, restaurant: null, pms: { rooms: [], reservations: [] } };
+    });
+
+    const state = baseState();
+    await runDailyCycle({ ...state, referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+    expect(savedHotelState.progression.cycles).toBe(1);
+
+    await runDailyCycle({ ...state, hotelState: savedHotelState, referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+    expect(savedHotelState.progression.cycles).toBe(2);
   });
 });
