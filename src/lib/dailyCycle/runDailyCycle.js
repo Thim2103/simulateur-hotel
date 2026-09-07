@@ -10,7 +10,7 @@ import { calculateHotelRevenue } from "./calculateHotelRevenue";
 import { calculateRestaurantRevenue } from "./calculateRestaurantRevenue";
 import { calculateExpenses } from "./calculateExpenses";
 import { updateStaff } from "./updateStaff";
-import { applyEvents } from "./applyEvents";
+import { generateEvents } from "../events";
 import { updateReservations } from "./updateReservations";
 import { updateFinance } from "./updateFinance";
 import { saveDailyState } from "./saveDailyState";
@@ -53,7 +53,7 @@ function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expe
 //     the pipeline against in-memory state (tests, previews) instead of
 //     Supabase.
 //   referenceDate: the simulated "today" (default: now).
-//   rng: injectable randomness for applyEvents()/updateStaff() (default:
+//   rng: injectable randomness for the event engine/updateStaff() (default:
 //     Math.random).
 //   persist: set to false to compute a DailyReport without saving anything
 //     (a dry-run/preview).
@@ -73,11 +73,16 @@ export async function runDailyCycle(options = {}) {
   // 3. Restaurant revenue (sales, margin, VAT).
   const restaurantRevenue = calculateRestaurantRevenue({ menu: restaurantState.menu, finance: restaurantState.finance, referenceDate });
 
-  // 6. Daily events (rolled before expenses/staff so their impact feeds both).
-  const { events, impacts } = applyEvents({
+  // 6. Daily events -- weather, VIPs, restaurant rushes, inspections, power
+  // outages, staff strikes, reviews, technical incidents, local events (see
+  // lib/events/). Multi-day events carry over via hotelState.progression
+  // .activeEvents, rolled before expenses/staff so their impact feeds both.
+  const { events, impacts, activeEvents } = generateEvents({
     hotelState,
     restaurantState,
     pmsState: { rooms: reservationUpdate.rooms, reservations: reservationUpdate.reservations },
+    activeEvents: hotelState.progression?.activeEvents,
+    referenceDate,
     rng,
   });
 
@@ -87,7 +92,7 @@ export async function runDailyCycle(options = {}) {
   // 5. Staff fatigue, morale, and turnover. Today's demand is approximated
   // from actual occupancy, so a busy day tires staff out faster.
   const demand = rooms.length ? Math.round((hotelRevenue.occupiedRooms / rooms.length) * 100) : 60;
-  const staffUpdate = updateStaff({ staff: restaurantState.staff, demand, eventSatisfactionImpact: impacts.satisfaction, rng });
+  const staffUpdate = updateStaff({ staff: restaurantState.staff, demand, eventStaffImpact: impacts.staff, rng });
 
   // 8. Fold today's numbers into the hotel/restaurant finance objects.
   const hotelRevenueTotal = hotelRevenue.netRevenue + impacts.revenue;
@@ -102,7 +107,14 @@ export async function runDailyCycle(options = {}) {
   });
   const profit = hotelRevenueTotal + restaurantRevenueTotal - expenses.total;
 
-  const nextHotelState = { ...hotelState, finance: financeUpdate.hotelFinance };
+  const nextHotelState = {
+    ...hotelState,
+    finance: financeUpdate.hotelFinance,
+    // Multi-day events (e.g. a 3-day heatwave) carry over to tomorrow's
+    // run via this field; it rides along in the same jsonb `progression`
+    // column already persisted by hotelRepository.js, no schema change.
+    progression: { ...hotelState.progression, activeEvents },
+  };
   const nextRestaurantState = { ...restaurantState, finance: financeUpdate.restaurantFinance, staff: staffUpdate.staff };
 
   // 9. Persist (user_id = auth.uid() is applied inside each repository).

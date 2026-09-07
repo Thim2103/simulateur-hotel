@@ -5,7 +5,6 @@
 // than introducing new ones.
 const FATIGUE_PER_DAY = 3; // productivity points lost per day worked
 const RECOVERY_ON_REST_DAY = 6; // productivity regained if demand is low that day
-const MORALE_EVENT_MULTIPLIER = 20; // scales applyEvents()'s -1..1-ish satisfaction impact into morale points
 const RESIGNATION_MORALE_THRESHOLD = 20;
 const RESIGNATION_PROBABILITY = 0.35; // chance per day a below-threshold staff member actually resigns
 
@@ -20,9 +19,10 @@ function clamp(value, min, max) {
 // staff: the restaurant's staff array (see restaurant.js's restaurantStaff).
 // demand: today's demand indicator (0-100); high demand tires staff out
 // faster, low demand lets them recover.
-// eventSatisfactionImpact: applyEvents()'s combined `satisfaction` delta.
-export function updateStaff({ staff = [], demand = 60, eventSatisfactionImpact = 0, rng = Math.random } = {}) {
-  const moraleDelta = eventSatisfactionImpact * MORALE_EVENT_MULTIPLIER;
+// eventStaffImpact: the event engine's combined `staff` delta (see
+// lib/events/eventEngine.js), already expressed in morale points.
+export function updateStaff({ staff = [], demand = 60, eventStaffImpact = 0, rng = Math.random } = {}) {
+  const moraleDelta = eventStaffImpact;
   const fatigueDelta = demand >= 50 ? -FATIGUE_PER_DAY : RECOVERY_ON_REST_DAY;
 
   const moraleChanges = [];

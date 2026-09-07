@@ -24,15 +24,20 @@ test("clamps productivity between 20 and 100", () => {
 });
 
 test("negative event impact lowers morale (satisfaction) and records the change", () => {
-  const result = updateStaff({ staff: [staffMember({ satisfaction: 70 })], eventSatisfactionImpact: -0.1, rng: () => 1 });
-  expect(result.staff[0].satisfaction).toBeLessThan(70);
+  const result = updateStaff({ staff: [staffMember({ satisfaction: 70 })], eventStaffImpact: -4, rng: () => 1 });
+  expect(result.staff[0].satisfaction).toBe(66);
   expect(result.changes.moraleChanges).toHaveLength(1);
+});
+
+test("positive event impact raises morale (satisfaction)", () => {
+  const result = updateStaff({ staff: [staffMember({ satisfaction: 70 })], eventStaffImpact: 8, rng: () => 1 });
+  expect(result.staff[0].satisfaction).toBe(78);
 });
 
 test("a staff member resigns once morale is at/below the threshold and the resignation roll succeeds", () => {
   const result = updateStaff({
     staff: [staffMember({ satisfaction: 15 })],
-    eventSatisfactionImpact: 0,
+    eventStaffImpact: 0,
     rng: () => 0, // always "succeeds" (below any probability threshold)
   });
 
@@ -43,7 +48,7 @@ test("a staff member resigns once morale is at/below the threshold and the resig
 test("a staff member below the threshold stays if the resignation roll fails", () => {
   const result = updateStaff({
     staff: [staffMember({ satisfaction: 15 })],
-    eventSatisfactionImpact: 0,
+    eventStaffImpact: 0,
     rng: () => 0.999, // always "fails"
   });
 

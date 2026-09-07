@@ -32,6 +32,25 @@ function MiniStat({ label, value }) {
 
 const EVENT_BADGE_TYPE = { high: "danger", medium: "warning", low: "info" };
 
+const EVENT_CATEGORY_LABELS = {
+  environment: "Environnement",
+  guest: "Client",
+  restaurant: "Restaurant",
+  compliance: "Conformité",
+  facilities: "Infrastructure",
+  staff: "Personnel",
+  reputation: "Réputation",
+};
+
+function formatEventImpact(impact = {}) {
+  const parts = [];
+  if (impact.revenue) parts.push(`${impact.revenue >= 0 ? "+" : ""}${impact.revenue} € CA`);
+  if (impact.expenses) parts.push(`${impact.expenses >= 0 ? "+" : ""}${impact.expenses} € dépenses`);
+  if (impact.staff) parts.push(`${impact.staff >= 0 ? "+" : ""}${impact.staff} pts moral`);
+  if (impact.reputation) parts.push(`${impact.reputation >= 0 ? "+" : ""}${impact.reputation} pts réputation`);
+  return parts.join(" · ");
+}
+
 // Shown after each "Jour suivant" click: summarizes the DailyReport
 // returned by useDailyCycle().advanceDay() (see lib/dailyCycle/runDailyCycle.js).
 // Renders nothing if there is no report yet (report === null).
@@ -85,12 +104,33 @@ export default function DailyReportModal({ report, onClose }) {
         <Section title="Événements du jour">
           {events.length ? (
             <ul className="space-y-2">
-              {events.map((event) => (
-                <li key={event.id} className="flex items-start justify-between gap-3 rounded-lg border border-slate-200 p-3">
-                  <span className="text-sm text-slate-700">{event.message}</span>
-                  <Badge type={EVENT_BADGE_TYPE[event.severity] || "info"}>{event.severity}</Badge>
-                </li>
-              ))}
+              {events.map((event) => {
+                const dayIndex = event.totalDays > 1 ? event.totalDays - (event.remainingDays ?? event.totalDays) + 1 : null;
+                const impactSummary = formatEventImpact(event.impact);
+                return (
+                  <li key={event.id} className="rounded-lg border border-slate-200 p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {event.category && (
+                            <span className="text-xs font-semibold uppercase tracking-wide text-cyan-700">
+                              {EVENT_CATEGORY_LABELS[event.category] || event.category}
+                            </span>
+                          )}
+                          {dayIndex && (
+                            <span className="text-xs text-slate-400">
+                              jour {dayIndex}/{event.totalDays}
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-sm text-slate-700">{event.message}</p>
+                        {impactSummary && <p className="mt-1 text-xs text-slate-500">{impactSummary}</p>}
+                      </div>
+                      <Badge type={EVENT_BADGE_TYPE[event.severity] || "info"}>{event.severity}</Badge>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="rounded-lg border border-dashed border-slate-200 p-3 text-sm text-slate-500">Aucun événement notable aujourd'hui.</p>
