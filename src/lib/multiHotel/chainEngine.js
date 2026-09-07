@@ -1,13 +1,15 @@
 // Orchestrates one simulated day across an entire hotel chain: run
 // runDailyCycle() for each hotel, consolidate finance and RM, apply
-// regional/global events, update the chain's own progression, and return
-// a ChainReport. Every step is a small pure (or, for step 1, async) function
+// regional/global events, run multi-site staff management (see
+// lib/staffMulti/), update the chain's own progression, and return a
+// ChainReport. Every step is a small pure (or, for step 1, async) function
 // in this folder; this file only wires them together.
 import { runDailyCycle } from "../dailyCycle/runDailyCycle";
 import { consolidateFinance } from "./chainFinance";
 import { consolidateRM } from "./chainRM";
 import { applyRegionalEvents } from "./chainEvents";
 import { updateChainProgression } from "./chainProgression";
+import { runStaffEngine } from "../staffMulti/staffEngine";
 
 function safeArray(value) {
   return Array.isArray(value) ? value : [];
@@ -76,6 +78,22 @@ export async function runChainCycle({ hotels = [], chainProgressionState = {}, r
     previousState: chainProgressionState,
   });
 
+  const hotelsAfterDailyCycle = results.map(({ hotel, dailyReport }) => ({
+    ...hotel,
+    hotelState: dailyReport.nextState?.hotelState ?? hotel.hotelState,
+    restaurantState: dailyReport.nextState?.restaurantState ?? hotel.restaurantState,
+    rooms: dailyReport.nextState?.rooms ?? hotel.rooms,
+    reservations: dailyReport.nextState?.reservations ?? hotel.reservations,
+  }));
+
+  // Multi-site staff management (transfers/training/promotions/regional HR
+  // events -- see lib/staffMulti/staffEngine.js) runs on top of today's
+  // already-updated staff, so it can move/train/promote people who just
+  // survived the day's own fatigue/morale/turnover pass. Its changes take
+  // effect starting with tomorrow's cycle rather than retroactively
+  // altering today's already-computed finance/RM figures.
+  const { report: staffReport, hotels: nextHotels } = runStaffEngine({ hotels: hotelsAfterDailyCycle, rng });
+
   // 6. Return the ChainReport, the updated hotel bundles (so the caller can
   // persist/replace them in chain state -- see useChain.js), and the chain
   // progression state to carry into tomorrow's cycle.
@@ -86,15 +104,8 @@ export async function runChainCycle({ hotels = [], chainProgressionState = {}, r
     rm,
     progression,
     events: { regionalEvents, globalEvents },
+    staff: staffReport,
   };
-
-  const nextHotels = results.map(({ hotel, dailyReport }) => ({
-    ...hotel,
-    hotelState: dailyReport.nextState?.hotelState ?? hotel.hotelState,
-    restaurantState: dailyReport.nextState?.restaurantState ?? hotel.restaurantState,
-    rooms: dailyReport.nextState?.rooms ?? hotel.rooms,
-    reservations: dailyReport.nextState?.reservations ?? hotel.reservations,
-  }));
 
   return { report, hotels: nextHotels, chainProgressionState: nextChainProgressionState };
 }
