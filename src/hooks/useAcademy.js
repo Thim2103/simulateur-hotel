@@ -12,6 +12,8 @@ import { trackAssignmentProgress } from "../lib/academy/academyAssignments";
 import { generateFinalReport as generateFinalReportPure } from "../lib/academy/academyEvaluation";
 import { findClass, findGroup } from "../lib/academy/academyState";
 import academyRepository from "../lib/academy/academyRepository";
+import { buildReplayRunFromAcademyGroup } from "../lib/replay/replayEngine";
+import replayRepository from "../lib/replay/replayRepository";
 
 // Drives the whole Academy module: a teacher's classes, each class's
 // groups, the scenario assigned to a class, and every group's own
@@ -131,7 +133,10 @@ export function useAcademy() {
   );
 
   // Grades every group in the class that has finished (or is mid-run) and
-  // builds the class-wide final report for the teacher.
+  // builds the class-wide final report for the teacher. Also stores a
+  // normalized replay run per newly-finalized group (see
+  // lib/replay/replayEngine.js) so the Replay Viewer/Compare/Export pages
+  // can rejoin the group's playthrough afterwards.
   const generateFinalReport = useCallback(
     (classId) =>
       runWithErrorHandling(async () => {
@@ -144,13 +149,18 @@ export function useAcademy() {
           if (!state.runsByGroupId[group.id] || state.reportsByGroupId[group.id]) return;
           const { report, state: updated } = finalizeGroupEngine(state, group.id);
           state = updated;
-          reportsToPersist.push({ groupId: group.id, report });
+          reportsToPersist.push({ group, report });
         });
 
         if (state !== academyState) setAcademyState(state);
 
         await Promise.all(
-          reportsToPersist.map(({ groupId, report }) => academyRepository.saveGroupReport({ classId, groupId, scenarioId: assignment?.scenarioId, report }))
+          reportsToPersist.map(({ group, report }) => academyRepository.saveGroupReport({ classId, groupId: group.id, scenarioId: assignment?.scenarioId, report }))
+        );
+        await Promise.all(
+          reportsToPersist.map(({ group, report }) =>
+            replayRepository.saveReplayRun(buildReplayRunFromAcademyGroup(group, state.runsByGroupId[group.id], report))
+          )
         );
 
         const classEntry = findClass(state, classId);

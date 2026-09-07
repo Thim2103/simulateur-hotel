@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Badge from "../components/ui/Badge";
@@ -104,6 +104,7 @@ export default function AcademyReview() {
                       {entry.evaluation.recommendations.map((recommendation) => (
                         <p key={recommendation} className="text-xs text-slate-500">{recommendation}</p>
                       ))}
+                      <Link to={`/replay/academie-${classId}-${entry.groupId}`} className="text-xs font-semibold text-cyan-700 hover:text-cyan-800">Voir le replay →</Link>
                     </div>
                   ) : (
                     <p className="text-sm text-slate-500">Groupe pas encore évalué.</p>

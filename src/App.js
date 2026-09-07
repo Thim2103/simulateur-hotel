@@ -17,6 +17,9 @@ import CompetitionDashboard from "./pages/CompetitionDashboard";
 import CompetitionMatch from "./pages/CompetitionMatch";
 import CompetitionPlayer from "./pages/CompetitionPlayer";
 import CompetitionReview from "./pages/CompetitionReview";
+import ReplayViewer from "./pages/ReplayViewer";
+import ReplayCompare from "./pages/ReplayCompare";
+import ReplayExport from "./pages/ReplayExport";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -50,6 +53,9 @@ function App() {
                 <Route path="/competition/:matchId" element={<CompetitionMatch />} />
                 <Route path="/competition/:matchId/player/:playerId" element={<CompetitionPlayer />} />
                 <Route path="/competition/:matchId/review" element={<CompetitionReview />} />
+                <Route path="/replay/compare/:runIdA/:runIdB" element={<ReplayCompare />} />
+                <Route path="/replay/:runId/export" element={<ReplayExport />} />
+                <Route path="/replay/:runId" element={<ReplayViewer />} />
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/reservations" element={<Reservations />} />
                 <Route path="/rooms" element={<Rooms />} />
