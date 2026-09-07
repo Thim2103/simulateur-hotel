@@ -13,7 +13,7 @@ function safeArray(value) {
 }
 
 function eventCosts(events) {
-  return safeArray(events).reduce((sum, event) => sum + Number(event?.impact?.cost || 0), 0);
+  return safeArray(events).reduce((sum, event) => sum + Number(event?.impact?.expenses || 0), 0);
 }
 
 // Splits today's spend into fixed (rent, base payroll, fixed costs) and

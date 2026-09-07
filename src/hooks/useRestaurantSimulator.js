@@ -11,7 +11,7 @@ import { useSupabaseRestaurant } from "./useSupabaseRestaurant";
 import { getPmsEvents, subscribeToPmsEvents } from "../lib/pmsRestaurantBridge";
 
 export function useRestaurantSimulator() {
-  const { data: persistedState, loading, error, persist } = useSupabaseRestaurant(defaultRestaurantState);
+  const { data: persistedState, loading, error, persist, reload } = useSupabaseRestaurant(defaultRestaurantState);
   const [state, setState] = useState(defaultRestaurantState);
   const [hydrated, setHydrated] = useState(false);
 
@@ -380,6 +380,10 @@ export function useRestaurantSimulator() {
     state,
     loading,
     error,
+    // Re-fetches the restaurant state from Supabase (e.g. after the daily
+    // cycle persisted changes directly through the repository rather than
+    // through this hook's own setState/persist).
+    reload,
     structure: state.structure,
     finance: state.finance,
     staff: state.staff,
