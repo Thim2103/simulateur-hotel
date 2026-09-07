@@ -47,7 +47,7 @@ export default function PickupChart({ pickup, pickupCurve }) {
 
   return (
     <Card title="Pick-up (créations de réservations)">
-      <Line data={data} options={options} />
+      <div className="h-64"><Line data={data} options={options} /></div>
     </Card>
   );
 }

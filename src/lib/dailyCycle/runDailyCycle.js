@@ -11,6 +11,7 @@ import { calculateRestaurantRevenue } from "./calculateRestaurantRevenue";
 import { calculateExpenses } from "./calculateExpenses";
 import { updateStaff } from "./updateStaff";
 import { generateEvents } from "../events";
+import { runRM } from "../rm";
 import { updateReservations } from "./updateReservations";
 import { updateFinance } from "./updateFinance";
 import { saveDailyState } from "./saveDailyState";
@@ -35,7 +36,7 @@ async function loadDailyCycleState({ hotelState, restaurantState, rooms, reserva
 
 // Step 10: shape the pipeline's results into the DailyReport contract
 // consumed by the UI.
-function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges }) {
+function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport }) {
   return {
     date: toDateOnly(referenceDate),
     hotelRevenue,
@@ -45,6 +46,7 @@ function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expe
     events,
     staffChanges,
     reservationsChanges,
+    rmReport,
   };
 }
 
@@ -94,6 +96,17 @@ export async function runDailyCycle(options = {}) {
   const demand = rooms.length ? Math.round((hotelRevenue.occupiedRooms / rooms.length) * 100) : 60;
   const staffUpdate = updateStaff({ staff: restaurantState.staff, demand, eventStaffImpact: impacts.staff, rng });
 
+  // Revenue management: segmentation -> pickup -> forecast -> dynamic
+  // pricing -> recommendations (see lib/rm/rmEngine.js). Weather/local
+  // event/VIP impacts from today's events feed the pricing adjustments.
+  const rmReport = runRM({
+    rooms: reservationUpdate.rooms,
+    reservations: reservationUpdate.reservations,
+    restaurantDemand: demand,
+    activeEvents,
+    referenceDate,
+  });
+
   // 8. Fold today's numbers into the hotel/restaurant finance objects.
   const hotelRevenueTotal = hotelRevenue.netRevenue + impacts.revenue;
   const restaurantRevenueTotal = restaurantRevenue.netRevenue;
@@ -137,5 +150,6 @@ export async function runDailyCycle(options = {}) {
     events,
     staffChanges: staffUpdate.changes,
     reservationsChanges: reservationUpdate.changes,
+    rmReport,
   });
 }
