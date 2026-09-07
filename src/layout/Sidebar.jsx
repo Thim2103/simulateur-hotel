@@ -1,12 +1,16 @@
 import { NavLink } from "react-router-dom";
 
+// Académie, Compétition, Replay et Analytics stay mounted in App.js and
+// fully functional (Academy/Competition write real replay+analytics data
+// on finalization, see hooks/useAcademy.js and useCompetition.js) -- they
+// are deliberately left out of this nav so the UI only surfaces the Solo/
+// Career experience for now. Reaching /academy, /competition, /replay/:id
+// or /analytics directly still works.
 const primaryLinks = [
   ["/", "Dashboard", true],
+  ["/career", "Mode Carrière"],
   ["/chain", "Chaîne d'hôtels"],
   ["/staff", "Personnel"],
-  ["/academy", "Académie"],
-  ["/competition", "Compétition"],
-  ["/analytics", "Analytics"],
   ["/dashboard-rm", "Revenue management"],
   ["/rm-dashboard", "RM avancé"],
   ["/pms", "Planning PMS"],

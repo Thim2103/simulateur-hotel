@@ -7,7 +7,7 @@
 import { safeArray, safeObject, safeString } from "../safe";
 import { buildReplay } from "../scenario/scenarioReplay";
 
-export const REPLAY_SOURCES = ["scenario", "academie", "competition", "tfe"];
+export const REPLAY_SOURCES = ["scenario", "academie", "competition", "tfe", "career"];
 
 // runState: a ScenarioRunState (has .scenario, .replayLog, .scoreHistory,
 // .status, .cycleIndex, .totalCycles). ownerRefs: whatever ids identify

@@ -16,6 +16,7 @@ export {
   buildReplayRunFromAcademyGroup,
   buildReplayRunFromCompetitionPlayer,
   buildReplayRunFromScenarioRun,
+  buildReplayRunFromCareerRun,
   loadReplayRun,
   getCycleForRun,
   reconstructStateAtCycle,
