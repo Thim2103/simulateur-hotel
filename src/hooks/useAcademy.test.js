@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { useAcademy } from "./useAcademy";
 import academyRepository from "../lib/academy/academyRepository";
+import replayRepository from "../lib/replay/replayRepository";
 import { createScenarioTemplate } from "../lib/scenario/scenarioSchema";
 
 jest.mock("../lib/academy/academyRepository", () => ({
@@ -12,6 +13,10 @@ jest.mock("../lib/academy/academyRepository", () => ({
   loadGroupRun: jest.fn(),
   saveGroupReport: jest.fn(),
   listClasses: jest.fn(),
+}));
+
+jest.mock("../lib/replay/replayRepository", () => ({
+  saveReplayRun: jest.fn(),
 }));
 
 function scenario(overrides = {}) {
@@ -26,6 +31,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   academyRepository.saveGroupRun.mockResolvedValue({});
   academyRepository.saveGroupReport.mockResolvedValue({});
+  replayRepository.saveReplayRun.mockResolvedValue({});
 });
 
 test("createClass persists then stores the class locally", async () => {
@@ -127,6 +133,7 @@ test("generateFinalReport finalizes every unfinalized group and builds the class
 
   expect(finalReport).toEqual(expect.objectContaining({ classId: "c1", groupCount: 1 }));
   expect(academyRepository.saveGroupReport).toHaveBeenCalledWith(expect.objectContaining({ classId: "c1", groupId: "g1" }));
+  expect(replayRepository.saveReplayRun).toHaveBeenCalledWith(expect.objectContaining({ id: "academie-c1-g1", source: "academie" }));
 });
 
 test("loadClassState() with no classId refreshes the teacher's whole class roster", async () => {

@@ -10,6 +10,8 @@ import {
 } from "../lib/competition";
 import { assignScenarioToMatch, finalizeMatch, runPlayerCycle as runPlayerCycleEngine } from "../lib/competition/competitionEngine";
 import competitionRepository from "../lib/competition/competitionRepository";
+import { buildReplayRunFromCompetitionPlayer } from "../lib/replay/replayEngine";
+import replayRepository from "../lib/replay/replayRepository";
 
 // Drives the whole Competition module: an organizer's matches, each
 // match's registered players, the global scenario assigned to it (with
@@ -145,6 +147,18 @@ export function useCompetition() {
           })
         );
         await competitionRepository.saveRanking({ matchId, ranking });
+
+        // Stores a normalized replay run per player who was just finalized
+        // (see lib/replay/replayEngine.js) so the Replay Viewer/Compare/
+        // Export pages can rejoin -- and compare -- the match afterwards.
+        await Promise.all(
+          players.map((player) => {
+            const report = nextState.reportsByPlayerId[player.id];
+            const run = nextState.runsByPlayerId[player.id];
+            if (!report || !run) return null;
+            return replayRepository.saveReplayRun(buildReplayRunFromCompetitionPlayer(player, run, report));
+          })
+        );
 
         return ranking;
       }),

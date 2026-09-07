@@ -1,6 +1,7 @@
 import { renderHook, act } from "@testing-library/react";
 import { useCompetition } from "./useCompetition";
 import competitionRepository from "../lib/competition/competitionRepository";
+import replayRepository from "../lib/replay/replayRepository";
 import { createScenarioTemplate } from "../lib/scenario/scenarioSchema";
 
 jest.mock("../lib/competition/competitionRepository", () => ({
@@ -13,6 +14,10 @@ jest.mock("../lib/competition/competitionRepository", () => ({
   savePlayerReport: jest.fn(),
   saveRanking: jest.fn(),
   listMatches: jest.fn(),
+}));
+
+jest.mock("../lib/replay/replayRepository", () => ({
+  saveReplayRun: jest.fn(),
 }));
 
 function scenario(overrides = {}) {
@@ -30,6 +35,7 @@ beforeEach(() => {
   competitionRepository.savePlayerRun.mockResolvedValue({});
   competitionRepository.savePlayerReport.mockResolvedValue({});
   competitionRepository.saveRanking.mockResolvedValue({});
+  replayRepository.saveReplayRun.mockResolvedValue({});
 });
 
 test("createCompetition persists then stores the match locally", async () => {
@@ -132,6 +138,7 @@ test("generateFinalRanking finalizes players and persists the ranking", async ()
   expect(ranking).toEqual([expect.objectContaining({ playerId: "p1", rank: 1 })]);
   expect(competitionRepository.savePlayerReport).toHaveBeenCalledWith(expect.objectContaining({ matchId: "m1", playerId: "p1" }));
   expect(competitionRepository.saveRanking).toHaveBeenCalledWith(expect.objectContaining({ matchId: "m1" }));
+  expect(replayRepository.saveReplayRun).toHaveBeenCalledWith(expect.objectContaining({ id: "competition-m1-p1", source: "competition" }));
 });
 
 test("loadCompetitionState() with no matchId refreshes the organizer's whole match list", async () => {
