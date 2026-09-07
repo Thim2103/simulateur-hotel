@@ -12,6 +12,7 @@ import { calculateExpenses } from "./calculateExpenses";
 import { updateStaff } from "./updateStaff";
 import { generateEvents } from "../events";
 import { runRM } from "../rm";
+import { runProgression } from "../progression";
 import { updateReservations } from "./updateReservations";
 import { updateFinance } from "./updateFinance";
 import { saveDailyState } from "./saveDailyState";
@@ -36,7 +37,7 @@ async function loadDailyCycleState({ hotelState, restaurantState, rooms, reserva
 
 // Step 10: shape the pipeline's results into the DailyReport contract
 // consumed by the UI.
-function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport }) {
+function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport, progressionReport }) {
   return {
     date: toDateOnly(referenceDate),
     hotelRevenue,
@@ -47,6 +48,7 @@ function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expe
     staffChanges,
     reservationsChanges,
     rmReport,
+    progressionReport,
   };
 }
 
@@ -120,15 +122,42 @@ export async function runDailyCycle(options = {}) {
   });
   const profit = hotelRevenueTotal + restaurantRevenueTotal - expenses.total;
 
+  const nextRestaurantState = { ...restaurantState, finance: financeUpdate.restaurantFinance, staff: staffUpdate.staff };
+
+  // Player progression: reputation -> xp -> level -> objectives ->
+  // achievements -> rewards -> storyline (see lib/progression/). Runs last
+  // so it can see the day's full results (profit, events, updated staff).
+  const dailyReportSoFar = {
+    hotelRevenue: { ...hotelRevenue, eventRevenue: Math.round(impacts.revenue) },
+    restaurantRevenue,
+    expenses,
+    profit,
+    events,
+    staffChanges: staffUpdate.changes,
+    reservationsChanges: reservationUpdate.changes,
+    rmReport,
+  };
+  const progression = runProgression({
+    hotelState,
+    restaurantState: nextRestaurantState,
+    rooms: reservationUpdate.rooms,
+    dailyReport: dailyReportSoFar,
+  });
+
   const nextHotelState = {
     ...hotelState,
     finance: financeUpdate.hotelFinance,
-    // Multi-day events (e.g. a 3-day heatwave) carry over to tomorrow's
-    // run via this field; it rides along in the same jsonb `progression`
-    // column already persisted by hotelRepository.js, no schema change.
-    progression: { ...hotelState.progression, activeEvents },
+    progression: {
+      ...hotelState.progression,
+      cycles: progression.cycles,
+      // Multi-day events (e.g. a 3-day heatwave) and the player's running
+      // xp/level/reputation/achievements both ride along in the same
+      // jsonb `progression` column hotelRepository.js already persists as
+      // -is, so neither needed a schema change.
+      activeEvents,
+      player: progression.player,
+    },
   };
-  const nextRestaurantState = { ...restaurantState, finance: financeUpdate.restaurantFinance, staff: staffUpdate.staff };
 
   // 9. Persist (user_id = auth.uid() is applied inside each repository).
   if (persist) {
@@ -143,13 +172,7 @@ export async function runDailyCycle(options = {}) {
   // 10. Return the DailyReport for the UI.
   return buildDailyReport({
     referenceDate,
-    hotelRevenue: { ...hotelRevenue, eventRevenue: Math.round(impacts.revenue) },
-    restaurantRevenue,
-    expenses,
-    profit,
-    events,
-    staffChanges: staffUpdate.changes,
-    reservationsChanges: reservationUpdate.changes,
-    rmReport,
+    ...dailyReportSoFar,
+    progressionReport: progression.report,
   });
 }
