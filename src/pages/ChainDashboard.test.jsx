@@ -1,8 +1,8 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import ChainDashboard from "./ChainDashboard";
-import { useChain } from "../hooks/useChain";
+import { useChainContext } from "../context/ChainContext";
 
-jest.mock("../hooks/useChain");
+jest.mock("../context/ChainContext");
 
 function hotel(overrides = {}) {
   return {
@@ -41,7 +41,7 @@ function baseHookState(overrides = {}) {
 }
 
 test("shows an empty state and disables the cycle button when the chain has no hotels", () => {
-  useChain.mockReturnValue(baseHookState());
+  useChainContext.mockReturnValue(baseHookState());
   render(<ChainDashboard />);
 
   expect(screen.getByText(/ajoutez un premier hôtel/i)).toBeInTheDocument();
@@ -49,7 +49,7 @@ test("shows an empty state and disables the cycle button when the chain has no h
 });
 
 test("lists the chain's hotels and highlights the active one", () => {
-  useChain.mockReturnValue(baseHookState({ chainState: { hotels: [hotel()], activeHotelId: "a" }, activeHotel: hotel() }));
+  useChainContext.mockReturnValue(baseHookState({ chainState: { hotels: [hotel()], activeHotelId: "a" }, activeHotel: hotel() }));
   render(<ChainDashboard />);
 
   expect(screen.getByText("Riviera Palace")).toBeInTheDocument();
@@ -58,7 +58,7 @@ test("lists the chain's hotels and highlights the active one", () => {
 
 test("calling addHotel via the form fields", () => {
   const addHotel = jest.fn();
-  useChain.mockReturnValue(baseHookState({ addHotel }));
+  useChainContext.mockReturnValue(baseHookState({ addHotel }));
   render(<ChainDashboard />);
 
   fireEvent.change(screen.getByPlaceholderText(/riviera palace/i), { target: { value: "Alpine Lodge" } });
@@ -71,7 +71,7 @@ test("calling addHotel via the form fields", () => {
 test("switching to a non-active hotel calls switchHotel with its id", () => {
   const switchHotel = jest.fn();
   const hotels = [hotel({ id: "a" }), hotel({ id: "b", name: "Second Hotel", city: "Lyon" })];
-  useChain.mockReturnValue(baseHookState({ chainState: { hotels, activeHotelId: "a" }, activeHotel: hotels[0], switchHotel }));
+  useChainContext.mockReturnValue(baseHookState({ chainState: { hotels, activeHotelId: "a" }, activeHotel: hotels[0], switchHotel }));
   render(<ChainDashboard />);
 
   fireEvent.click(screen.getByRole("button", { name: /basculer sur cet hôtel/i }));
@@ -79,7 +79,7 @@ test("switching to a non-active hotel calls switchHotel with its id", () => {
 });
 
 test("displays consolidated finance, RM, events and progression once a report is available", () => {
-  useChain.mockReturnValue(
+  useChainContext.mockReturnValue(
     baseHookState({ chainState: { hotels: [hotel()], activeHotelId: "a" }, activeHotel: hotel(), chainReport: sampleReport() })
   );
   render(<ChainDashboard />);
@@ -92,7 +92,7 @@ test("displays consolidated finance, RM, events and progression once a report is
 });
 
 test("shows an error banner when the chain cycle fails", () => {
-  useChain.mockReturnValue(baseHookState({ error: new Error("Session Supabase non authentifiee.") }));
+  useChainContext.mockReturnValue(baseHookState({ error: new Error("Session Supabase non authentifiee.") }));
   render(<ChainDashboard />);
   expect(screen.getByText(/impossible de calculer le cycle de la chaîne/i)).toBeInTheDocument();
 });

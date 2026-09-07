@@ -4,7 +4,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Badge from "../components/ui/Badge";
 import KpiCard from "../components/charts/KpiCard";
-import { useChain } from "../hooks/useChain";
+import { useChainContext } from "../context/ChainContext";
 
 // Rough, illustrative placement for a handful of well-known cities; any
 // other city name gets a deterministic (but arbitrary) spot instead of
@@ -62,7 +62,7 @@ const EVENT_ID_KEY = (event, index) => event.id || `${event.name || "event"}-${i
 // here can be persisted, the rest are session-local until a future
 // migration relaxes that constraint for real multi-hotel accounts.
 export default function ChainDashboard() {
-  const { chainState, activeHotel, chainReport, addHotel, switchHotel, runChainCycle, isRunning, error } = useChain();
+  const { chainState, activeHotel, chainReport, addHotel, switchHotel, runChainCycle, isRunning, error } = useChainContext();
   const [newHotelName, setNewHotelName] = useState("");
   const [newHotelCity, setNewHotelCity] = useState("");
 

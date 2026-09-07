@@ -62,7 +62,30 @@ test("returns a ChainReport with exactly the documented shape", async () => {
     rm: expect.objectContaining({ consolidatedForecast: expect.any(Object), consolidatedPickup: expect.any(Object), recommendedADR: expect.any(Number) }),
     progression: expect.objectContaining({ chainLevel: expect.any(Object), chainXP: expect.any(Number), chainReputation: expect.any(Number), achievements: expect.any(Array) }),
     events: { regionalEvents: expect.any(Array), globalEvents: expect.any(Array) },
+    staff: expect.objectContaining({
+      staffGlobal: expect.any(Array),
+      staffByHotel: expect.any(Object),
+      moraleGlobal: expect.any(Number),
+      moraleByHotel: expect.any(Object),
+      transfers: expect.any(Array),
+      training: expect.any(Array),
+      promotions: expect.any(Array),
+      optimization: expect.any(Object),
+      regionalEvents: expect.any(Array),
+    }),
   });
+});
+
+test("staffEngine runs on top of the day's updated staff and its report reflects the chain's real roster", async () => {
+  mockRunDailyCycle.mockResolvedValue(fakeDailyReport({ nextState: { hotelState: { structure: { roomCount: 60 } }, restaurantState: { staff: [{ id: 1, name: "Ada", satisfaction: 70 }] }, rooms: [], reservations: [] } }));
+  const hotels = [createHotel({ id: "a", city: "Paris" })];
+
+  const { report, hotels: nextHotels } = await runChainCycle({ hotels, referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+
+  expect(report.staff.staffGlobal).toEqual([expect.objectContaining({ id: 1, name: "Ada" })]);
+  expect(report.staff.staffByHotel.a).toEqual([expect.objectContaining({ id: 1 })]);
+  // The chain's returned hotel bundles carry staffEngine's version forward, not just runDailyCycle's.
+  expect(nextHotels[0].restaurantState.staff).toEqual(report.staff.staffByHotel.a);
 });
 
 test("consolidates finance and RM across every hotel's own daily report", async () => {
