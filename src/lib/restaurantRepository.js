@@ -1,8 +1,12 @@
-import { assertSupabaseConfigured } from "./supabase";
+import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
 import { safeLoad } from "./safeLoad";
 import { safeArray, safeNumber, safeObject } from "./safe";
 
-const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
+// Pre-auth seed row: only referenced so the first signed-in user can claim it
+// (see resolveRestaurantId()). Every other restaurant gets a fresh id from
+// the DB (restaurants.id defaults to gen_random_uuid()).
+const LEGACY_RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
+const CHILD_TABLES = ["restaurant_finance", "restaurant_staff", "restaurant_menu_items", "restaurant_operations"];
 const FINANCE_MONTH_KEYS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const FINANCE_MONTH_ALIASES = {
   jan: "jan", january: "jan", janvier: "jan",
@@ -91,7 +95,6 @@ export const defaultStructure = {
 };
 
 export const defaultRestaurant = {
-  id: RESTAURANT_ID,
   name: "Luxury Palace",
   concept: "Fusion créative",
   location: "Bruxelles",
@@ -106,12 +109,12 @@ export const defaultRestaurant = {
 
 export const safeRestaurant = (restaurant) => restaurant ?? defaultRestaurant;
 
-function restaurantPayload(restaurant = {}) {
+function restaurantPayload(restaurant = {}, userId) {
   const source = safeRestaurant(restaurant);
   return {
     ...defaultRestaurant,
     ...source,
-    id: RESTAURANT_ID,
+    ...(userId ? { user_id: userId } : {}),
     name: source.name || defaultRestaurant.name,
     concept: source.concept || defaultRestaurant.concept,
     location: source.location || defaultRestaurant.location,
@@ -134,16 +137,16 @@ function validateItem(item, fields) {
   return item;
 }
 
-function toStaffRow(person) {
-  return { id: person.id, restaurant_id: RESTAURANT_ID, name: person.name, role: person.role, department: person.department, salary: Number(person.salary) || 0, skills: person.skills || [], skill_level: Number(person.skill_level || person.skillLevel || 0), productivity: Number(person.productivity || 0), satisfaction: Number(person.satisfaction || 0), experience_years: Number(person.experience_years || person.experienceYears || 0) };
+function toStaffRow(person, restaurantId, userId) {
+  return { id: person.id, restaurant_id: restaurantId, user_id: userId, name: person.name, role: person.role, department: person.department, salary: Number(person.salary) || 0, skills: person.skills || [], skill_level: Number(person.skill_level || person.skillLevel || 0), productivity: Number(person.productivity || 0), satisfaction: Number(person.satisfaction || 0), experience_years: Number(person.experience_years || person.experienceYears || 0) };
 }
 
-function toMenuRow(item) {
-  return { id: item.id, restaurant_id: RESTAURANT_ID, name: item.name, category: item.category, cost: Number(item.cost) || 0, price: Number(item.price) || 0, sales: Number(item.sales) || 0, popularity: Number(item.popularity || 0), preparation_time: Number(item.preparation_time || item.preparationTime || 0) };
+function toMenuRow(item, restaurantId, userId) {
+  return { id: item.id, restaurant_id: restaurantId, user_id: userId, name: item.name, category: item.category, cost: Number(item.cost) || 0, price: Number(item.price) || 0, sales: Number(item.sales) || 0, popularity: Number(item.popularity || 0), preparation_time: Number(item.preparation_time || item.preparationTime || 0) };
 }
 
-function toOperationRow(operation) {
-  return { id: operation.id, restaurant_id: RESTAURANT_ID, day: operation.day, title: operation.title, type: operation.type, status: operation.status, owner: operation.owner, priority: operation.priority, due_in: operation.dueIn, customers_served: Number(operation.customers_served || operation.customersServed || 0), average_wait_time: Number(operation.average_wait_time || operation.averageWaitTime || 0), service_quality: Number(operation.service_quality || operation.serviceQuality || 0), kitchen_efficiency: Number(operation.kitchen_efficiency || operation.kitchenEfficiency || 0), incidents: Number(operation.incidents || 0), complaints: Number(operation.complaints || 0), compliments: Number(operation.compliments || 0) };
+function toOperationRow(operation, restaurantId, userId) {
+  return { id: operation.id, restaurant_id: restaurantId, user_id: userId, day: operation.day, title: operation.title, type: operation.type, status: operation.status, owner: operation.owner, priority: operation.priority, due_in: operation.dueIn, customers_served: Number(operation.customers_served || operation.customersServed || 0), average_wait_time: Number(operation.average_wait_time || operation.averageWaitTime || 0), service_quality: Number(operation.service_quality || operation.serviceQuality || 0), kitchen_efficiency: Number(operation.kitchen_efficiency || operation.kitchenEfficiency || 0), incidents: Number(operation.incidents || 0), complaints: Number(operation.complaints || 0), compliments: Number(operation.compliments || 0) };
 }
 
 function fromOperationRow(operation) {
@@ -182,9 +185,9 @@ export function buildFinanceState(financeRows) {
 // swallows its own errors, but this also guards buildFinanceState() itself
 // and guarantees a fully-shaped, normalized finance object comes back no
 // matter what Supabase returns (null rows, missing table, malformed types).
-async function loadRestaurantFinance() {
+async function loadRestaurantFinance(restaurantId, userId) {
   return safeLoad(
-    async () => buildFinanceState(await select("restaurant_finance", (builder) => builder.eq("restaurant_id", RESTAURANT_ID))),
+    async () => buildFinanceState(await select("restaurant_finance", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId))),
     { ...FINANCE_DEFAULTS },
     { label: "select:restaurant_finance" }
   );
@@ -203,13 +206,16 @@ async function select(table, query = (builder) => builder) {
   );
 }
 
-async function upsert(table, rows) {
+async function upsert(table, rows, options = {}) {
   const client = assertSupabaseConfigured();
-  const { data, error } = await client.from(table).upsert(rows).select();
+  const { data, error } = await client.from(table).upsert(rows, options).select();
   if (error) throw error;
   return data || [];
 }
 
+// Returns the inserted row, or null if the insert itself failed (network
+// error, RLS rejection, ...) -- callers must not assume a fake/local row was
+// actually persisted.
 async function insertRestaurant(restaurant) {
   return safeLoad(
     async () => {
@@ -218,32 +224,74 @@ async function insertRestaurant(restaurant) {
       if (error) throw error;
       return Array.isArray(data) ? data[0] : data;
     },
-    defaultRestaurant,
+    null,
     { label: "insertRestaurant" }
   );
 }
 
-async function remove(table, id, idColumn = "id") {
+async function remove(table, id, idColumn = "id", userId) {
   const client = assertSupabaseConfigured();
   const query = client.from(table).delete().eq(idColumn, id);
-  const { error } = await (idColumn === "restaurant_id" ? query : query.eq("restaurant_id", RESTAURANT_ID));
+  const { error } = await (userId ? query.eq("user_id", userId) : query);
   if (error) throw error;
 }
 
+// Resolves "the current user's restaurant id", in three steps:
+//  1) they already own one -> return it;
+//  2) nobody owns one yet, but the pre-auth seed restaurant is still
+//     unclaimed (user_id is null) -> claim it (and its finance/staff/menu/
+//     operations rows) for this user;
+//  3) otherwise -> create a brand new restaurant for this user.
+async function resolveRestaurantId(userId) {
+  const owned = await select("restaurants", (builder) => builder.eq("user_id", userId).limit(1));
+  if (owned.length) return owned[0].id;
+
+  const client = assertSupabaseConfigured();
+  const { data: claimed, error: claimError } = await client
+    .from("restaurants")
+    .update({ user_id: userId })
+    .eq("id", LEGACY_RESTAURANT_ID)
+    .is("user_id", null)
+    .select("id");
+  if (claimError) throw claimError;
+  if (claimed?.length) {
+    await claimRestaurantChildren(claimed[0].id, userId);
+    return claimed[0].id;
+  }
+
+  const created = await insertRestaurant(restaurantPayload(defaultRestaurant, userId));
+  if (!created) throw new Error("Impossible de creer un restaurant pour cet utilisateur.");
+  return created.id;
+}
+
+// Adopts every not-yet-claimed row (user_id IS NULL) tied to `restaurantId`
+// across the restaurant's child tables, once it has just been claimed.
+async function claimRestaurantChildren(restaurantId, userId) {
+  const client = assertSupabaseConfigured();
+  await Promise.all(
+    CHILD_TABLES.map((table) =>
+      client.from(table).update({ user_id: userId }).eq("restaurant_id", restaurantId).is("user_id", null)
+    )
+  );
+}
+
 export async function getRestaurantState() {
+  const userId = await requireUserId();
+  const restaurantId = await resolveRestaurantId(userId);
+
   const [profilesData, financeState, staffData, menuData, operationsData] = await Promise.all([
-    select("restaurants", (builder) => builder.eq("id", RESTAURANT_ID).limit(1)),
-    loadRestaurantFinance(),
-    select("restaurant_staff", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
-    select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
-    select("restaurant_operations", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
+    select("restaurants", (builder) => builder.eq("id", restaurantId).eq("user_id", userId).limit(1)),
+    loadRestaurantFinance(restaurantId, userId),
+    select("restaurant_staff", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId).order("created_at")),
+    select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId).order("created_at")),
+    select("restaurant_operations", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId).order("created_at")),
   ]);
   const profiles = safeArray(profilesData, []);
   const staff = safeArray(staffData, []);
   const menu = safeArray(menuData, []);
   const operations = safeArray(operationsData, []);
   let profile = profiles[0];
-  if (!profile) profile = await insertRestaurant(defaultRestaurant);
+  if (!profile) profile = await insertRestaurant(restaurantPayload(defaultRestaurant, userId));
   profile = safeObject(safeRestaurant(profile));
   const structure = safeObject(profile.structure);
   return {
@@ -261,6 +309,8 @@ export async function getRestaurantState() {
 
 export async function saveRestaurantState(state) {
   const client = assertSupabaseConfigured();
+  const userId = await requireUserId();
+  const restaurantId = await resolveRestaurantId(userId);
   const restaurantUpdate = {
     name: state.structure?.name || defaultRestaurant.name,
     concept: state.structure?.concept || defaultRestaurant.concept,
@@ -273,68 +323,139 @@ export async function saveRestaurantState(state) {
     expansion: state.expansion || defaultRestaurant.expansion,
     progression: state.progression || defaultRestaurant.progression,
   };
-  const { error: restaurantError } = await client.from("restaurants").update(restaurantUpdate).eq("id", RESTAURANT_ID);
+  const { error: restaurantError } = await client.from("restaurants").update(restaurantUpdate).eq("id", restaurantId).eq("user_id", userId);
   if (restaurantError) throw restaurantError;
   const finance = safeObject(state.finance);
-  await upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, day: finance.day, months: normalizeMonths(finance.months), revenue: finance.revenue, costs: finance.costs, payroll: finance.payroll, fixed_costs: finance.fixedCosts, rent: finance.rent, taxes: toTaxesColumnValue(finance.taxes), energy_cost: finance.energyCost, waste: finance.waste }]);
+  await upsert(
+    "restaurant_finance",
+    [{ restaurant_id: restaurantId, user_id: userId, day: finance.day, months: normalizeMonths(finance.months), revenue: finance.revenue, costs: finance.costs, payroll: finance.payroll, fixed_costs: finance.fixedCosts, rent: finance.rent, taxes: toTaxesColumnValue(finance.taxes), energy_cost: finance.energyCost, waste: finance.waste }],
+    { onConflict: "user_id" }
+  );
   const existing = await Promise.all([
-    select("restaurant_staff", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
-    select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
-    select("restaurant_operations", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
+    select("restaurant_staff", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId)),
+    select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId)),
+    select("restaurant_operations", (builder) => builder.eq("restaurant_id", restaurantId).eq("user_id", userId)),
   ]);
   const currentIds = [state.staff, state.menu, state.operations].map((items) => new Set(items.map((item) => String(item.id))));
-  await Promise.all(existing.map((rows, index) => Promise.all(rows.filter((row) => !currentIds[index].has(String(row.id))).map((row) => client.from(["restaurant_staff", "restaurant_menu_items", "restaurant_operations"][index]).delete().eq("id", row.id).eq("restaurant_id", RESTAURANT_ID)))));
+  await Promise.all(existing.map((rows, index) => Promise.all(rows.filter((row) => !currentIds[index].has(String(row.id))).map((row) => client.from(["restaurant_staff", "restaurant_menu_items", "restaurant_operations"][index]).delete().eq("id", row.id).eq("restaurant_id", restaurantId).eq("user_id", userId)))));
   await Promise.all([
-    upsert("restaurant_staff", state.staff.map(toStaffRow)),
-    upsert("restaurant_menu_items", state.menu.map(toMenuRow)),
-    upsert("restaurant_operations", state.operations.map(toOperationRow)),
+    upsert("restaurant_staff", state.staff.map((person) => toStaffRow(person, restaurantId, userId))),
+    upsert("restaurant_menu_items", state.menu.map((item) => toMenuRow(item, restaurantId, userId))),
+    upsert("restaurant_operations", state.operations.map((operation) => toOperationRow(operation, restaurantId, userId))),
   ]);
 }
 
 export const restaurantRepository = {
   restaurant: {
-    get: () => select("restaurants", (builder) => builder.eq("id", RESTAURANT_ID).limit(1)),
-    upsert: (restaurant) => upsert("restaurants", [restaurantPayload(restaurant)]),
-    remove: () => remove("restaurants", RESTAURANT_ID),
+    get: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurants", (builder) => builder.eq("user_id", userId).limit(1));
+    },
+    upsert: async (restaurant) => {
+      const userId = await requireUserId();
+      return upsert("restaurants", [restaurantPayload(restaurant, userId)], { onConflict: "user_id" });
+    },
+    remove: async () => {
+      const userId = await requireUserId();
+      return remove("restaurants", userId, "user_id");
+    },
   },
   getRestaurantState,
   saveRestaurantState,
   staff: {
-    list: () => select("restaurant_staff", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
-    upsert: (person) => upsert("restaurant_staff", [toStaffRow(validateItem(person, ["name", "role", "department"]))]),
-    remove: (id) => remove("restaurant_staff", id),
+    list: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_staff", (builder) => builder.eq("user_id", userId).order("created_at"));
+    },
+    upsert: async (person) => {
+      const userId = await requireUserId();
+      const restaurantId = await resolveRestaurantId(userId);
+      return upsert("restaurant_staff", [toStaffRow(validateItem(person, ["name", "role", "department"]), restaurantId, userId)]);
+    },
+    remove: async (id) => {
+      const userId = await requireUserId();
+      return remove("restaurant_staff", id, "id", userId);
+    },
   },
   menu: {
-    list: () => select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
-    upsert: (item) => upsert("restaurant_menu_items", [toMenuRow(validateItem(item, ["name", "category"]))]),
-    remove: (id) => remove("restaurant_menu_items", id),
+    list: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_menu_items", (builder) => builder.eq("user_id", userId).order("created_at"));
+    },
+    upsert: async (item) => {
+      const userId = await requireUserId();
+      const restaurantId = await resolveRestaurantId(userId);
+      return upsert("restaurant_menu_items", [toMenuRow(validateItem(item, ["name", "category"]), restaurantId, userId)]);
+    },
+    remove: async (id) => {
+      const userId = await requireUserId();
+      return remove("restaurant_menu_items", id, "id", userId);
+    },
   },
   operations: {
-    list: () => select("restaurant_operations", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")).then((rows) => rows.map(fromOperationRow)),
-    upsert: (operation) => upsert("restaurant_operations", [toOperationRow(validateItem(operation, ["title", "type", "status"]))]),
-    remove: (id) => remove("restaurant_operations", id),
+    list: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_operations", (builder) => builder.eq("user_id", userId).order("created_at")).then((rows) => rows.map(fromOperationRow));
+    },
+    upsert: async (operation) => {
+      const userId = await requireUserId();
+      const restaurantId = await resolveRestaurantId(userId);
+      return upsert("restaurant_operations", [toOperationRow(validateItem(operation, ["title", "type", "status"]), restaurantId, userId)]);
+    },
+    remove: async (id) => {
+      const userId = await requireUserId();
+      return remove("restaurant_operations", id, "id", userId);
+    },
   },
   finance: {
-    get: () => select("restaurant_finance", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
-    update: (finance) => {
-      const source = safeObject(finance);
-      return upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, months: normalizeMonths(source.months), revenue: source.revenue, costs: source.costs, payroll: source.payroll, fixed_costs: source.fixedCosts, rent: source.rent, taxes: toTaxesColumnValue(source.taxes) }]).then((rows) => rows[0]);
+    get: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_finance", (builder) => builder.eq("user_id", userId));
     },
-    remove: () => remove("restaurant_finance", RESTAURANT_ID, "restaurant_id"),
+    update: async (finance) => {
+      const userId = await requireUserId();
+      const restaurantId = await resolveRestaurantId(userId);
+      const source = safeObject(finance);
+      const rows = await upsert(
+        "restaurant_finance",
+        [{ restaurant_id: restaurantId, user_id: userId, months: normalizeMonths(source.months), revenue: source.revenue, costs: source.costs, payroll: source.payroll, fixed_costs: source.fixedCosts, rent: source.rent, taxes: toTaxesColumnValue(source.taxes) }],
+        { onConflict: "user_id" }
+      );
+      return rows[0];
+    },
+    remove: async () => {
+      const userId = await requireUserId();
+      return remove("restaurant_finance", userId, "user_id");
+    },
   },
   financeHistory: {
-    list: () => select("restaurant_finance_periods", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("period_start")),
+    list: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_finance_periods", (builder) => builder.eq("user_id", userId).order("period_start"));
+    },
   },
   esg: {
-    list: () => select("restaurant_esg_metrics", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("period_start")),
+    list: async () => {
+      const userId = await ensureAuthSession();
+      if (!userId) return [];
+      return select("restaurant_esg_metrics", (builder) => builder.eq("user_id", userId).order("period_start"));
+    },
   },
 };
 
 export async function listReservations() {
-  return select("reservations", (builder) => builder.order("arrival"));
+  const userId = await ensureAuthSession();
+  if (!userId) return [];
+  return select("reservations", (builder) => builder.eq("user_id", userId).order("arrival"));
 }
 
-function toReservationRow(input) {
+function toReservationRow(input, userId) {
   const clientName = input.client_name ?? input.client;
   const roomId = input.room_id ?? input.roomId;
   const room = input.room ?? (roomId === undefined || roomId === null ? undefined : String(roomId));
@@ -343,6 +464,7 @@ function toReservationRow(input) {
   validateItem(input, ["arrival", "departure", "status"]);
   return {
     ...input,
+    user_id: userId,
     client_name: clientName,
     client: clientName,
     ...(roomId === undefined || roomId === null ? {} : { room_id: Number(roomId) }),
@@ -351,7 +473,8 @@ function toReservationRow(input) {
 }
 
 export async function createReservation(input) {
-  const reservation = toReservationRow(input);
+  const userId = await requireUserId();
+  const reservation = toReservationRow(input, userId);
   const client = assertSupabaseConfigured();
   const { data, error } = await client.from("reservations").insert(reservation).select().single();
   if (error) throw error;
@@ -359,15 +482,17 @@ export async function createReservation(input) {
 }
 
 export async function updateReservation(id, input) {
-  const reservation = toReservationRow(input);
+  const userId = await requireUserId();
+  const reservation = toReservationRow(input, userId);
   const client = assertSupabaseConfigured();
-  const { data, error } = await client.from("reservations").update(reservation).eq("id", id).select().single();
+  const { data, error } = await client.from("reservations").update(reservation).eq("id", id).eq("user_id", userId).select().single();
   if (error) throw error;
   return data;
 }
 
 export async function deleteReservation(id) {
+  const userId = await requireUserId();
   const client = assertSupabaseConfigured();
-  const { error } = await client.from("reservations").delete().eq("id", id);
+  const { error } = await client.from("reservations").delete().eq("id", id).eq("user_id", userId);
   if (error) throw error;
 }

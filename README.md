@@ -7,7 +7,16 @@ Restaurant Simulator and PMS reservations require a Supabase project configured 
 - `REACT_APP_SUPABASE_URL`
 - `REACT_APP_SUPABASE_ANON_KEY`
 
-Run `supabase/migrations/202609060001_restaurant_and_pms.sql` in the Supabase SQL editor before starting the app. The migration creates and seeds the restaurant, staff, menu, finance, operations, and reservation schema. The current policies are intentionally public for this simulator; add authentication and replace them with user-scoped RLS policies before production use.
+Run every file under `supabase/migrations/` in order (oldest first) in the Supabase SQL editor before starting the app. The first migration creates and seeds the restaurant, staff, menu, finance, operations, and reservation schema.
+
+### Row Level Security (user-scoped, anonymous auth)
+
+`202609070006_rls_user_scoping.sql` replaces the old fully-public `using (true)` policies with real per-user RLS: every table gets a `user_id` column, and a signed-in user can only see/write their own rows (mono-tenant: one hotel and one restaurant per user). The app has no login screen -- each browser transparently gets its own identity via Supabase's **anonymous auth**, so after running this migration you must also:
+
+1. In the Supabase dashboard, go to **Authentication → Sign In / Providers → Anonymous Sign-Ins** and enable it. Without this, `supabase.auth.signInAnonymously()` fails and the app falls back to its offline mock/local-storage data instead of Supabase.
+2. Reload the app once as the first user: it will automatically claim the pre-migration seed data (the rows that still have `user_id IS NULL`) for that browser's identity. Any other browser/user starts with a fresh hotel and restaurant.
+
+`.env` is committed to this repo for convenience in this simulator context, but note that Create React App loads it in every environment including `test` -- `.env.test` (also committed) blanks both variables so `npm test` never depends on network access to the live project.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
