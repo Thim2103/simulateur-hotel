@@ -1,5 +1,5 @@
 import { NavLink, Route, Routes } from "react-router-dom";
-import RestaurantOverview from "./RestaurantOverview";
+import RestaurantStructure from "./RestaurantStructure";
 import RestaurantDashboard from "./RestaurantDashboard";
 import RestaurantFinance from "./RestaurantFinance";
 import RestaurantHR from "./RestaurantHR";
@@ -23,22 +23,39 @@ const tabs = [
   { to: "expansion", label: "Expansion" },
 ];
 
-function LockedModule({ children }) {
-  return <Card className="p-8 text-slate-600">{children}</Card>;
-}
-
 export default function RestaurantSimulator() {
-  const { progression, isModuleUnlocked, setDifficulty, loading, error } = useRestaurantSimulator();
+  const { progression, setDifficulty, loading, error } = useRestaurantSimulator();
 
   if (loading) return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500"><span className="inline-flex items-center gap-2" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />Chargement des données restaurant…</span></div>;
 
+  if (error) {
+    return (
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+        Connexion aux données restaurant indisponible : {error.message}
+      </div>
+    );
+  }
+
+  // The establishment must be validated (see RestaurantStructure.jsx) before
+  // any other module is reachable -- no offline mode, no mocked KPIs shown
+  // in place of a real establishment.
+  if (!progression.ready) {
+    return (
+      <div className="flex flex-col gap-6">
+        <header className="page-header">
+          <div>
+            <p className="eyebrow">Restaurant simulator</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Pilotez votre établissement</h1>
+            <p className="mt-1 text-sm text-slate-500">Commencez par décrire votre établissement.</p>
+          </div>
+        </header>
+        <RestaurantStructure />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-6">
-      {error && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Connexion aux données restaurant indisponible : les valeurs affichées sont issues du mode hors-ligne.
-        </div>
-      )}
       <header className="page-header">
         <div>
           <p className="eyebrow">Restaurant simulator</p>
@@ -95,46 +112,37 @@ export default function RestaurantSimulator() {
         </Card>
       </div>
 
+      {/* Every tab is reachable as soon as the establishment is validated
+          (progression.ready, checked above) -- no further per-module score
+          gating once the player has cleared the real first step. */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Modules du restaurant">
-        {tabs.map((tab) => {
-          const unlocked = isModuleUnlocked(tab.to);
-
-          return (
-            <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.to === "overview"}
-              className={({ isActive }) =>
-                `shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                  isActive
-                    ? "bg-amber-500 text-white shadow-sm"
-                    : unlocked
-                    ? "bg-white text-slate-700 hover:bg-slate-100"
-                    : "cursor-not-allowed bg-slate-200 text-slate-400"
-                }`
-              }
-              onClick={(event) => {
-                if (!unlocked) event.preventDefault();
-              }}
-            >
-              {tab.label}
-              {!unlocked && " · verrouillé"}
-            </NavLink>
-          );
-        })}
+        {tabs.map((tab) => (
+          <NavLink
+            key={tab.to}
+            to={tab.to}
+            end={tab.to === "overview"}
+            className={({ isActive }) =>
+              `shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${
+                isActive ? "bg-amber-500 text-white shadow-sm" : "bg-white text-slate-700 hover:bg-slate-100"
+              }`
+            }
+          >
+            {tab.label}
+          </NavLink>
+        ))}
       </div>
 
       <Routes>
-        <Route path="overview" element={<RestaurantOverview />} />
-        <Route path="dashboard" element={isModuleUnlocked("dashboard") ? <RestaurantDashboard /> : <LockedModule>Le module Dashboard est verrouillé. Il s’ouvre avec une progression plus élevée.</LockedModule>} />
-        <Route path="finance" element={isModuleUnlocked("finance") ? <RestaurantFinance /> : <LockedModule>Le module Finance est verrouillé. Il s’ouvre après la mise en place du pilotage.</LockedModule>} />
-        <Route path="hr" element={isModuleUnlocked("hr") ? <RestaurantHR /> : <LockedModule>Le module RH est verrouillé. Le recrutement et l’organisation doivent être validés.</LockedModule>} />
-        <Route path="menu" element={isModuleUnlocked("menu") ? <RestaurantMenu /> : <LockedModule>Le module Menu est verrouillé. Il s’ouvre une fois la carte et les marges sont validées.</LockedModule>} />
-        <Route path="operations" element={isModuleUnlocked("operations") ? <RestaurantOperations /> : <LockedModule>Le module Opérations est verrouillé. Il s’ouvre une fois l’exploitation stabilisée.</LockedModule>} />
-        <Route path="marketing" element={isModuleUnlocked("marketing") ? <RestaurantMarketing /> : <LockedModule>Le module Marketing est verrouillé. Atteignez le score requis.</LockedModule>} />
-        <Route path="esg" element={isModuleUnlocked("esg") ? <RestaurantESG /> : <LockedModule>Le module ESG est verrouillé. Atteignez le score requis.</LockedModule>} />
-        <Route path="expansion" element={isModuleUnlocked("expansion") ? <RestaurantExpansion /> : <LockedModule>Le module Expansion est verrouillé. Atteignez le score requis.</LockedModule>} />
-        <Route index element={<RestaurantOverview />} />
+        <Route path="overview" element={<RestaurantStructure />} />
+        <Route path="dashboard" element={<RestaurantDashboard />} />
+        <Route path="finance" element={<RestaurantFinance />} />
+        <Route path="hr" element={<RestaurantHR />} />
+        <Route path="menu" element={<RestaurantMenu />} />
+        <Route path="operations" element={<RestaurantOperations />} />
+        <Route path="marketing" element={<RestaurantMarketing />} />
+        <Route path="esg" element={<RestaurantESG />} />
+        <Route path="expansion" element={<RestaurantExpansion />} />
+        <Route index element={<RestaurantDashboard />} />
       </Routes>
     </div>
   );

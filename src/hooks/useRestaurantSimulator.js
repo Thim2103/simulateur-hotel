@@ -6,7 +6,7 @@ import {
   restaurantDifficultyLevels,
   restaurantProgression,
   restaurantTutorialSteps,
-} from "../lib/restaurant";
+} from "../lib/legacyRestaurantSimulator";
 import { useSupabaseRestaurant } from "./useSupabaseRestaurant";
 import { getPmsEvents, subscribeToPmsEvents } from "../lib/pmsRestaurantBridge";
 
@@ -405,6 +405,11 @@ export function useRestaurantSimulator() {
       playerLevel,
       xp: state.progression?.xp || 0,
       cycles: state.progression?.cycles || 0,
+      // Set once, by the "Structure de l'établissement" form (see
+      // hooks/useRestaurant.js's submitStructure() / pages/
+      // RestaurantStructure.jsx) -- both hooks read/write the same
+      // restaurants.progression column, so this reflects it here too.
+      ready: Boolean(state.progression?.ready),
       difficulty: difficulty.id,
       difficultyLabel: difficulty.label,
       difficultyMultiplier: difficulty.multiplier,

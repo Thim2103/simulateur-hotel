@@ -3,7 +3,7 @@
 // runDailyCycle() already consumes for a single hotel. Reuses the existing
 // single-hotel/restaurant defaults rather than redefining them.
 import { defaultHotelState } from "../hotel";
-import { defaultRestaurantState } from "../restaurant";
+import { defaultRestaurantState } from "../legacyRestaurantSimulator";
 import { createRoom } from "../pmsModels";
 
 let localIdCounter = 0;

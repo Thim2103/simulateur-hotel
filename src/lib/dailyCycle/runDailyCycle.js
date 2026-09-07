@@ -1,8 +1,11 @@
 // Orchestrates one simulated day end-to-end: load state, compute today's
 // hotel/restaurant revenue and expenses, apply random events, update staff
-// and reservations, fold the results into finance, persist, and return a
-// DailyReport for the UI. Every step is a small pure function in this
-// folder; this file only wires them together and talks to the repositories.
+// and reservations, run the restaurant's own operations cycle (see
+// lib/restaurant/restaurantEngine.js -- synced with PMS occupancy, RM
+// demand and today's events), fold the results into finance, persist, and
+// return a DailyReport for the UI. Every step is a small pure function in
+// this folder; this file only wires them together and talks to the
+// repositories.
 import { getHotelState } from "../hotelRepository";
 import { getRestaurantState } from "../restaurantRepository";
 import { listReservations, listRooms } from "../pmsRepository";
@@ -16,6 +19,7 @@ import { runProgression } from "../progression";
 import { updateReservations } from "./updateReservations";
 import { updateFinance } from "./updateFinance";
 import { saveDailyState } from "./saveDailyState";
+import { runRestaurantCycle } from "../restaurant/restaurantEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -37,7 +41,7 @@ async function loadDailyCycleState({ hotelState, restaurantState, rooms, reserva
 
 // Step 10: shape the pipeline's results into the DailyReport contract
 // consumed by the UI.
-function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport, progressionReport, nextState }) {
+function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expenses, profit, events, staffChanges, reservationsChanges, rmReport, restaurantReport, progressionReport, nextState }) {
   return {
     date: toDateOnly(referenceDate),
     hotelRevenue,
@@ -48,6 +52,7 @@ function buildDailyReport({ referenceDate, hotelRevenue, restaurantRevenue, expe
     staffChanges,
     reservationsChanges,
     rmReport,
+    restaurantReport,
     progressionReport,
     // Not part of the original DailyReport contract, but additive and
     // backward-compatible: the resulting state, for a caller that wants to
@@ -128,7 +133,22 @@ export async function runDailyCycle(options = {}) {
   });
   const profit = hotelRevenueTotal + restaurantRevenueTotal - expenses.total;
 
-  const nextRestaurantState = { ...restaurantState, finance: financeUpdate.restaurantFinance, staff: staffUpdate.staff };
+  const nextRestaurantStateAfterFinance = { ...restaurantState, finance: financeUpdate.restaurantFinance, staff: staffUpdate.staff };
+
+  // Restaurant cycle: syncs with PMS (occupancy/guests), RM (demand) and
+  // today's events (see lib/restaurant/restaurantEngine.js), then simulates
+  // operations/menu/staff metrics on top of the finance/staff fold above.
+  const restaurantCycle = runRestaurantCycle({
+    hotelState,
+    restaurantState: nextRestaurantStateAfterFinance,
+    rooms: reservationUpdate.rooms,
+    reservations: reservationUpdate.reservations,
+    occupiedRooms: hotelRevenue.occupiedRooms,
+    rmReport,
+    events,
+    referenceDate,
+  });
+  const nextRestaurantState = restaurantCycle.restaurantState;
 
   // Player progression: reputation -> xp -> level -> objectives ->
   // achievements -> rewards -> storyline (see lib/progression/). Runs last
@@ -142,6 +162,7 @@ export async function runDailyCycle(options = {}) {
     staffChanges: staffUpdate.changes,
     reservationsChanges: reservationUpdate.changes,
     rmReport,
+    restaurantReport: restaurantCycle.report,
   };
   const progression = runProgression({
     hotelState,

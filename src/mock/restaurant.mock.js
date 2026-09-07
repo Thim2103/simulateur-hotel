@@ -1,6 +1,6 @@
 // Mock data mirroring defaultRestaurantState, used as an offline fallback
 // when Supabase is unreachable/misconfigured.
-import { defaultRestaurantState } from "../lib/restaurant";
+import { defaultRestaurantState } from "../lib/legacyRestaurantSimulator";
 
 export const mockRestaurantState = {
   ...defaultRestaurantState,

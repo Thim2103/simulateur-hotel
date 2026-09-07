@@ -257,3 +257,32 @@ describe("lib/progression integration", () => {
     expect(savedHotelState.progression.cycles).toBe(2);
   });
 });
+
+describe("lib/restaurant integration", () => {
+  test("returns a restaurantReport produced by restaurantEngine, alongside the existing restaurantRevenue", async () => {
+    const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+
+    expect(report.restaurantReport).toEqual(
+      expect.objectContaining({
+        demand: expect.any(Number),
+        finance: expect.objectContaining({ menuRevenue: expect.any(Number) }),
+        staff: expect.objectContaining({ headcount: 1 }),
+        pms: expect.objectContaining({ hotelOccupancy: expect.any(Number) }),
+      })
+    );
+  });
+
+  test("restaurant PMS sync reflects today's real occupancy, not a placeholder", async () => {
+    const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0.999, persist: false });
+
+    // baseState() has 1 room, occupied by the one confirmed reservation.
+    expect(report.restaurantReport.pms.hotelOccupancy).toBe(100);
+  });
+
+  test("nextState.restaurantState carries the restaurant engine's updated operations forward", async () => {
+    const report = await runDailyCycle({ ...baseState(), referenceDate: REFERENCE_DATE, rng: () => 0, persist: false }); // fires every event
+
+    expect(Array.isArray(report.nextState.restaurantState.operations)).toBe(true);
+    expect(report.nextState.restaurantState.pmsContext).toEqual(expect.objectContaining({ hotelOccupancy: expect.any(Number) }));
+  });
+});

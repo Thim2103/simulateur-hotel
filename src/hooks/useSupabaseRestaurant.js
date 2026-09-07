@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getRestaurantState, restaurantRepository, saveRestaurantState } from "../lib/restaurantRepository";
 import { normalizeRestaurant } from "../lib/normalizers";
-import { mockRestaurantState } from "../mock/restaurant.mock";
 import { runRestaurantSchemaDiagnostics } from "../lib/restaurantSchemaSync";
 
 let schemaDiagnosticsPromise;
@@ -31,10 +30,11 @@ export function useSupabaseRestaurant(initialState) {
       setData(normalizeRestaurant(rawState));
       setError(null);
     } catch (loadError) {
-      console.error("[useSupabaseRestaurant] getRestaurantState failed, falling back to mock data:", loadError);
-      // Genuine/unexpected failure: fall back to mock data so the simulator
-      // remains usable offline, while still surfacing the error.
-      setData(normalizeRestaurant(mockRestaurantState));
+      // Genuine/unexpected failure (Supabase unreachable, RLS rejection,
+      // ...): surface it instead of silently swapping in offline mock data.
+      // The UI (see RestaurantSimulator.jsx) shows an error state and lets
+      // the player retry rather than play against fake numbers.
+      console.error("[useSupabaseRestaurant] getRestaurantState failed:", loadError);
       setError(loadError);
     } finally {
       setLoading(false);
