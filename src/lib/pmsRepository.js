@@ -95,3 +95,15 @@ export async function saveClient(client) {
 export async function deleteClient(id) {
   return remove("clients", id);
 }
+
+// Persists a day's worth of PMS changes (see lib/dailyCycle/saveDailyState.js
+// and updateReservations.js): rooms and reservations are collections, so
+// unlike hotelRepository/restaurantRepository's saveDailyState() this saves
+// only the rows that actually changed today rather than the whole table.
+export async function saveDailyState({ rooms = [], reservations = [] } = {}) {
+  const [savedRooms, savedReservations] = await Promise.all([
+    Promise.all(rooms.map((room) => saveRoom(room))),
+    Promise.all(reservations.map((reservation) => saveReservation(reservation))),
+  ]);
+  return { rooms: savedRooms, reservations: savedReservations };
+}

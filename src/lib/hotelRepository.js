@@ -131,7 +131,14 @@ export async function saveHotelState(state) {
   if (error) throw error;
 }
 
+// Persists the hotel's state after a simulated day (see
+// lib/dailyCycle/saveDailyState.js). Currently an alias for saveHotelState:
+// the daily cycle folds its results into the same `hotels` row rather than
+// its own table, so there's nothing day-specific to persist beyond that.
+export const saveDailyState = saveHotelState;
+
 export const hotelRepository = {
   getHotelState,
   saveHotelState,
+  saveDailyState,
 };
