@@ -2,7 +2,7 @@
 // where objects are expected, objects where arrays are expected, etc.) into
 // the shapes consumed by useRestaurantSimulator and the Restaurant* pages.
 import { safeArray, safeNumber, safeObject, safeString } from "./safe";
-import { normalizeFinanceMonths } from "./restaurantRepository";
+import { normalizeFinanceMonths, normalizeTaxes } from "./restaurantRepository";
 import {
   restaurantStructure,
   restaurantFinancials,
@@ -46,10 +46,7 @@ export function normalizeFinance(input) {
   const source = safeObject(input);
   const revenue = safeArray(source.revenue, restaurantFinancials.revenue).map((value) => safeNumber(value, 0));
   const costs = safeArray(source.costs, restaurantFinancials.costs).map((value) => safeNumber(value, 0));
-  const rawTaxes = source.taxes;
-  const taxes = Array.isArray(rawTaxes) || (typeof rawTaxes === "string" && rawTaxes.trim().startsWith("["))
-    ? safeArray(rawTaxes, []).map((value) => safeNumber(value, 0))
-    : safeNumber(rawTaxes, restaurantFinancials.taxes);
+  const taxes = normalizeTaxes(source.taxes, restaurantFinancials.taxes);
 
   return {
     day: source.day,

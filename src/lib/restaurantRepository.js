@@ -50,6 +50,39 @@ export function normalizeMonths(months) {
 
 export const normalizeFinanceMonths = normalizeMonths;
 
+// restaurant_finance.taxes is stored as a scalar `numeric` column, but legacy
+// rows/state (or a future per-month schema) may carry it as an array. Accept
+// either shape defensively and never let a non-numeric value slip through.
+export function normalizeTaxes(value, fallback = 0) {
+  if (Array.isArray(value)) return value.map((item) => safeNumber(item, 0));
+  if (typeof value === "string" && value.trim().startsWith("[")) {
+    return safeArray(value, []).map((item) => safeNumber(item, 0));
+  }
+  return safeNumber(value, fallback);
+}
+
+// The DB column only accepts a scalar: collapse an array-shaped tax rate
+// (legacy data, or a value that only went through normalizeTaxes) to its
+// most recent entry before writing it back to Supabase.
+function toTaxesColumnValue(value, fallback = 0) {
+  const normalized = normalizeTaxes(value, fallback);
+  return Array.isArray(normalized) ? safeNumber(normalized[normalized.length - 1], fallback) : normalized;
+}
+
+const FINANCE_DEFAULTS = {
+  day: null,
+  months: normalizeMonths(null),
+  revenue: [],
+  costs: [],
+  taxes: 0,
+  waste: [],
+  energy: [],
+  energyCost: [],
+  payroll: 0,
+  fixedCosts: 0,
+  rent: 0,
+};
+
 export const defaultStructure = {
   floors: 1,
   sections: ["main"],
@@ -124,6 +157,39 @@ function toNumberArray(rows, field) {
   }).map((value) => safeNumber(value, 0));
 }
 
+// Shapes whatever restaurant_finance row(s) Supabase returned into the
+// finance contract the app expects, defaulting every field individually so a
+// null row, a missing column, or an unexpected type never breaks the shape.
+export function buildFinanceState(financeRows) {
+  const rows = safeArray(financeRows, []);
+  const finance = safeObject(rows[0]);
+  return {
+    day: finance.day ?? FINANCE_DEFAULTS.day,
+    months: normalizeMonths(finance.months),
+    revenue: toNumberArray(rows, "revenue"),
+    costs: toNumberArray(rows, "costs"),
+    taxes: normalizeTaxes(finance.taxes, FINANCE_DEFAULTS.taxes),
+    waste: toNumberArray(rows, "waste"),
+    energy: toNumberArray(rows, "energy_cost"),
+    energyCost: toNumberArray(rows, "energy_cost"),
+    payroll: safeNumber(finance.payroll, FINANCE_DEFAULTS.payroll),
+    fixedCosts: safeNumber(finance.fixed_costs, FINANCE_DEFAULTS.fixedCosts),
+    rent: safeNumber(finance.rent, FINANCE_DEFAULTS.rent),
+  };
+}
+
+// Dedicated, resilient Finance loader: the underlying select() already
+// swallows its own errors, but this also guards buildFinanceState() itself
+// and guarantees a fully-shaped, normalized finance object comes back no
+// matter what Supabase returns (null rows, missing table, malformed types).
+async function loadRestaurantFinance() {
+  return safeLoad(
+    async () => buildFinanceState(await select("restaurant_finance", (builder) => builder.eq("restaurant_id", RESTAURANT_ID))),
+    { ...FINANCE_DEFAULTS },
+    { label: "select:restaurant_finance" }
+  );
+}
+
 async function select(table, query = (builder) => builder) {
   return safeLoad(
     async () => {
@@ -165,38 +231,24 @@ async function remove(table, id, idColumn = "id") {
 }
 
 export async function getRestaurantState() {
-  const [profilesData, financeData, staffData, menuData, operationsData] = await Promise.all([
+  const [profilesData, financeState, staffData, menuData, operationsData] = await Promise.all([
     select("restaurants", (builder) => builder.eq("id", RESTAURANT_ID).limit(1)),
-    select("restaurant_finance", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
+    loadRestaurantFinance(),
     select("restaurant_staff", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
     select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
     select("restaurant_operations", (builder) => builder.eq("restaurant_id", RESTAURANT_ID).order("created_at")),
   ]);
   const profiles = safeArray(profilesData, []);
-  const finances = safeArray(financeData, []);
   const staff = safeArray(staffData, []);
   const menu = safeArray(menuData, []);
   const operations = safeArray(operationsData, []);
   let profile = profiles[0];
-  const finance = safeObject(finances[0]);
   if (!profile) profile = await insertRestaurant(defaultRestaurant);
   profile = safeObject(safeRestaurant(profile));
   const structure = safeObject(profile.structure);
   return {
     structure: { ...defaultStructure, ...structure, concept: profile.concept || structure.concept, location: profile.location || structure.location, capacity: profile.capacity || structure.capacity, openingHours: profile.opening_hours || structure.openingHours },
-    finance: {
-      day: finance.day,
-      months: normalizeFinanceMonths(finance.months),
-      revenue: toNumberArray(finances, "revenue"),
-      costs: toNumberArray(finances, "costs"),
-      taxes: toNumberArray(finances, "taxes"),
-      waste: toNumberArray(finances, "waste"),
-      energy: toNumberArray(finances, "energy_cost"),
-      energyCost: toNumberArray(finances, "energy_cost"),
-      payroll: safeNumber(finance.payroll, 0),
-      fixedCosts: safeNumber(finance.fixed_costs, 0),
-      rent: safeNumber(finance.rent, 0),
-    },
+    finance: financeState,
     staff,
     menu,
     operations: operations.map(fromOperationRow),
@@ -223,7 +275,8 @@ export async function saveRestaurantState(state) {
   };
   const { error: restaurantError } = await client.from("restaurants").update(restaurantUpdate).eq("id", RESTAURANT_ID);
   if (restaurantError) throw restaurantError;
-  await upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, day: state.finance.day, months: normalizeMonths(state.finance.months), revenue: state.finance.revenue, costs: state.finance.costs, payroll: state.finance.payroll, fixed_costs: state.finance.fixedCosts, rent: state.finance.rent, taxes: state.finance.taxes, energy_cost: state.finance.energyCost, waste: state.finance.waste }]);
+  const finance = safeObject(state.finance);
+  await upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, day: finance.day, months: normalizeMonths(finance.months), revenue: finance.revenue, costs: finance.costs, payroll: finance.payroll, fixed_costs: finance.fixedCosts, rent: finance.rent, taxes: toTaxesColumnValue(finance.taxes), energy_cost: finance.energyCost, waste: finance.waste }]);
   const existing = await Promise.all([
     select("restaurant_staff", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
     select("restaurant_menu_items", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
@@ -263,7 +316,10 @@ export const restaurantRepository = {
   },
   finance: {
     get: () => select("restaurant_finance", (builder) => builder.eq("restaurant_id", RESTAURANT_ID)),
-    update: (finance) => upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, months: normalizeMonths(finance.months), revenue: finance.revenue, costs: finance.costs, payroll: finance.payroll, fixed_costs: finance.fixedCosts, rent: finance.rent, taxes: finance.taxes }]).then((rows) => rows[0]),
+    update: (finance) => {
+      const source = safeObject(finance);
+      return upsert("restaurant_finance", [{ restaurant_id: RESTAURANT_ID, months: normalizeMonths(source.months), revenue: source.revenue, costs: source.costs, payroll: source.payroll, fixed_costs: source.fixedCosts, rent: source.rent, taxes: toTaxesColumnValue(source.taxes) }]).then((rows) => rows[0]);
+    },
     remove: () => remove("restaurant_finance", RESTAURANT_ID, "restaurant_id"),
   },
   financeHistory: {
