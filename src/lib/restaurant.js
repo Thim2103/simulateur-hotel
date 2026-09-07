@@ -190,15 +190,24 @@ export const restaurantSimulationDefaults = {
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+const safe = (arr) => (Array.isArray(arr) ? arr : []);
 
 export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
-  const marketing = state.marketing || restaurantMarketing;
-  const esg = state.esg || restaurantEsg;
-  const expansion = state.expansion || restaurantExpansion;
-  const pmsContext = state.pmsContext || {};
-  const activeEstablishments = expansion.establishments.filter((establishment) => establishment.status === "active");
+  const data = state || {};
+  const staff = safe(data.staff);
+  const menu = safe(data.menu);
+  const operations = safe(data.operations);
+  const finance = safe(data.finance);
+  const financeState = finance[0] || (data.finance && !Array.isArray(data.finance) ? data.finance : {});
+  const marketing = data.marketing || restaurantMarketing;
+  const esg = data.esg || restaurantEsg;
+  const expansion = data.expansion || restaurantExpansion;
+  const pmsContext = data.pmsContext || {};
+  const establishments = safe(expansion.establishments);
+  const channels = safe(marketing.channels);
+  const activeEstablishments = establishments.filter((establishment) => establishment.status === "active");
   const marketingReach = clamp(
-    42 + Number(marketing.budget || 0) / 100 + marketing.channels.filter((channel) => channel.enabled).reduce((sum, channel) => sum + Number(channel.reach || 0), 0) / 12,
+    42 + Number(marketing.budget || 0) / 100 + channels.filter((channel) => channel.enabled).reduce((sum, channel) => sum + Number(channel.reach || 0), 0) / 12,
     35,
     100
   );
@@ -206,25 +215,25 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
   const capacity = activeEstablishments.reduce((sum, establishment) => sum + Number(establishment.capacity || 0), 0) || Number(state.structure.capacity || 0);
   const staffProductivity = clamp(
     68 +
-      state.staff.reduce((sum, person) => sum + Number(person.salary || 0), 0) / 2200 -
-      state.operations.filter((task) => task.type === "complaint").length * 6,
+      staff.reduce((sum, person) => sum + Number(person.salary || 0), 0) / 2200 -
+      operations.filter((task) => task.type === "complaint").length * 6,
     45,
     98
   );
 
   const menuPopularity = clamp(
     60 +
-      state.menu.reduce((sum, item) => sum + Number(item.sales || 0), 0) / 3 -
-      state.menu.filter((item) => Number(item.cost || 0) > Number(item.price || 0)).length * 10,
+      menu.reduce((sum, item) => sum + Number(item.sales || 0), 0) / 3 -
+      menu.filter((item) => Number(item.cost || 0) > Number(item.price || 0)).length * 10,
     40,
     99
   );
 
   const demand = clamp(
     45 +
-      (state.structure.capacity / state.structure.seats) * 24 +
+      (Number(data.structure?.capacity || 0) / Number(data.structure?.seats || data.structure?.capacity || 1)) * 24 +
       menuPopularity / 3 -
-      state.operations.filter((task) => task.type === "complaint").length * 8 -
+      operations.filter((task) => task.type === "complaint").length * 8 -
       (100 - marketingReach) / 8 -
       (difficultyMultiplier - 1) * 20 +
       Number(pmsContext.hotelOccupancy || 0) * 0.08 +
@@ -238,7 +247,7 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
     3.4 +
       staffProductivity / 30 +
       menuPopularity / 35 -
-      state.operations.filter((task) => task.type === "complaint").length * 0.4 -
+      operations.filter((task) => task.type === "complaint").length * 0.4 -
       Number(pmsContext.housekeepingIssues || 0) * 0.08,
     2.0,
     5.0
@@ -249,38 +258,38 @@ export function buildRestaurantSimulation(state, difficultyMultiplier = 1) {
   const complaints = clamp(
     1 +
       Math.max(0, 85 - customerSatisfaction * 18) / 18 +
-      state.operations.filter((task) => task.type === "complaint").length,
+      operations.filter((task) => task.type === "complaint").length,
     0,
     10
   );
 
   const maintenanceRisk = clamp(
     12 +
-      state.operations.filter((task) => task.type === "maintenance").length * 10 -
-      state.staff.length * 0.8,
+      operations.filter((task) => task.type === "maintenance").length * 10 -
+      staff.length * 0.8,
     5,
     95
   );
 
   const esgImpact = clamp(
-    30 + esgReadiness * 0.65 + state.menu.length * 0.8 -
-      state.operations.filter((task) => task.type === "complaint").length * 4 +
-      state.staff.length * 0.3,
+    30 + esgReadiness * 0.65 + menu.length * 0.8 -
+      operations.filter((task) => task.type === "complaint").length * 4 +
+      staff.length * 0.3,
     20,
     100
   );
 
   const revenue = clamp(
     (capacity * 18 * demand) / 10 +
-      state.menu.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.sales || 0), 0) * 30,
+      menu.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.sales || 0), 0) * 30,
     5000,
     150000
   );
 
   const cost = clamp(
-    state.finance.fixedCosts +
-      state.finance.rent +
-      state.staff.reduce((sum, person) => sum + Number(person.salary || 0), 0) / 3 +
+    Number(financeState.fixedCosts || financeState.fixed_costs || 0) +
+      Number(financeState.rent || 0) +
+      staff.reduce((sum, person) => sum + Number(person.salary || 0), 0) / 3 +
       maintenanceRisk * 70 +
       Number(marketing.budget || 0) +
       Number(esg.monthlyInvestment || 0) +

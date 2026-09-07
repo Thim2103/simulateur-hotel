@@ -12,6 +12,7 @@ const summaryItems = [
 
 export default function RestaurantDashboard() {
   const { finance, menu, kpis, advanceSimulation, simulation, progression } = useRestaurantSimulator();
+  const monthLabels = Array.isArray(finance.months) ? finance.months : Object.keys(finance.months || {});
 
   const menuRevenue = menu.reduce((sum, item) => sum + item.price * item.sales, 0);
   const categoryMix = [
@@ -71,7 +72,7 @@ export default function RestaurantDashboard() {
       </section>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <LineChart title="Évolution du chiffre d'affaires" labels={finance.months} data={finance.revenue} />
+        <LineChart title="Évolution du chiffre d'affaires" labels={monthLabels} data={finance.revenue} />
         <BarChart title="Mix produits" labels={["Plats", "Entrées", "Desserts", "Boissons"]} data={categoryMix} />
       </div>
 

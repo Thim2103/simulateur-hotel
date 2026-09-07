@@ -1,9 +1,17 @@
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
+import { defaultStructure } from "../lib/restaurantRepository";
+
+const safe = (arr) => (Array.isArray(arr) ? arr : []);
 
 export default function RestaurantOverview() {
-  const { structure, kpis, updateStructure } = useRestaurantSimulator();
+  const { structure: loadedStructure, kpis, updateStructure } = useRestaurantSimulator();
+  const structure = { ...defaultStructure, ...(loadedStructure || {}) };
+  const sections = safe(structure?.sections);
+  const materials = safe(structure?.materials);
+  const equipment = safe(structure?.equipment);
+  const sectionList = sections.join(", ");
 
   const handleArrayChange = (key, value) => {
     updateStructure({
@@ -53,10 +61,19 @@ export default function RestaurantOverview() {
             </div>
 
             <div className="flex flex-col gap-1">
+              <label className="font-medium">Sections</label>
+              <input
+                className="border rounded-md px-3 py-2"
+                value={sectionList}
+                onChange={(event) => handleArrayChange("sections", event.target.value)}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1">
               <label className="font-medium">Matériaux</label>
               <textarea
                 className="border rounded-md px-3 py-2 min-h-[90px]"
-                value={structure.materials.join(", ")}
+                value={materials.join(", ")}
                 onChange={(event) => handleArrayChange("materials", event.target.value)}
               />
             </div>
@@ -67,12 +84,12 @@ export default function RestaurantOverview() {
           <div className="flex flex-col gap-4">
             <textarea
               className="border rounded-md px-3 py-2 min-h-[150px]"
-              value={structure.equipment.join(", ")}
+              value={equipment.join(", ")}
               onChange={(event) => handleArrayChange("equipment", event.target.value)}
             />
 
             <div className="flex flex-wrap gap-2">
-              {structure.equipment.map((item) => (
+              {equipment.map((item) => (
                 <Badge key={item} type="info">{item}</Badge>
               ))}
             </div>

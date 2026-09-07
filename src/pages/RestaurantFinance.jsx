@@ -7,6 +7,9 @@ import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 
 export default function RestaurantFinance() {
   const { finance, kpis, updateFinance } = useRestaurantSimulator();
+  const monthLabels = Array.isArray(finance.months) ? finance.months : Object.keys(finance.months || {});
+  // taxes can be a per-month array from legacy/malformed data; the input only edits a single rate
+  const taxesValue = Array.isArray(finance.taxes) ? Number(finance.taxes[0] || 0) : Number(finance.taxes || 0);
 
   const updateRevenueValue = (index, value) => {
     const nextRevenue = [...finance.revenue];
@@ -31,13 +34,13 @@ export default function RestaurantFinance() {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <LineChart
           title="Revenus du restaurant"
-          labels={finance.months}
+          labels={monthLabels}
           data={finance.revenue}
         />
 
         <BarChart
           title="Coûts de gestion"
-          labels={finance.months}
+          labels={monthLabels}
           data={finance.costs}
         />
       </div>
@@ -50,7 +53,7 @@ export default function RestaurantFinance() {
             <input
               type="number"
               className="border rounded-md px-3 py-2"
-              value={finance.taxes}
+              value={taxesValue}
               onChange={(event) => updateFinance({ taxes: Number(event.target.value || 0) })}
             />
           </div>
@@ -87,7 +90,7 @@ export default function RestaurantFinance() {
       <div className="rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-5">
         <h3 className="text-lg font-semibold mb-4">Évolution mensuelle</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {finance.months.map((month, index) => (
+          {monthLabels.map((month, index) => (
             <div key={month} className="border rounded-lg p-3 flex flex-col gap-2">
               <div className="font-medium">{month}</div>
               <div className="flex flex-col gap-2">

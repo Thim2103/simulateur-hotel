@@ -31,10 +31,14 @@ export default function RestaurantSimulator() {
   const { progression, isModuleUnlocked, setDifficulty, loading, error } = useRestaurantSimulator();
 
   if (loading) return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500"><span className="inline-flex items-center gap-2" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />Chargement des données restaurant…</span></div>;
-  if (error) return <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Impossible de charger le restaurant : {error.message}</div>;
 
   return (
     <div className="flex flex-col gap-6">
+      {error && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          Connexion aux données restaurant indisponible : les valeurs affichées sont issues du mode hors-ligne.
+        </div>
+      )}
       <header className="page-header">
         <div>
           <p className="eyebrow">Restaurant simulator</p>

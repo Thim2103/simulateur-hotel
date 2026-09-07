@@ -1,0 +1,210 @@
+// Normalizers repair unreliable/malformed data (nulls, JSON strings, arrays
+// where objects are expected, objects where arrays are expected, etc.) into
+// the shapes consumed by useRestaurantSimulator and the Restaurant* pages.
+import { safeArray, safeNumber, safeObject, safeString } from "./safe";
+import { normalizeFinanceMonths } from "./restaurantRepository";
+import {
+  restaurantStructure,
+  restaurantFinancials,
+  restaurantMarketing,
+  restaurantEsg,
+  restaurantExpansion,
+  defaultRestaurantState,
+} from "./restaurant";
+
+function safeStringArray(value, fallback) {
+  return safeArray(value, fallback).map((item) => safeString(item, ""));
+}
+
+export function normalizeStructure(input) {
+  const source = safeObject(input);
+  const capacity = safeNumber(source.capacity, restaurantStructure.capacity);
+
+  return {
+    concept: safeString(source.concept, restaurantStructure.concept),
+    location: safeString(source.location, restaurantStructure.location),
+    capacity,
+    seats: safeNumber(source.seats, capacity || restaurantStructure.seats),
+    materials: safeStringArray(source.materials, restaurantStructure.materials),
+    equipment: safeStringArray(source.equipment, restaurantStructure.equipment),
+    floors: safeNumber(source.floors, 1),
+    sections: safeStringArray(source.sections, ["main"]),
+    layout: safeString(source.layout, "standard"),
+    openingHours: safeString(source.openingHours ?? source.opening_hours, ""),
+  };
+}
+
+export function normalizeFinance(input) {
+  const source = safeObject(input);
+  const revenue = safeArray(source.revenue, restaurantFinancials.revenue).map((value) => safeNumber(value, 0));
+  const costs = safeArray(source.costs, restaurantFinancials.costs).map((value) => safeNumber(value, 0));
+  const rawTaxes = source.taxes;
+  const taxes = Array.isArray(rawTaxes) || (typeof rawTaxes === "string" && rawTaxes.trim().startsWith("["))
+    ? safeArray(rawTaxes, []).map((value) => safeNumber(value, 0))
+    : safeNumber(rawTaxes, restaurantFinancials.taxes);
+
+  return {
+    day: source.day,
+    months: normalizeFinanceMonths(source.months ?? restaurantFinancials.months),
+    revenue: revenue.length ? revenue : [...restaurantFinancials.revenue],
+    costs: costs.length ? costs : [...restaurantFinancials.costs],
+    payroll: safeNumber(source.payroll, restaurantFinancials.payroll),
+    fixedCosts: safeNumber(source.fixedCosts ?? source.fixed_costs, restaurantFinancials.fixedCosts),
+    rent: safeNumber(source.rent, restaurantFinancials.rent),
+    taxes,
+    waste: safeArray(source.waste, []).map((value) => safeNumber(value, 0)),
+    energy: safeArray(source.energy, []).map((value) => safeNumber(value, 0)),
+    energyCost: safeArray(source.energyCost ?? source.energy_cost, []).map((value) => safeNumber(value, 0)),
+  };
+}
+
+export function normalizeMarketing(input) {
+  const source = safeObject(input);
+  const channels = safeArray(source.channels, restaurantMarketing.channels).map((channel) => {
+    const channelSource = safeObject(channel);
+    return {
+      id: channelSource.id ?? Date.now() + Math.random(),
+      name: safeString(channelSource.name, "Canal"),
+      enabled: Boolean(channelSource.enabled),
+      budget: safeNumber(channelSource.budget, 0),
+      reach: safeNumber(channelSource.reach, 0),
+    };
+  });
+  const campaigns = safeArray(source.campaigns, restaurantMarketing.campaigns).map((campaign) => {
+    const campaignSource = safeObject(campaign);
+    return {
+      id: campaignSource.id ?? Date.now() + Math.random(),
+      name: safeString(campaignSource.name, "Campagne"),
+      objective: safeString(campaignSource.objective, "Acquisition"),
+      status: safeString(campaignSource.status, "draft"),
+      budget: safeNumber(campaignSource.budget, 0),
+      conversion: safeNumber(campaignSource.conversion, 0),
+    };
+  });
+
+  return {
+    budget: safeNumber(source.budget, restaurantMarketing.budget),
+    positioning: safeString(source.positioning, restaurantMarketing.positioning),
+    channels: channels.length ? channels : restaurantMarketing.channels,
+    campaigns,
+    roi: safeNumber(source.roi, 0),
+    visibility: safeNumber(source.visibility, 0),
+  };
+}
+
+export function normalizeESG(input) {
+  const source = safeObject(input);
+
+  return {
+    wasteReduction: safeNumber(source.wasteReduction, restaurantEsg.wasteReduction),
+    localSourcing: safeNumber(source.localSourcing, restaurantEsg.localSourcing),
+    energyEfficiency: safeNumber(source.energyEfficiency, restaurantEsg.energyEfficiency),
+    staffWellbeing: safeNumber(source.staffWellbeing, restaurantEsg.staffWellbeing),
+    certifications: safeStringArray(source.certifications, restaurantEsg.certifications),
+    monthlyInvestment: safeNumber(source.monthlyInvestment, restaurantEsg.monthlyInvestment),
+  };
+}
+
+export function normalizeExpansion(input) {
+  const source = safeObject(input);
+  const establishments = safeArray(source.establishments, restaurantExpansion.establishments).map((establishment) => {
+    const establishmentSource = safeObject(establishment);
+    return {
+      id: establishmentSource.id ?? Date.now() + Math.random(),
+      name: safeString(establishmentSource.name, "Établissement"),
+      city: safeString(establishmentSource.city, ""),
+      capacity: safeNumber(establishmentSource.capacity, 0),
+      status: safeString(establishmentSource.status, "planned"),
+      manager: safeString(establishmentSource.manager, ""),
+    };
+  });
+
+  return {
+    establishments: establishments.length ? establishments : restaurantExpansion.establishments,
+    pipeline: safeArray(source.pipeline, restaurantExpansion.pipeline),
+    availableCapital: safeNumber(source.availableCapital, restaurantExpansion.availableCapital),
+  };
+}
+
+export function normalizeProgression(input) {
+  const source = safeObject(input);
+
+  return {
+    xp: safeNumber(source.xp, 0),
+    completedTutorials: safeStringArray(source.completedTutorials, []),
+    unlockedAchievements: safeStringArray(source.unlockedAchievements, []),
+    difficulty: safeString(source.difficulty, "easy"),
+    cycles: safeNumber(source.cycles, 0),
+  };
+}
+
+function normalizeStaff(input) {
+  return safeArray(input, defaultRestaurantState.staff).map((person) => {
+    const source = safeObject(person);
+    return {
+      id: source.id ?? Date.now() + Math.random(),
+      name: safeString(source.name, "Nouveau membre"),
+      role: safeString(source.role, "Serveur"),
+      department: safeString(source.department, "Service"),
+      salary: safeNumber(source.salary, 0),
+      skills: safeStringArray(source.skills, []),
+    };
+  });
+}
+
+function normalizeMenu(input) {
+  return safeArray(input, defaultRestaurantState.menu).map((item) => {
+    const source = safeObject(item);
+    return {
+      id: source.id ?? Date.now() + Math.random(),
+      name: safeString(source.name, "Nouvel article"),
+      category: safeString(source.category, "Plat"),
+      cost: safeNumber(source.cost, 0),
+      price: safeNumber(source.price, 0),
+      sales: safeNumber(source.sales, 0),
+    };
+  });
+}
+
+function normalizeOperations(input) {
+  return safeArray(input, defaultRestaurantState.operations).map((task) => {
+    const source = safeObject(task);
+    return {
+      id: source.id ?? Date.now() + Math.random(),
+      title: safeString(source.title, "Nouvelle tâche"),
+      type: safeString(source.type, "cleaning"),
+      status: safeString(source.status, "à faire"),
+      owner: safeString(source.owner, "Équipe"),
+      priority: safeString(source.priority, "moyenne"),
+      dueIn: safeString(source.dueIn, ""),
+    };
+  });
+}
+
+function normalizePmsContext(input) {
+  const source = safeObject(input);
+  return {
+    hotelOccupancy: safeNumber(source.hotelOccupancy, 0),
+    activeGuests: safeNumber(source.activeGuests, 0),
+    housekeepingIssues: safeNumber(source.housekeepingIssues, 0),
+    scheduledEvents: safeNumber(source.scheduledEvents, 0),
+    processedEventIds: safeArray(source.processedEventIds, []),
+  };
+}
+
+export function normalizeRestaurant(input) {
+  const source = safeObject(input);
+
+  return {
+    structure: normalizeStructure(source.structure),
+    finance: normalizeFinance(source.finance),
+    staff: normalizeStaff(source.staff),
+    menu: normalizeMenu(source.menu),
+    operations: normalizeOperations(source.operations),
+    marketing: normalizeMarketing(source.marketing),
+    esg: normalizeESG(source.esg),
+    expansion: normalizeExpansion(source.expansion),
+    pmsContext: normalizePmsContext(source.pmsContext),
+    progression: normalizeProgression(source.progression),
+  };
+}

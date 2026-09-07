@@ -16,11 +16,14 @@ export function useRestaurantSimulator() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    if (!loading && !error) {
+    if (!loading) {
+      // persistedState is always normalized/safe (see useSupabaseRestaurant),
+      // including the mock fallback used when Supabase fails, so the
+      // simulator remains usable even when `error` is set.
       setState(persistedState);
+      setHydrated(true);
     }
-    if (!loading) setHydrated(true);
-  }, [persistedState, loading, error]);
+  }, [persistedState, loading]);
 
   useEffect(() => {
     if (!hydrated) return undefined;
@@ -333,7 +336,8 @@ export function useRestaurantSimulator() {
   const totalMonthlyRevenue = state.finance.revenue.reduce((sum, value) => sum + value, 0);
   const monthlyCosts = state.finance.costs.reduce((sum, value) => sum + value, 0);
   const payroll = state.staff.reduce((sum, person) => sum + Number(person.salary || 0), 0);
-  const taxAmount = totalMonthlyRevenue * ((Number(state.finance.taxes) || 0) / 100);
+  const taxRate = Number(state.finance.taxes[state.finance.taxes.length - 1] || 0);
+  const taxAmount = totalMonthlyRevenue * (taxRate / 100);
   const totalMonthlyCosts = monthlyCosts + Number(state.finance.fixedCosts || 0) + Number(state.finance.rent || 0) + taxAmount;
 
   const menuGrossRevenue = state.menu.reduce(

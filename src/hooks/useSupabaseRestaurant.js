@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { getRestaurantState, restaurantRepository, saveRestaurantState } from "../lib/restaurantRepository";
+import { normalizeRestaurant } from "../lib/normalizers";
+import { mockRestaurantState } from "../mock/restaurant.mock";
 
 export function useSupabaseRestaurant(initialState) {
   const [data, setData] = useState(initialState);
@@ -8,9 +10,22 @@ export function useSupabaseRestaurant(initialState) {
 
   const reload = useCallback(async () => {
     setLoading(true);
-    try { setData(await getRestaurantState()); setError(null); }
-    catch (loadError) { setError(loadError); }
-    finally { setLoading(false); }
+    try {
+      // getRestaurantState() is resilient to per-table/per-field failures
+      // (see restaurantRepository.js); normalizeRestaurant repairs anything
+      // that still slips through (nulls, malformed JSON, wrong types, etc.).
+      const rawState = await getRestaurantState();
+      setData(normalizeRestaurant(rawState));
+      setError(null);
+    } catch (loadError) {
+      console.error("[useSupabaseRestaurant] getRestaurantState failed, falling back to mock data:", loadError);
+      // Genuine/unexpected failure: fall back to mock data so the simulator
+      // remains usable offline, while still surfacing the error.
+      setData(normalizeRestaurant(mockRestaurantState));
+      setError(loadError);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
@@ -32,7 +47,8 @@ function useSupabaseCollection({ initialState, list, upsert, remove }) {
   const reload = useCallback(async () => {
     setLoading(true);
     try {
-      setData(await list());
+      const result = await list();
+      setData(Array.isArray(result) ? result : []);
       setError(null);
     } catch (loadError) {
       setError(loadError);
@@ -87,7 +103,7 @@ export function useSupabaseFinance(initialState = {}) {
     initialState: [initialState],
     list: async () => {
       const finance = await restaurantRepository.finance.get();
-      return finance.length ? [finance[0]] : [];
+      return Array.isArray(finance) ? finance : [];
     },
     upsert: restaurantRepository.finance.update,
     remove: restaurantRepository.finance.remove,
