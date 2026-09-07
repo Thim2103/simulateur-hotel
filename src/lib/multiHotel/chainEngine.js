@@ -1,9 +1,11 @@
 // Orchestrates one simulated day across an entire hotel chain: run
-// runDailyCycle() for each hotel, consolidate finance and RM, apply
-// regional/global events, run multi-site staff management (see
-// lib/staffMulti/), update the chain's own progression, and return a
-// ChainReport. Every step is a small pure (or, for step 1, async) function
-// in this folder; this file only wires them together.
+// runDailyCycle() for each hotel -- which, per hotel, also runs the
+// restaurant's own cycle (see lib/restaurant/restaurantEngine.js) -- then
+// consolidate finance and RM, apply regional/global events, run multi-site
+// staff management (see lib/staffMulti/), update the chain's own
+// progression, and return a ChainReport. Every step is a small pure (or,
+// for step 1, async) function in this folder; this file only wires them
+// together.
 import { runDailyCycle } from "../dailyCycle/runDailyCycle";
 import { consolidateFinance } from "./chainFinance";
 import { consolidateRM } from "./chainRM";

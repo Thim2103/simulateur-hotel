@@ -122,6 +122,19 @@ test("carries the chain's progression state forward to the next cycle instead of
   expect(day2.report.progression.chainXP).toBeGreaterThan(day1.report.progression.chainXP);
 });
 
+test("carries each hotel's restaurantReport through the chain's per-hotel dailyReport (restaurantEngine runs per hotel via runDailyCycle)", async () => {
+  mockRunDailyCycle.mockResolvedValue(
+    fakeDailyReport({ restaurantReport: { demand: 70, finance: { menuRevenue: 500 }, staff: { headcount: 2 } } })
+  );
+  const hotels = [createHotel({ id: "a", city: "Paris" })];
+
+  const { report } = await runChainCycle({ hotels, referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+
+  expect(report.hotels[0].dailyReport.restaurantReport).toEqual(
+    expect.objectContaining({ demand: 70, finance: expect.objectContaining({ menuRevenue: 500 }) })
+  );
+});
+
 test("handles an empty chain without throwing", async () => {
   await expect(runChainCycle({ hotels: [] })).resolves.toEqual(
     expect.objectContaining({ report: expect.objectContaining({ hotels: [] }) })

@@ -10,7 +10,7 @@ import {
   restaurantEsg,
   restaurantExpansion,
   defaultRestaurantState,
-} from "./restaurant";
+} from "./legacyRestaurantSimulator";
 import {
   hotelStructure,
   hotelFinancials,
