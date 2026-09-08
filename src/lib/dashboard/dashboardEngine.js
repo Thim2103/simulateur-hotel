@@ -15,6 +15,7 @@ import { buildInsights } from "./dashboardInsights";
 import { QUICK_ACTION_CATALOG, applyQuickAction as applyQuickActionPure } from "./dashboardActions";
 import { normalizeViewMode } from "./dashboardViewMode";
 import { financeFromCareerState } from "../finance/financeEngine";
+import { staffFromCareerState } from "../staff/staffEngine";
 
 // KPI aggregation: occupation, avg price / ADR, revenue, satisfaction,
 // staff -- pulled from today's DailyReport (careerState.lastDayReport,
@@ -39,6 +40,11 @@ export function computeKpis(careerState) {
   // actually persists a finance cycle -- see its docstring).
   const finance = careerState?.hotel ? financeFromCareerState(careerState) : null;
 
+  // Moral/productivité/payroll -- lib/staff/staffEngine.js's own HR
+  // cycle, same "computed fresh, not persisted here" contract as Finance
+  // above (see hooks/useStaffEngine.js for the module that persists it).
+  const staffCycle = careerState?.hotel ? staffFromCareerState(careerState) : null;
+
   return {
     occupancyRate,
     averagePrice,
@@ -51,6 +57,9 @@ export function computeKpis(careerState) {
     reputation: safeNumber(dailyReport.progressionReport?.reputation, null),
     ebitda: finance ? finance.incomeStatement.ebitda : null,
     goppar: finance ? finance.ratios.goppar : null,
+    staffMorale: staffCycle ? staffCycle.morale : null,
+    staffOverload: staffCycle ? staffCycle.overload : null,
+    payrollTotal: staffCycle ? staffCycle.payroll.total : null,
     date: dailyReport.date,
   };
 }

@@ -1,106 +1,106 @@
 import { render, screen, fireEvent } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import StaffDashboard from "./StaffDashboard";
-import { useChainContext } from "../context/ChainContext";
-import { useStaff } from "../hooks/useStaff";
+import { useCareerContext } from "../context/CareerContext";
+import { useStaffEngine } from "../hooks/useStaffEngine";
 
-jest.mock("../context/ChainContext");
-jest.mock("../hooks/useStaff");
+jest.mock("../context/CareerContext");
+jest.mock("../hooks/useStaffEngine");
 
-function hotel(overrides = {}) {
-  return { id: "a", name: "Riviera Palace", city: "Nice", restaurantState: { staff: [] }, ...overrides };
-}
-
-function staffMember(overrides = {}) {
-  return { id: 1, name: "Ada", satisfaction: 70, ...overrides };
-}
-
-function sampleReport(overrides = {}) {
+function careerState(overrides = {}) {
   return {
-    staffGlobal: [staffMember()],
-    staffByHotel: { a: [staffMember()] },
-    moraleGlobal: 70,
-    moraleByHotel: { a: 70 },
-    transfers: [],
-    training: [],
-    promotions: [],
-    regionalEvents: [],
-    optimization: { recommendations: [] },
+    day: 3,
+    status: "active",
+    hotel: { hotelState: {}, restaurantState: {} },
+    missions: [{ id: "team-morale", title: "Équipe soudée", description: "Maintenir un bon moral d'équipe.", status: "accepted" }],
+    objectives: [{ id: "low-turnover", label: "Maîtriser le turnover", achieved: true }],
+    rewardsInbox: [],
     ...overrides,
   };
 }
 
-function baseStaffHook(overrides = {}) {
+function staffState(overrides = {}) {
   return {
-    staffState: { hotels: [] },
-    setHotels: jest.fn(),
-    staffReport: null,
-    transferStaff: jest.fn(),
-    trainStaff: jest.fn(),
-    optimizeStaff: jest.fn().mockResolvedValue(sampleReport()),
+    headcount: { hotel: 10, restaurant: 6, total: 16 },
+    morale: 72,
+    productivity: 78,
+    absenteeism: 8,
+    overload: 85,
+    housekeepingLoad: 90,
+    serviceLoad: 70,
+    turnover: { estimatedRate: 5, actualRateLastCycle: 0, departuresLast: 0 },
+    payroll: { hotel: 38000, restaurant: 9800, total: 47800 },
+    diagnostics: [{ type: "opportunity", severity: "low", message: "Équipe en bonne santé." }],
+    replayLog: { entries: [{ cycleIndex: 0, morale: 72, productivity: 78, absenteeism: 8 }] },
+    forecast: { scenarios: { realiste: { days: [{ day: 1, overload: 85 }] } } },
+    ...overrides,
+  };
+}
+
+function careerHook(overrides = {}) {
+  return {
+    careerState: null,
     isRunning: false,
     error: null,
+    startCareer: jest.fn().mockResolvedValue(careerState()),
     ...overrides,
   };
 }
 
-beforeEach(() => {
-  useChainContext.mockReturnValue({ chainState: { hotels: [] } });
+function staffHook(overrides = {}) {
+  return {
+    staffState: null,
+    isRunning: false,
+    error: null,
+    loadStaffState: jest.fn().mockResolvedValue(null),
+    applyStaffAction: jest.fn().mockResolvedValue(null),
+    ...overrides,
+  };
+}
+
+test("loads the staff state on mount", () => {
+  const loadStaffState = jest.fn().mockResolvedValue(null);
+  useCareerContext.mockReturnValue(careerHook());
+  useStaffEngine.mockReturnValue(staffHook({ loadStaffState }));
+  render(<StaffDashboard />, { wrapper: MemoryRouter });
+  expect(loadStaffState).toHaveBeenCalled();
 });
 
-test("shows an empty state when the chain has no hotels", () => {
-  useStaff.mockReturnValue(baseStaffHook());
-  render(<StaffDashboard />);
-
-  expect(screen.getByText(/aucun hôtel dans la chaîne/i)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /optimiser le personnel/i })).toBeDisabled();
+test("prompts to start a career when none exists yet", () => {
+  useCareerContext.mockReturnValue(careerHook());
+  useStaffEngine.mockReturnValue(staffHook());
+  render(<StaffDashboard />, { wrapper: MemoryRouter });
+  expect(screen.getByRole("button", { name: /démarrer ma carrière/i })).toBeInTheDocument();
 });
 
-test("prompts to run the first analysis once hotels exist but no report yet", () => {
-  useChainContext.mockReturnValue({ chainState: { hotels: [hotel()] } });
-  useStaff.mockReturnValue(baseStaffHook({ staffState: { hotels: [hotel()] } }));
-  render(<StaffDashboard />);
+test("shows the HR KPIs, diagnostics and career progression once loaded", () => {
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useStaffEngine.mockReturnValue(staffHook({ staffState: staffState() }));
+  render(<StaffDashboard />, { wrapper: MemoryRouter });
 
-  expect(screen.getByText(/cliquez sur « optimiser le personnel »/i)).toBeInTheDocument();
+  expect(screen.getByText("72/100")).toBeInTheDocument(); // moral
+  expect(screen.getByText("78/100")).toBeInTheDocument(); // productivity
+  expect(screen.getByText("8%")).toBeInTheDocument(); // absenteeism
+  expect(screen.getByText("Équipe en bonne santé.")).toBeInTheDocument();
+  expect(screen.getByText("Équipe soudée")).toBeInTheDocument();
+  expect(screen.getByText("Maîtriser le turnover")).toBeInTheDocument();
 });
 
-test("displays global/local morale, transfers, training, promotions, events and recommendations once a report is available", () => {
-  useChainContext.mockReturnValue({ chainState: { hotels: [hotel()] } });
-  useStaff.mockReturnValue(
-    baseStaffHook({
-      staffState: { hotels: [hotel()] },
-      staffReport: sampleReport({
-        transfers: [{ staffId: 1, staffName: "Ada", fromHotelId: "a", toHotelId: "b", reason: "Ratio déséquilibré" }],
-        training: [{ staffId: 1, staffName: "Ada", hotelId: "a", skillBefore: 40, skillAfter: 45 }],
-        promotions: [{ staffId: 1, staffName: "Ada", hotelId: "a", fromRole: "Serveur", toRole: "Serveur senior" }],
-        regionalEvents: [{ id: "r1", city: "Nice", message: "Une grève régionale touche le personnel." }],
-        optimization: { recommendations: [{ id: "rec1", message: "Renforcer l'effectif à Nice", priority: "high" }] },
-      }),
-    })
-  );
-  render(<StaffDashboard />);
+test("clicking an HR action's 'Appliquer' calls applyStaffAction with its id", () => {
+  const applyStaffAction = jest.fn().mockResolvedValue(null);
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useStaffEngine.mockReturnValue(staffHook({ staffState: staffState(), applyStaffAction }));
+  render(<StaffDashboard />, { wrapper: MemoryRouter });
 
-  expect(screen.getAllByText("70/100").length).toBeGreaterThan(0);
-  expect(screen.getByText(/ratio déséquilibré/i)).toBeInTheDocument();
-  expect(screen.getByText(/compétence 40 → 45/i)).toBeInTheDocument();
-  expect(screen.getByText(/serveur → serveur senior/i)).toBeInTheDocument();
-  expect(screen.getByText(/grève régionale/i)).toBeInTheDocument();
-  expect(screen.getByText(/renforcer l'effectif à nice/i)).toBeInTheDocument();
+  fireEvent.click(screen.getAllByRole("button", { name: /appliquer/i })[0]);
+  expect(applyStaffAction).toHaveBeenCalledWith("recruter");
 });
 
-test("clicking the optimize button calls optimizeStaff", () => {
-  const optimizeStaff = jest.fn().mockResolvedValue(sampleReport());
-  useChainContext.mockReturnValue({ chainState: { hotels: [hotel()] } });
-  useStaff.mockReturnValue(baseStaffHook({ staffState: { hotels: [hotel()] }, optimizeStaff }));
-  render(<StaffDashboard />);
+test("links to the forecast and full report pages", () => {
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useStaffEngine.mockReturnValue(staffHook({ staffState: staffState() }));
+  render(<StaffDashboard />, { wrapper: MemoryRouter });
 
-  fireEvent.click(screen.getByRole("button", { name: /optimiser le personnel/i }));
-  expect(optimizeStaff).toHaveBeenCalled();
-});
-
-test("shows an error banner when the staff engine fails", () => {
-  useChainContext.mockReturnValue({ chainState: { hotels: [hotel()] } });
-  useStaff.mockReturnValue(baseStaffHook({ staffState: { hotels: [hotel()] }, error: new Error("boom") }));
-  render(<StaffDashboard />);
-
-  expect(screen.getByText(/impossible de calculer le rapport rh/i)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /prévisions/i })).toHaveAttribute("href", "/staff/forecast");
+  expect(screen.getByRole("link", { name: /rapport complet/i })).toHaveAttribute("href", "/staff/report");
 });

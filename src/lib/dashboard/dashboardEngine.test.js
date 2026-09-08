@@ -53,6 +53,17 @@ test("computeKpis includes EBITDA/GOPPAR from the Finance module", async () => {
   expect(kpis.goppar).toBeDefined();
 });
 
+// Refonte RH's Dashboard integration: computeKpis() also folds in
+// lib/staff/staffEngine.js's own HR cycle.
+test("computeKpis includes moral/surcharge/payroll from the Staff module", async () => {
+  const state = await playedCareerState();
+  const kpis = computeKpis(state);
+
+  expect(kpis.staffMorale).toBeGreaterThanOrEqual(0);
+  expect(kpis.staffOverload).toBeGreaterThanOrEqual(0);
+  expect(kpis.payrollTotal).toBeGreaterThan(0);
+});
+
 test("buildReplaySummary returns null before any cycle exists", () => {
   expect(buildReplaySummary(baseCareerState())).toBeNull();
 });
