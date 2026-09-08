@@ -39,3 +39,19 @@ test("resetGuestSession clears the session", () => {
   act(() => result.current.resetGuestSession());
   expect(result.current.isGuest()).toBe(false);
 });
+
+// Part C of the navigation fixes: Guest Mode is a session type, not a
+// separate/restricted game mode. useGuest.js is deliberately a thin
+// session manager -- it exposes no per-page or per-feature allowlist, so
+// there is nothing here that could gate which pages a guest can reach;
+// full navigation access is enforced by simply not existing as a
+// concept, not by an explicit check this test could defeat. Real
+// page-by-page reachability is covered by the navigationMenuFlow/
+// navigationTopBarFlow integration tests.
+test("exposes only session management -- no page or feature restriction API", () => {
+  const { result } = renderHook(() => useGuest());
+  const exposedKeys = Object.keys(result.current).sort();
+  expect(exposedKeys).toEqual(
+    ["createGuestSession", "guestSession", "isGuest", "loadGuestSession", "loadGuestState", "resetGuestSession", "saveGuestState"].sort()
+  );
+});

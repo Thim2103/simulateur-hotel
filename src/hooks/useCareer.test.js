@@ -36,8 +36,12 @@ beforeEach(() => {
   listReservations.mockResolvedValue([{ id: 1, room_id: 1, client_name: "Ada", status: "confirmée", arrival: "2026-09-10", departure: "2026-09-12" }]);
   // Every existing test below exercises the real-Supabase-session path
   // (unchanged behaviour); see the "guest mode" describe block for the
-  // localStorage-backed path.
-  useSupabaseSession.mockReturnValue({ session: { user: { id: "u1" }, mode: "supabase" }, loading: false, isGuest: false });
+  // localStorage-backed path. `reload` stands in for useSupabaseSession's
+  // resolveSession() -- every action now awaits it instead of trusting a
+  // closed-over `isGuest` (see useCareer.js's docstring on the mount-time
+  // race that guards against).
+  const supabaseSession = { user: { id: "u1" }, mode: "supabase" };
+  useSupabaseSession.mockReturnValue({ session: supabaseSession, loading: false, isGuest: false, reload: jest.fn().mockResolvedValue(supabaseSession) });
 });
 
 afterEach(() => {
@@ -158,7 +162,8 @@ test("surfaces an error instead of silently failing", async () => {
 
 describe("guest mode", () => {
   beforeEach(() => {
-    useSupabaseSession.mockReturnValue({ session: { user: { id: "guest-1" }, mode: "guest" }, loading: false, isGuest: true });
+    const guestSession = { user: { id: "guest-1" }, mode: "guest" };
+    useSupabaseSession.mockReturnValue({ session: guestSession, loading: false, isGuest: true, reload: jest.fn().mockResolvedValue(guestSession) });
   });
 
   test("startCareer seeds a ready-to-play hotel locally, bypassing every Supabase repository", async () => {
@@ -207,5 +212,35 @@ describe("guest mode", () => {
     expect(careerRepository.saveCareerState).not.toHaveBeenCalled();
     expect(result.current.careerState.day).toBe(1);
     expect(outcome.analysis.kpis).toBeDefined();
+  });
+
+  // Regression test: on a fresh mount, useSupabaseSession() hasn't
+  // resolved yet (loading: true, session: null) -- the guest fallback
+  // only becomes available a tick later. Calling loadCareerState()
+  // immediately (as CareerDashboard.jsx's mount effect does) must not
+  // read that still-unresolved state and wrongly hit
+  // careerRepository.loadCareerState() (which would throw "Session
+  // Supabase non authentifiee").
+  test("an action called before the session finishes resolving still waits for the guest fallback instead of hitting Supabase", async () => {
+    let resolveSessionPromise;
+    const pendingReload = jest.fn(() => new Promise((resolve) => { resolveSessionPromise = resolve; }));
+    useSupabaseSession.mockReturnValue({ session: null, loading: true, isGuest: false, reload: pendingReload });
+
+    const { result } = renderHook(() => useCareer());
+    let loadPromise;
+    act(() => {
+      loadPromise = result.current.loadCareerState();
+    });
+
+    // The session resolves to guest only after loadCareerState() has
+    // already started -- exactly the race that used to surface a
+    // Supabase error.
+    resolveSessionPromise({ user: { id: "guest-1" }, mode: "guest" });
+    await act(async () => {
+      await loadPromise;
+    });
+
+    expect(careerRepository.loadCareerState).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
   });
 });

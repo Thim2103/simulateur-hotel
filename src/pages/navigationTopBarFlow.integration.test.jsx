@@ -28,13 +28,15 @@ jest.mock("../lib/calculs/rm", () => ({
 
 beforeEach(() => {
   window.localStorage.clear();
-  window.history.pushState({}, "", "/");
+  // "/" now always redirects to the Menu Principal (/menu, see App.js) --
+  // the in-game Dashboard this test starts from lives at /dashboard.
+  window.history.pushState({}, "", "/dashboard");
 });
 
 test("Dashboard -> Hôtel -> Restaurant -> RM -> Finance, all through the top-bar", async () => {
   render(<App />);
 
-  // Dashboard (/): the top-bar's own "Dashboard" entry is present.
+  // Dashboard (/dashboard): the top-bar's own "Dashboard" entry is present.
   await waitFor(() => expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument());
 
   // Hôtel -> Chambres (/rooms).

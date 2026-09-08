@@ -10,12 +10,21 @@ import { useGuest } from "../hooks/useGuest";
 // checks useSupabaseSession()'s `isGuest` and reads/writes localStorage
 // instead of Supabase from that point on.
 export default function GuestMode() {
-  const { guestSession, createGuestSession } = useGuest();
+  const { guestSession, createGuestSession, resetGuestSession } = useGuest();
   const navigate = useNavigate();
 
   const handlePlayAsGuest = () => {
     createGuestSession();
-    navigate("/career");
+    navigate("/select-mode");
+  };
+
+  // "Se déconnecter" du mode invité : retour au Menu Principal, session
+  // locale réinitialisée (see lib/guest/guestSession.js's
+  // resetGuestSession()) -- la prochaine visite de /play ou /guest
+  // repartira d'une session invité neuve, pas de l'ancienne.
+  const handleQuitGuestMode = () => {
+    resetGuestSession();
+    navigate("/menu");
   };
 
   return (
@@ -46,7 +55,14 @@ export default function GuestMode() {
               {guestSession ? "Une session invité existe déjà sur ce navigateur." : "Aucune session invité pour le moment."}
             </p>
           </div>
-          <Button onClick={handlePlayAsGuest}>Jouer en mode invité</Button>
+          <div className="flex gap-2">
+            {guestSession && (
+              <Button variant="outline" onClick={handleQuitGuestMode}>
+                Quitter le mode invité
+              </Button>
+            )}
+            <Button onClick={handlePlayAsGuest}>Jouer en mode invité</Button>
+          </div>
         </div>
       </Card>
     </div>

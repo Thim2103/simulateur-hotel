@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./layout/Layout";
 import { ChainProvider } from "./context/ChainContext";
 import { AcademyProvider } from "./context/AcademyContext";
@@ -98,7 +98,13 @@ function App() {
                   <Route path="/analytics/compare/:runIdA/:runIdB" element={<AnalyticsCompare />} />
                   <Route path="/analytics/:runId/report" element={<AnalyticsReport />} />
                   <Route path="/analytics/:runId" element={<AnalyticsRun />} />
-                  <Route path="/" element={<Dashboard />} />
+                  {/* The app's true landing page is the Menu Principal (/menu)
+                      -- "/" only ever redirects there. The in-game "Mon
+                      Hôtel" home (formerly at "/") now lives at
+                      /dashboard, and the top-bar's own "Dashboard" entry
+                      points there (see TopBar.jsx). */}
+                  <Route path="/" element={<Navigate to="/menu" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/reservations" element={<Reservations />} />
                   <Route path="/rooms" element={<Rooms />} />
                   <Route path="/clients" element={<Clients />} />

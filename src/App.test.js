@@ -39,11 +39,26 @@ jest.mock('./lib/calculs/rm', () => ({
   })),
 }));
 
+beforeEach(() => {
+  window.history.pushState({}, '', '/');
+});
+
+// "/" is the app's true landing page: it always redirects to the Menu
+// Principal (see App.js's <Route path="/" element={<Navigate to="/menu"
+// replace />} />)) -- it never renders the in-game Dashboard directly
+// anymore (that lives at /dashboard).
+test('renders MainMenu (not the in-game Dashboard) at /', () => {
+  render(<App />);
+  expect(screen.getByRole('heading', { name: 'Hospitality Lab' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Jouer' })).toHaveAttribute('href', '/play');
+});
+
 // The vertical Sidebar.jsx (with its "Restaurant Simulator" link) was
 // replaced by the horizontal TopBar.jsx (see layout/Layout.jsx and
 // components/navigation/TopBar.jsx) -- the Restaurant module is now
 // reached through the top-bar's "Restaurant" dropdown instead.
 test('renders the Restaurant dropdown in the top-bar navigation', () => {
+  window.history.pushState({}, '', '/dashboard');
   render(<App />);
   expect(screen.getByRole('button', { name: /restaurant/i })).toBeInTheDocument();
 });

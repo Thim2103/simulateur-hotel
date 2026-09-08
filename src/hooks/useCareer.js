@@ -39,8 +39,20 @@ const guestCareerRepository = createGuestRepository("career", { defaultState: nu
 // mode needed no changes there. A real Supabase session keeps the
 // existing behaviour unchanged; a load/save failure there still surfaces
 // as `error` rather than silently reverting to demo data.
+//
+// Every action below starts by `await`ing resolveSession() instead of
+// reading the `isGuest` closed over at render time: useSupabaseSession()
+// resolves asynchronously (it tries real Supabase auth first, then falls
+// back to a guest session), and a mount-time effect calling e.g.
+// loadCareerState() can easily run before that first resolution
+// completes -- reading a still-`undefined`/stale session would wrongly
+// take the Supabase branch and surface a "non authentifiee" error even
+// though this is (or is about to become) a guest session.
+// resolveSession() itself is cheap to call repeatedly: ensureAuthSession()
+// caches its own promise (see lib/supabase.js), so this never re-triggers
+// a real network call once the first resolution has happened.
 export function useCareer() {
-  const { session } = useSupabaseSession();
+  const { session, reload: resolveSession } = useSupabaseSession();
   const isGuest = session?.mode === "guest";
 
   const [careerState, setCareerState] = useState(null);
@@ -62,8 +74,8 @@ export function useCareer() {
   }, []);
 
   const persistCareerState = useCallback(
-    (state) => (isGuest ? guestCareerRepository.save(state) : careerRepository.saveCareerState(state)),
-    [isGuest]
+    (state, guestNow) => (guestNow ? guestCareerRepository.save(state) : careerRepository.saveCareerState(state)),
+    []
   );
 
   // Starts a brand-new career against the player's real (persisted) hotel
@@ -72,82 +84,89 @@ export function useCareer() {
   const startCareer = useCallback(
     (playerId) =>
       runWithErrorHandling(async () => {
-        const bundle = isGuest
+        const guestNow = (await resolveSession())?.mode === "guest";
+        const bundle = guestNow
           ? createGuestHotelBundle()
           : await Promise.all([getHotelState(), getRestaurantState(), listRooms(), listReservations()]).then(
               ([hotelState, restaurantState, rooms, reservations]) => ({ hotelState, restaurantState, rooms, reservations })
             );
         const state = startCareerEngine({ playerId, ...bundle });
         setCareerState(state);
-        await persistCareerState(state);
+        await persistCareerState(state, guestNow);
         return state;
       }),
-    [isGuest, persistCareerState, runWithErrorHandling]
+    [persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const loadCareerState = useCallback(
     () =>
       runWithErrorHandling(async () => {
-        const state = isGuest ? await guestCareerRepository.get() : await careerRepository.loadCareerState();
+        const guestNow = (await resolveSession())?.mode === "guest";
+        const state = guestNow ? await guestCareerRepository.get() : await careerRepository.loadCareerState();
         setCareerState(state);
         return state;
       }),
-    [isGuest, runWithErrorHandling]
+    [resolveSession, runWithErrorHandling]
   );
 
   const acceptMission = useCallback(
     (missionId) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const nextState = acceptMissionEngine(careerState, missionId);
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const completeMission = useCallback(
     (missionId) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const { state: nextState } = completeMissionEngine(careerState, missionId);
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const triggerStoryEvent = useCallback(
     (eventId, choiceId) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const { state: nextState, consequence } = triggerStoryEventEngine(careerState, eventId, choiceId);
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return consequence;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const updateSkill = useCallback(
     (skillId, delta) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const nextState = updateSkillPoints(careerState, skillId, delta);
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const claimReward = useCallback(
     (rewardId) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const { state: nextState } = claimRewardEngine(careerState, rewardId);
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   // Applies a pure transform to the player's own hotel bundle (the
@@ -160,13 +179,14 @@ export function useCareer() {
   const applyHotelAdjustment = useCallback(
     (updater) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const nextHotel = updater(careerState.hotel);
         const nextState = { ...careerState, hotel: nextHotel };
         setCareerState(nextState);
-        await persistCareerState(nextState);
+        await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   // Plays one sandboxed day, then analyzes it (see lib/analytics/
@@ -176,6 +196,7 @@ export function useCareer() {
   const nextDay = useCallback(
     (decisions = {}) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const { state: nextState, report } = await runCareerDay({ state: careerState, decisions });
 
         const replayRun = buildReplayRunFromCareerRun({
@@ -189,10 +210,10 @@ export function useCareer() {
 
         const stateWithAnalysis = { ...nextState, lastAnalysis };
         setCareerState(stateWithAnalysis);
-        await persistCareerState(stateWithAnalysis);
+        await persistCareerState(stateWithAnalysis, guestNow);
         return { state: stateWithAnalysis, report, analysis: lastAnalysis };
       }),
-    [careerState, persistCareerState, runWithErrorHandling]
+    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   return {
