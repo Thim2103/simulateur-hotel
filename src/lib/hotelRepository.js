@@ -4,6 +4,8 @@ import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./su
 import { safeLoad } from "./safeLoad";
 import { safeObject } from "./safe";
 import { defaultHotelState } from "./hotel";
+import { resolveSession } from "./sessionResolver";
+import { createGuestHotelBundle, createGuestRepository } from "./guest";
 
 // Pre-auth seed row: only referenced so the first signed-in user can claim it
 // (see claimLegacyHotel()). Every other hotel gets a fresh id from the DB.
@@ -86,7 +88,25 @@ async function insertHotel(state, userId) {
   return Array.isArray(data) ? data[0] : data;
 }
 
+// Guest Mode branch: a ready-to-play hotelState (see
+// lib/guest/guestAdapter.js's createGuestHotelBundle() -- the same seed
+// Career/Restaurant/PMS use, so a guest sees one consistent hotel
+// everywhere) persisted to its own localStorage document instead of
+// Supabase. Same namespace convention as useCareer.js's
+// guestCareerRepository/useRestaurant.js's guestRestaurantRepository.
+const guestHotelRepository = createGuestRepository("hotel-simulator", { defaultState: null });
+
+async function loadGuestHotelState() {
+  const existing = await guestHotelRepository.get();
+  if (existing) return existing;
+  const seeded = createGuestHotelBundle().hotelState;
+  await guestHotelRepository.save(seeded);
+  return seeded;
+}
+
 export async function getHotelState() {
+  if ((await resolveSession()).mode === "guest") return loadGuestHotelState();
+
   const userId = await ensureAuthSession();
   if (!userId) {
     // No authenticated session yet (Supabase not configured, or anonymous
@@ -117,6 +137,11 @@ export async function getHotelState() {
 }
 
 export async function saveHotelState(state) {
+  if ((await resolveSession()).mode === "guest") {
+    await guestHotelRepository.save(state);
+    return;
+  }
+
   writeHotelLocalStorage(state);
   const userId = await requireUserId();
   const client = assertSupabaseConfigured();

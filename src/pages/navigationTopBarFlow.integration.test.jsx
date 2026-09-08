@@ -45,17 +45,18 @@ test("Dashboard -> Hôtel -> Restaurant -> RM -> Finance, all through the top-ba
   await waitFor(() => expect(screen.getByRole("heading", { name: "Chambres" })).toBeInTheDocument());
 
   // Restaurant -> Menu (/restaurant/menu). RestaurantSimulator.jsx's own
-  // top-level gate reads through the legacy, pre-Guest-Mode
-  // useRestaurantSimulator()/useSupabaseRestaurant() hook (not the
-  // guest-aware useRestaurant.js RestaurantDashboard.jsx/
-  // RestaurantStructure.jsx use once past that gate -- a pre-existing
-  // inconsistency, not introduced by the top-bar work here), so with no
-  // real Supabase session it shows its own connection-error state
-  // instead of the establishment view. That still proves the route
-  // itself changed correctly, which is what this test is about.
+  // top-level gate goes through useRestaurantSimulator()/
+  // useSupabaseRestaurant() -> lib/restaurantRepository.js, which is now
+  // guest-aware (see restaurantRepository.js's loadGuestRestaurantState())
+  // -- with no real Supabase session configured, resolveSession() falls
+  // back to a guest session and this loads cleanly instead of erroring.
+  // (lib/normalizers.js's normalizeProgression() strips `ready`, so the
+  // page's own gate always shows the Structure form first regardless of
+  // Supabase vs guest -- a pre-existing, unrelated quirk; what this test
+  // cares about is that it renders at all, with no Supabase error.)
   fireEvent.click(screen.getByRole("button", { name: "Restaurant" }));
   fireEvent.click(screen.getByRole("menuitem", { name: "Menu" }));
-  await waitFor(() => expect(screen.getByText(/connexion aux données restaurant indisponible/i)).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("heading", { name: /pilotez votre établissement/i })).toBeInTheDocument());
 
   // RM -> Pricing (/rm-dashboard#rm-pricing).
   fireEvent.click(screen.getByRole("button", { name: "RM" }));

@@ -7,6 +7,16 @@ import {
   toReservationPayload,
   toRoomPayload,
 } from "./pmsModels";
+import { resolveSession } from "./sessionResolver";
+// Imported from the specific submodules, not the "./guest" barrel: the
+// barrel re-exports guestAdapter.js, which imports lib/hotel.js, which
+// (via lib/calculs/rm.js) imports this very file -- see
+// lib/guest/guestRepository.js's header comment for the full cycle that
+// would create. createGuestRepository/seedRooms/seedReservations live in
+// files with no such dependency.
+import { createGuestRepository } from "./guest/guestRepository";
+import { seedReservations, seedRooms } from "./guest/guestPmsSeed";
+import { safeArray } from "./safe";
 
 // One-time-per-table set of tables this browser session has already tried to
 // claim legacy (pre-auth, user_id IS NULL) rows for, so repeated loads don't
@@ -60,40 +70,122 @@ async function remove(table, id) {
   if (error) throw error;
 }
 
+// --- Guest Mode branch --------------------------------------------------
+// One localStorage document holding all three PMS collections (rooms,
+// reservations, clients), seeded on first access from the same bundle
+// Career/Restaurant use (see lib/guest/guestAdapter.js's
+// createGuestHotelBundle()) so a brand-new guest sees the same hotel
+// everywhere in the app, not a second, empty one. Mirrors Supabase's own
+// row shape/semantics closely enough that pmsModels.js's normalize*/to*
+// Payload helpers work unchanged on either side.
+const guestPmsRepository = createGuestRepository("pms", { defaultState: null });
+
+async function loadGuestPmsState() {
+  const existing = await guestPmsRepository.get();
+  if (existing) return existing;
+  const seeded = { rooms: seedRooms(), reservations: seedReservations(new Date()), clients: [] };
+  await guestPmsRepository.save(seeded);
+  return seeded;
+}
+
+function nextGuestId(rows) {
+  const numericIds = safeArray(rows)
+    .map((row) => Number(row.id))
+    .filter((id) => Number.isFinite(id));
+  return (numericIds.length ? Math.max(...numericIds) : 0) + 1;
+}
+
+async function guestList(collection, order) {
+  const state = await loadGuestPmsState();
+  const rows = safeArray(state[collection]);
+  if (!order) return rows;
+  return [...rows].sort((a, b) => String(a[order] ?? "").localeCompare(String(b[order] ?? "")));
+}
+
+async function guestSave(collection, payload) {
+  const state = await loadGuestPmsState();
+  const rows = safeArray(state[collection]);
+  const now = new Date().toISOString();
+
+  let saved;
+  let nextRows;
+  if (payload.id) {
+    saved = { ...rows.find((row) => String(row.id) === String(payload.id)), ...payload, updated_at: now };
+    nextRows = rows.map((row) => (String(row.id) === String(payload.id) ? saved : row));
+  } else {
+    saved = { ...payload, id: nextGuestId(rows), created_at: now, updated_at: now };
+    nextRows = [...rows, saved];
+  }
+
+  await guestPmsRepository.save({ ...state, [collection]: nextRows });
+  return saved;
+}
+
+async function guestRemove(collection, id) {
+  const state = await loadGuestPmsState();
+  const rows = safeArray(state[collection]).filter((row) => String(row.id) !== String(id));
+  await guestPmsRepository.save({ ...state, [collection]: rows });
+}
+
+// --- Public API -----------------------------------------------------------
+// Every export below resolves the session itself (resolveSession(), see
+// hooks/useCareer.js's docstring for why this matters even for a call
+// made right after another one in the same handler) and branches to the
+// guest collection above instead of ever reaching Supabase for a guest
+// session.
+
 export async function listRooms() {
-  return (await list("rooms", "number")).map(normalizeRoom);
+  const guest = (await resolveSession()).mode === "guest";
+  const rows = guest ? await guestList("rooms", "number") : await list("rooms", "number");
+  return rows.map(normalizeRoom);
 }
 
 export async function saveRoom(room) {
-  return normalizeRoom(await save("rooms", toRoomPayload(room)));
+  const guest = (await resolveSession()).mode === "guest";
+  const payload = toRoomPayload(room);
+  const saved = guest ? await guestSave("rooms", payload) : await save("rooms", payload);
+  return normalizeRoom(saved);
 }
 
 export async function deleteRoom(id) {
-  return remove("rooms", id);
+  const guest = (await resolveSession()).mode === "guest";
+  return guest ? guestRemove("rooms", id) : remove("rooms", id);
 }
 
 export async function listReservations() {
-  return (await list("reservations", "arrival")).map(normalizeReservation);
+  const guest = (await resolveSession()).mode === "guest";
+  const rows = guest ? await guestList("reservations", "arrival") : await list("reservations", "arrival");
+  return rows.map(normalizeReservation);
 }
 
 export async function saveReservation(reservation) {
-  return normalizeReservation(await save("reservations", toReservationPayload(reservation)));
+  const guest = (await resolveSession()).mode === "guest";
+  const payload = toReservationPayload(reservation);
+  const saved = guest ? await guestSave("reservations", payload) : await save("reservations", payload);
+  return normalizeReservation(saved);
 }
 
 export async function deleteReservation(id) {
-  return remove("reservations", id);
+  const guest = (await resolveSession()).mode === "guest";
+  return guest ? guestRemove("reservations", id) : remove("reservations", id);
 }
 
 export async function listClients() {
-  return (await list("clients", "name")).map(normalizeClient);
+  const guest = (await resolveSession()).mode === "guest";
+  const rows = guest ? await guestList("clients", "name") : await list("clients", "name");
+  return rows.map(normalizeClient);
 }
 
 export async function saveClient(client) {
-  return normalizeClient(await save("clients", toClientPayload(client)));
+  const guest = (await resolveSession()).mode === "guest";
+  const payload = toClientPayload(client);
+  const saved = guest ? await guestSave("clients", payload) : await save("clients", payload);
+  return normalizeClient(saved);
 }
 
 export async function deleteClient(id) {
-  return remove("clients", id);
+  const guest = (await resolveSession()).mode === "guest";
+  return guest ? guestRemove("clients", id) : remove("clients", id);
 }
 
 // Persists a day's worth of PMS changes (see lib/dailyCycle/saveDailyState.js

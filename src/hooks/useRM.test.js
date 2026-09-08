@@ -1,6 +1,14 @@
 import { act, renderHook } from "@testing-library/react";
 import { useRM } from "./useRM";
 
+// useRM.js itself has no Supabase-vs-guest branch to test: it only ever
+// calls listRooms()/listReservations() from lib/pmsRepository.js (mocked
+// away below), which is where that branching now lives (see
+// pmsRepository.test.js's "guest mode" describe block for that unit
+// coverage, and navigationTopBarGuestFlow.integration.test.jsx's RM step
+// for the real, unmocked end-to-end proof that /rm-dashboard works as a
+// guest with zero Supabase errors).
+
 const mockRunRMEngine = jest.fn();
 const mockListRooms = jest.fn();
 const mockListReservations = jest.fn();

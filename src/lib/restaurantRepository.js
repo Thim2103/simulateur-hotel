@@ -1,6 +1,27 @@
 import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
 import { safeLoad } from "./safeLoad";
 import { safeArray, safeNumber, safeObject } from "./safe";
+import { resolveSession } from "./sessionResolver";
+import { createGuestHotelBundle, createGuestRepository } from "./guest";
+
+// Guest Mode branch: the same localStorage document useRestaurant.js's own
+// guestRestaurantRepository already reads/writes (namespace "restaurant"),
+// so a guest sees one consistent restaurant everywhere -- whether they
+// reach it through the new Restaurant module (RestaurantStructure.jsx/
+// RestaurantDashboard.jsx, via useRestaurant.js's own bypass) or through
+// the legacy simulator's other tabs (RestaurantMenu.jsx, Finance, HR,
+// Operations, Marketing, ESG, Expansion -- via useRestaurantSimulator.js
+// -> useSupabaseRestaurant.js -> the getRestaurantState()/
+// saveRestaurantState() below).
+const guestRestaurantRepository = createGuestRepository("restaurant", { defaultState: null });
+
+async function loadGuestRestaurantState() {
+  const existing = await guestRestaurantRepository.get();
+  if (existing) return existing;
+  const seeded = createGuestHotelBundle().restaurantState;
+  await guestRestaurantRepository.save(seeded);
+  return seeded;
+}
 
 // Pre-auth seed row: only referenced so the first signed-in user can claim it
 // (see resolveRestaurantId()). Every other restaurant gets a fresh id from
@@ -276,6 +297,8 @@ async function claimRestaurantChildren(restaurantId, userId) {
 }
 
 export async function getRestaurantState() {
+  if ((await resolveSession()).mode === "guest") return loadGuestRestaurantState();
+
   const userId = await requireUserId();
   const restaurantId = await resolveRestaurantId(userId);
 
@@ -308,6 +331,11 @@ export async function getRestaurantState() {
 }
 
 export async function saveRestaurantState(state) {
+  if ((await resolveSession()).mode === "guest") {
+    await guestRestaurantRepository.save(state);
+    return;
+  }
+
   const client = assertSupabaseConfigured();
   const userId = await requireUserId();
   const restaurantId = await resolveRestaurantId(userId);

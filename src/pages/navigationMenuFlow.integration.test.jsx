@@ -56,7 +56,11 @@ test("Menu -> Jouer -> Mode invité -> Sélection du mode -> Carrière", async (
   fireEvent.click(screen.getByRole("link", { name: /^carrière/i }));
 
   // CareerDashboard (/career), now wrapped by the top-bar (in-game route)
-  // and running in Guest Mode, per the session just created.
+  // and running in Guest Mode, per the session just created. Its own
+  // loadCareerState() now also awaits resolveSession() (see useCareer.js's
+  // docstring), so this needs its own wait rather than assuming it's
+  // already settled by the time the top-bar (unrelated to Career's own
+  // loading state) has rendered.
   await waitFor(() => expect(screen.getByRole("link", { name: "Dashboard" })).toBeInTheDocument());
-  expect(screen.getByRole("button", { name: /démarrer ma carrière/i })).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByRole("button", { name: /démarrer ma carrière/i })).toBeInTheDocument());
 });
