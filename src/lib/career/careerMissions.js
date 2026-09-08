@@ -80,6 +80,24 @@ export const MISSION_CATALOG = [
     auto: true,
     rewardId: "cash-1000",
   },
+  // Housekeeping mission -- see pages/HousekeepingDashboard.jsx's
+  // "Progression Housekeeping" section. Reuses
+  // restaurantReport.customerSatisfaction (0-5), the same real KPI
+  // lib/housekeeping/housekeepingEngine.js's own quality score already
+  // reads as "rmSatisfaction" (see the Refonte Housekeeping request's
+  // section 5: "RM: satisfaction -> qualité HK") -- a genuinely
+  // housekeeping-relevant, existing DailyReport figure rather than a
+  // new one invented just for this mission.
+  {
+    id: "spotless-rooms",
+    title: "Chambres impeccables",
+    description: "Atteindre 4,5/5 de satisfaction client grâce à un housekeeping irréprochable.",
+    kpi: "restaurantReport.customerSatisfaction",
+    comparator: "gte",
+    target: 4.5,
+    auto: true,
+    rewardId: "skill-point-management",
+  },
 ];
 
 export function createMissionInstance(definition) {

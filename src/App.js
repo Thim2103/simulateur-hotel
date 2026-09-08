@@ -51,7 +51,9 @@ import Clients from "./pages/Clients";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import FinanceReport from "./pages/FinanceReport";
 import FinanceForecast from "./pages/FinanceForecast";
-import Housekeeping from "./pages/Housekeeping";
+import HousekeepingDashboard from "./pages/HousekeepingDashboard";
+import HousekeepingForecast from "./pages/HousekeepingForecast";
+import HousekeepingReport from "./pages/HousekeepingReport";
 import PMS from "./pages/PMS";
 import MarketingDashboard from "./pages/MarketingDashboard";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
@@ -126,7 +128,9 @@ function App() {
                   <Route path="/finance" element={<FinanceDashboard />} />
                   <Route path="/finance/report" element={<FinanceReport />} />
                   <Route path="/finance/forecast" element={<FinanceForecast />} />
-                  <Route path="/housekeeping" element={<Housekeeping />} />
+                  <Route path="/housekeeping" element={<HousekeepingDashboard />} />
+                  <Route path="/housekeeping/forecast" element={<HousekeepingForecast />} />
+                  <Route path="/housekeeping/report" element={<HousekeepingReport />} />
                   <Route path="/pms" element={<PMS />} />
                   <Route path="/marketing" element={<MarketingDashboard />} />
                   <Route path="/marketing/campaigns" element={<MarketingCampaigns />} />
