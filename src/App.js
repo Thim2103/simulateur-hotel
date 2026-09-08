@@ -31,6 +31,7 @@ import CareerStory from "./pages/CareerStory";
 import CareerSkills from "./pages/CareerSkills";
 import CareerRewards from "./pages/CareerRewards";
 import CareerNextDay from "./pages/CareerNextDay";
+import GuestMode from "./pages/GuestMode";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -52,6 +53,7 @@ function App() {
             <CareerProvider>
               <Layout>
                 <Routes>
+                  <Route path="/guest" element={<GuestMode />} />
                   <Route path="/career" element={<CareerDashboard />} />
                   <Route path="/career/missions" element={<CareerMissions />} />
                   <Route path="/career/story" element={<CareerStory />} />

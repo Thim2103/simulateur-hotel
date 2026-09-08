@@ -6,16 +6,30 @@ import {
   runRestaurantCycle as runRestaurantCycleEngine,
   validateRestaurantStructure as validateStructure,
 } from "../lib/restaurant";
+import { useSupabaseSession } from "./useSupabaseSession";
+import { createGuestHotelBundle, createGuestRepository } from "../lib/guest";
 
-// Drives the restaurant module end to end: loads the real Supabase state
-// (no offline/mock fallback -- a load failure surfaces as `error`, it does
-// not silently swap in fake data), lets the "Structure de l'établissement"
-// form validate and submit itself, and runs the restaurant engine
-// (lib/restaurant/restaurantEngine.js) for a same-page preview cycle.
-// The authoritative daily cycle for a persisted hotel still runs through
-// runDailyCycle()/useDailyCycle -- this hook's runRestaurantCycle() is for
-// dashboards that want to preview the engine against the current state.
+// One localStorage slot for the whole restaurant state -- stateless
+// factory, safe to build once at module scope (see lib/guest/guestAdapter.js).
+const guestRestaurantRepository = createGuestRepository("restaurant", { defaultState: null });
+
+// Drives the restaurant module end to end. In guest mode (see
+// hooks/useSupabaseSession.js -- no Supabase session, no anonymous auth
+// available) this bypasses restaurantRepository.js entirely and reads/
+// writes lib/guest/'s localStorage-backed state instead, seeded with a
+// ready-to-play establishment on first load; a real Supabase session
+// keeps the existing behaviour unchanged (no offline/mock fallback -- a
+// load failure surfaces as `error`). Lets the "Structure de
+// l'établissement" form validate and submit itself, and runs the
+// restaurant engine (lib/restaurant/restaurantEngine.js) for a same-page
+// preview cycle. The authoritative daily cycle for a persisted hotel
+// still runs through runDailyCycle()/useDailyCycle -- this hook's
+// runRestaurantCycle() is for dashboards that want to preview the engine
+// against the current state.
 export function useRestaurant() {
+  const { session } = useSupabaseSession();
+  const isGuest = session?.mode === "guest";
+
   const [restaurantState, setRestaurantState] = useState(null);
   const [restaurantReport, setRestaurantReport] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -25,6 +39,13 @@ export function useRestaurant() {
     setLoading(true);
     setError(null);
     try {
+      if (isGuest) {
+        const existing = await guestRestaurantRepository.get();
+        const state = existing || createGuestHotelBundle().restaurantState;
+        if (!existing) await guestRestaurantRepository.save(state);
+        setRestaurantState(state);
+        return state;
+      }
       const state = await getRestaurantState();
       setRestaurantState(state);
       return state;
@@ -35,7 +56,7 @@ export function useRestaurant() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [isGuest]);
 
   // Validates either the current state's structure, or a candidate object
   // (used by the Structure form before it has been saved to state).
@@ -56,9 +77,9 @@ export function useRestaurant() {
     });
   }, []);
 
-  // Validates and persists the Structure form: writes the restaurant profile
-  // (restaurants/restaurant_finance/restaurant_menu_items/restaurant_staff/
-  // restaurant_operations, via saveRestaurantState()) and marks
+  // Validates and persists the Structure form: writes the restaurant
+  // profile (via saveRestaurantState() for a real session, or
+  // guestRestaurantRepository for a guest one) and marks
   // progression.ready = true so the rest of the module's tabs unlock.
   const submitStructure = useCallback(
     async (structure) => {
@@ -70,7 +91,11 @@ export function useRestaurant() {
       try {
         const base = restaurantState || createInitialRestaurantState();
         const nextState = markRestaurantReady({ ...base, structure: { ...base.structure, ...structure } });
-        await saveRestaurantState(nextState);
+        if (isGuest) {
+          await guestRestaurantRepository.save(nextState);
+        } else {
+          await saveRestaurantState(nextState);
+        }
         setRestaurantState(nextState);
         return { valid: true, errors: [] };
       } catch (saveError) {
@@ -81,7 +106,7 @@ export function useRestaurant() {
         setLoading(false);
       }
     },
-    [restaurantState]
+    [restaurantState, isGuest]
   );
 
   const runRestaurantCycle = useCallback(
@@ -92,9 +117,10 @@ export function useRestaurant() {
       });
       setRestaurantState(nextState);
       setRestaurantReport(report);
+      if (isGuest) guestRestaurantRepository.save(nextState).catch(() => undefined);
       return report;
     },
-    [restaurantState]
+    [restaurantState, isGuest]
   );
 
   return {
@@ -102,6 +128,7 @@ export function useRestaurant() {
     restaurantReport,
     loading,
     error,
+    isGuest,
     loadRestaurantState,
     validateRestaurantStructure,
     updateRestaurantField,
