@@ -5,17 +5,18 @@ import TopBarDropdown from "./TopBarDropdown";
 // The 9 primary menus asked for, in order, each with the sub-menu items
 // specified. A plain link (no `items`) renders without a dropdown (see
 // TopBarDropdown.jsx). Where the spec names a sub-page that doesn't exist
-// as its own route (RM's Pricing/Forecast/Segments, ESG's 4 items), the
-// item deep-links to the existing page's matching section by id when one
-// exists (RM -> /rm-dashboard#rm-pricing etc., see RMDashboard.jsx) or to
-// the page itself otherwise -- no dead links, but not every item is its
-// own route. Finance's Revenus/Charges/Bilan/Cash-flow, Staff's RH/
-// Planning/Productivité and Marketing's Campagnes/Canaux DO each have
-// their own routes (see pages/FinanceDashboard.jsx/FinanceReport.jsx/
-// FinanceForecast.jsx, pages/StaffDashboard.jsx/StaffReport.jsx/
-// StaffForecast.jsx and pages/MarketingCampaigns.jsx/MarketingChannels
-// .jsx -- Marketing's "ROI" item stays on /marketing itself, which
-// already leads with the ROI KPI).
+// as its own route (RM's Pricing/Forecast/Segments, ESG's Énergie/
+// Déchets/Eau), the item deep-links to the existing page's matching
+// section by id when one exists (RM -> /rm-dashboard#rm-pricing etc.,
+// see RMDashboard.jsx) or to the page itself otherwise -- no dead links,
+// but not every item is its own route. Finance's Revenus/Charges/Bilan/
+// Cash-flow, Staff's RH/Planning/Productivité, Marketing's Campagnes/
+// Canaux and ESG's Certifications DO each have their own routes (see
+// pages/FinanceDashboard.jsx/FinanceReport.jsx/FinanceForecast.jsx,
+// pages/StaffDashboard.jsx/StaffReport.jsx/StaffForecast.jsx,
+// pages/MarketingCampaigns.jsx/MarketingChannels.jsx and
+// pages/EsgCertifications.jsx -- Marketing's "ROI" item stays on
+// /marketing itself, which already leads with the ROI KPI).
 const PRIMARY_MENUS = [
   { label: "Dashboard", to: "/dashboard" },
   {
@@ -82,7 +83,7 @@ const PRIMARY_MENUS = [
       { label: "Énergie", to: "/esg" },
       { label: "Déchets", to: "/esg" },
       { label: "Eau", to: "/esg" },
-      { label: "Certifications", to: "/esg" },
+      { label: "Certifications", to: "/esg/certifications" },
     ],
     align: "right",
   },

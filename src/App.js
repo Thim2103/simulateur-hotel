@@ -58,7 +58,10 @@ import MarketingCampaigns from "./pages/MarketingCampaigns";
 import MarketingChannels from "./pages/MarketingChannels";
 import MarketingForecast from "./pages/MarketingForecast";
 import MarketingReport from "./pages/MarketingReport";
-import ESG from "./pages/ESG";
+import EsgDashboard from "./pages/EsgDashboard";
+import EsgCertifications from "./pages/EsgCertifications";
+import EsgForecast from "./pages/EsgForecast";
+import EsgReport from "./pages/EsgReport";
 import Expansion from "./pages/Expansion";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 
@@ -130,7 +133,10 @@ function App() {
                   <Route path="/marketing/channels" element={<MarketingChannels />} />
                   <Route path="/marketing/forecast" element={<MarketingForecast />} />
                   <Route path="/marketing/report" element={<MarketingReport />} />
-                  <Route path="/esg" element={<ESG />} />
+                  <Route path="/esg" element={<EsgDashboard />} />
+                  <Route path="/esg/certifications" element={<EsgCertifications />} />
+                  <Route path="/esg/forecast" element={<EsgForecast />} />
+                  <Route path="/esg/report" element={<EsgReport />} />
                   <Route path="/expansion" element={<Expansion />} />
                   <Route path="/restaurant/*" element={<RestaurantSimulator />} />
                 </Routes>

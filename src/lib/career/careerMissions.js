@@ -63,6 +63,23 @@ export const MISSION_CATALOG = [
     auto: true,
     rewardId: "skill-point-management",
   },
+  // ESG mission -- see pages/EsgDashboard.jsx's "Progression ESG"
+  // section. Reuses the same progressionReport.reputation KPI path
+  // careerObjectives.js's "reputation-60"/careerMissions.js's
+  // "brand-reputation-75" already read (see
+  // lib/progression/reputation.js, which itself blends the ESG
+  // sustainability score and staff wellbeing), at a higher bar to
+  // reflect a genuinely sustainability-driven reputation.
+  {
+    id: "sustainability-champion",
+    title: "Établissement exemplaire",
+    description: "Atteindre 80 de réputation grâce à une démarche ESG exemplaire (énergie, eau, déchets, certifications).",
+    kpi: "progressionReport.reputation",
+    comparator: "gte",
+    target: 80,
+    auto: true,
+    rewardId: "cash-1000",
+  },
 ];
 
 export function createMissionInstance(definition) {
