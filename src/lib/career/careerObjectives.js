@@ -9,6 +9,9 @@ export const DEFAULT_CAREER_OBJECTIVES = [
   { id: "first-profit", label: "Réaliser un premier jour rentable", kpi: "profit", comparator: "gte", target: 1, weight: 1 },
   { id: "reputation-60", label: "Atteindre 60 de réputation", kpi: "progressionReport.reputation", comparator: "gte", target: 60, weight: 1 },
   { id: "level-3", label: "Atteindre le niveau 3", kpi: "progressionReport.level.level", comparator: "gte", target: 3, weight: 1 },
+  // Finance objective -- see pages/FinanceDashboard.jsx's "Progression
+  // financière" section.
+  { id: "healthy-revenue-day", label: "Atteindre 2 000 € de revenu net en une journée", kpi: "hotelRevenue.netRevenue", comparator: "gte", target: 2000, weight: 1 },
 ];
 
 export function seedObjectives(definitions = DEFAULT_CAREER_OBJECTIVES) {

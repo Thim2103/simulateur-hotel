@@ -45,7 +45,9 @@ import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
 import Clients from "./pages/Clients";
-import Finance from "./pages/Finance";
+import FinanceDashboard from "./pages/FinanceDashboard";
+import FinanceReport from "./pages/FinanceReport";
+import FinanceForecast from "./pages/FinanceForecast";
 import Housekeeping from "./pages/Housekeeping";
 import PMS from "./pages/PMS";
 import Marketing from "./pages/Marketing";
@@ -108,7 +110,9 @@ function App() {
                   <Route path="/reservations" element={<Reservations />} />
                   <Route path="/rooms" element={<Rooms />} />
                   <Route path="/clients" element={<Clients />} />
-                  <Route path="/finance" element={<Finance />} />
+                  <Route path="/finance" element={<FinanceDashboard />} />
+                  <Route path="/finance/report" element={<FinanceReport />} />
+                  <Route path="/finance/forecast" element={<FinanceForecast />} />
                   <Route path="/housekeeping" element={<Housekeeping />} />
                   <Route path="/pms" element={<PMS />} />
                   <Route path="/marketing" element={<Marketing />} />

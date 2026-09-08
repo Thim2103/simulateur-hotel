@@ -51,8 +51,8 @@ const PRIMARY_MENUS = [
     items: [
       { label: "Revenus", to: "/finance" },
       { label: "Charges", to: "/finance" },
-      { label: "Bilan", to: "/finance" },
-      { label: "Cash-flow", to: "/finance" },
+      { label: "Bilan", to: "/finance/report" },
+      { label: "Cash-flow", to: "/finance/forecast" },
     ],
   },
   {
