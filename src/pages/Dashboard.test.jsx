@@ -3,9 +3,11 @@ import { MemoryRouter } from "react-router-dom";
 import Dashboard from "./Dashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useDashboard } from "../hooks/useDashboard";
+import { useTfeEngine } from "../hooks/useTfeEngine";
 
 jest.mock("../context/CareerContext");
 jest.mock("../hooks/useDashboard");
+jest.mock("../hooks/useTfeEngine");
 
 function careerState(overrides = {}) {
   return {
@@ -59,6 +61,15 @@ function dashboardHook(overrides = {}) {
     ...overrides,
   };
 }
+
+// This Dashboard also reads any in-progress TFE Solo run purely to
+// surface its score (see components/dashboard/DashboardKpis.jsx's own
+// docstring) -- no test here varies it, so a single default stub avoids
+// the real hook (and its real guest-mode repository calls) leaking into
+// every test in this file.
+beforeEach(() => {
+  useTfeEngine.mockReturnValue({ tfeState: null, loadTfeState: jest.fn().mockResolvedValue(null) });
+});
 
 test("loads the dashboard state on mount", () => {
   const loadDashboardState = jest.fn().mockResolvedValue(null);

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82 };
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);
@@ -81,4 +81,15 @@ test("shows the Qualité HK KPI (see the Refonte Housekeeping request's Dashboar
 test("shows a placeholder dash when Qualité HK isn't available yet", () => {
   render(<DashboardKpis kpis={{ ...kpis, housekeepingQuality: null }} viewMode="casual" />);
   expect(screen.getByText("Qualité HK")).toBeInTheDocument();
+});
+
+test("shows the Score TFE KPI (see the Mode TFE Solo request's Dashboard integration)", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" />);
+  expect(screen.getByText("Score TFE")).toBeInTheDocument();
+  expect(screen.getByText("82/100")).toBeInTheDocument();
+});
+
+test("shows a placeholder dash when no TFE run is active", () => {
+  render(<DashboardKpis kpis={{ ...kpis, tfeScore: null }} viewMode="casual" />);
+  expect(screen.getByText("Score TFE")).toBeInTheDocument();
 });
