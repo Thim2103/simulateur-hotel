@@ -41,7 +41,7 @@ export default function TopBarDropdown({ label, to, items, align = "left" }) {
   // A plain link -- no dropdown to manage.
   if (!items || items.length === 0) {
     return (
-      <NavLink to={to} end={to === "/"} className={linkClass}>
+      <NavLink to={to} end className={linkClass}>
         {label}
       </NavLink>
     );
@@ -64,13 +64,24 @@ export default function TopBarDropdown({ label, to, items, align = "left" }) {
         </svg>
       </button>
 
+      {/* Floating, not in-flow: position:absolute (with the wrapper above
+          as its `relative` containing block) takes this panel out of the
+          document flow entirely, so opening it never pushes any other
+          top-bar item or page content down. max-height + overflow-y:auto
+          caps how tall it can ever get (a long sub-menu scrolls inside
+          itself instead of growing the panel, which -- absolutely
+          positioned or not -- would otherwise still be able to extend the
+          page's own scrollable area past the viewport). z-[9999] keeps it
+          above every other layer in the app (modals aside). The
+          fade+slide (opacity + a small -translate-y when closed) is the
+          "légère" open animation asked for. */}
       <div
         role="menu"
         aria-label={label}
         hidden={!open}
-        className={`absolute top-full z-20 mt-1 w-52 origin-top rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg transition-all duration-150 ${
+        className={`absolute top-full z-[9999] mt-1 max-h-[300px] w-52 origin-top overflow-y-auto rounded-lg border border-slate-200 bg-white p-1.5 shadow-lg transition-all duration-150 ${
           align === "right" ? "right-0" : "left-0"
-        } ${open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"}`}
+        } ${open ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0"}`}
       >
         {items.map((item) => (
           <NavLink

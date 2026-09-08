@@ -12,7 +12,7 @@ import TopBarDropdown from "./TopBarDropdown";
 // /rm-dashboard#rm-pricing etc., see RMDashboard.jsx) or to the page
 // itself otherwise -- no dead links, but not every item is its own route.
 const PRIMARY_MENUS = [
-  { label: "Dashboard", to: "/" },
+  { label: "Dashboard", to: "/dashboard" },
   {
     label: "Hôtel",
     items: [
@@ -107,7 +107,17 @@ export default function TopBar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950 text-white">
-      <div className="mx-auto flex h-14 max-w-full items-center gap-2 overflow-x-hidden px-3 sm:px-4">
+      {/* No overflow-x-hidden here: setting it would force the browser to
+          compute overflow-y as "auto" too (per the CSS overflow spec, an
+          axis left "visible" while the other is constrained becomes
+          "auto"), turning this row into its own scroll container and
+          clipping/scrolling the dropdown panels (position:absolute,
+          anchored to a `relative` wrapper *inside* this row) instead of
+          letting them float freely above the page -- exactly the "menus
+          push the page down" bug this fixes. Horizontal safety at
+          in-between widths comes from the md: breakpoint switch to the
+          hamburger menu below, not from clipping this row. */}
+      <div className="mx-auto flex h-14 max-w-full items-center gap-2 px-3 sm:px-4">
         <Link to="/" className="mr-2 shrink-0 text-sm font-bold tracking-tight text-cyan-400">
           Hospitality Lab
         </Link>
@@ -162,7 +172,7 @@ export default function TopBar() {
               <NavLink
                 key={menu.label}
                 to={menu.to}
-                end={menu.to === "/"}
+                end
                 onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   `rounded-md px-3 py-2 text-sm font-medium ${isActive ? "bg-cyan-700 text-white" : "text-slate-200 hover:bg-slate-800"}`

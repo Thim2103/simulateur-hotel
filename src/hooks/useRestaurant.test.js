@@ -21,8 +21,10 @@ beforeEach(() => {
   saveRestaurantState.mockReset().mockResolvedValue(undefined);
   // Every existing test below exercises the real-Supabase-session path
   // (unchanged behaviour); see the "guest mode" describe block for the
-  // localStorage-backed path.
-  useSupabaseSession.mockReturnValue({ session: { user: { id: "u1" }, mode: "supabase" }, loading: false, isGuest: false });
+  // localStorage-backed path. `reload` stands in for resolveSession() --
+  // see useCareer.js's docstring on why every action awaits it now.
+  const supabaseSession = { user: { id: "u1" }, mode: "supabase" };
+  useSupabaseSession.mockReturnValue({ session: supabaseSession, loading: false, isGuest: false, reload: jest.fn().mockResolvedValue(supabaseSession) });
 });
 
 test("loadRestaurantState stores the loaded state", async () => {
@@ -102,7 +104,8 @@ test("runRestaurantCycle runs the engine against the current state and stores th
 
 describe("guest mode", () => {
   beforeEach(() => {
-    useSupabaseSession.mockReturnValue({ session: { user: { id: "guest-1" }, mode: "guest" }, loading: false, isGuest: true });
+    const guestSession = { user: { id: "guest-1" }, mode: "guest" };
+    useSupabaseSession.mockReturnValue({ session: guestSession, loading: false, isGuest: true, reload: jest.fn().mockResolvedValue(guestSession) });
   });
 
   test("loadRestaurantState seeds a ready-to-play establishment in localStorage on first load, bypassing Supabase entirely", async () => {
@@ -148,5 +151,29 @@ describe("guest mode", () => {
       await reloaded.result.current.loadRestaurantState();
     });
     expect(reloaded.result.current.restaurantState.structure.name).toBe("Le Central");
+  });
+
+  // Regression test: loadRestaurantState() called before useSupabaseSession()
+  // has resolved must wait for the guest fallback instead of hitting
+  // Supabase (see the equivalent test in useCareer.test.js).
+  test("loadRestaurantState called before the session resolves still waits for the guest fallback", async () => {
+    let resolveSessionPromise;
+    const pendingReload = jest.fn(() => new Promise((resolve) => { resolveSessionPromise = resolve; }));
+    useSupabaseSession.mockReturnValue({ session: null, loading: true, isGuest: false, reload: pendingReload });
+
+    const { result } = renderHook(() => useRestaurant());
+    let loadPromise;
+    act(() => {
+      loadPromise = result.current.loadRestaurantState();
+    });
+
+    resolveSessionPromise({ user: { id: "guest-1" }, mode: "guest" });
+    await act(async () => {
+      await loadPromise;
+    });
+
+    expect(getRestaurantState).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
+    expect(result.current.restaurantState.progression.ready).toBe(true);
   });
 });

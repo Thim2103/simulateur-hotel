@@ -22,7 +22,7 @@ const guestDashboardRepository = createGuestRepository("dashboard", { defaultSta
 // lib/dashboard/dashboardRepository.js or, in guest mode (see
 // hooks/useSupabaseSession.js), localStorage via lib/guest/.
 export function useDashboard() {
-  const { session } = useSupabaseSession();
+  const { session, reload: resolveSession } = useSupabaseSession();
   const isGuest = session?.mode === "guest";
   const career = useCareerContext();
 
@@ -45,11 +45,11 @@ export function useDashboard() {
   }, []);
 
   const persistPreferences = useCallback(
-    (state) =>
-      isGuest
+    (state, guestNow) =>
+      guestNow
         ? guestDashboardRepository.save({ viewMode: state.viewMode, metadata: state.metadata })
         : dashboardRepository.saveDashboardPreferences(state),
-    [isGuest]
+    []
   );
 
   // Loads the stored view-mode preference and rebuilds the full
@@ -64,29 +64,36 @@ export function useDashboard() {
   // otherwise read a stale value: setCareerState() inside useCareer.js
   // schedules a re-render, but doesn't synchronously update the `career`
   // object this hook already closed over before that re-render happens.
+  //
+  // Resolves the session itself (resolveSession(), see useCareer.js's
+  // docstring for why) rather than trusting the `isGuest` closed over at
+  // render time -- this is typically the very first thing to run after
+  // mount, exactly when that race is most likely to bite.
   const loadDashboardState = useCallback(
     (explicitCareerState) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const currentCareerState = explicitCareerState || career.careerState || (await career.loadCareerState().catch(() => null));
-        const stored = isGuest ? await guestDashboardRepository.get() : await dashboardRepository.loadDashboardPreferences();
+        const stored = guestNow ? await guestDashboardRepository.get() : await dashboardRepository.loadDashboardPreferences();
         const viewMode = normalizeViewMode(stored?.viewMode || DEFAULT_VIEW_MODE);
         const nextState = buildDashboardState({ careerState: currentCareerState, viewMode });
         setDashboardState(nextState);
         return nextState;
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [career, isGuest, runWithErrorHandling]
+    [career, resolveSession, runWithErrorHandling]
   );
 
   const setViewMode = useCallback(
     (mode) =>
       runWithErrorHandling(async () => {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const nextState = buildDashboardState({ careerState: career.careerState, viewMode: mode });
         setDashboardState(nextState);
-        await persistPreferences(nextState);
+        await persistPreferences(nextState, guestNow);
         return nextState;
       }),
-    [career.careerState, persistPreferences, runWithErrorHandling]
+    [career.careerState, persistPreferences, resolveSession, runWithErrorHandling]
   );
 
   // Runs a quick action against the player's own hotel bundle (see

@@ -67,7 +67,10 @@ beforeEach(() => {
   jest.useFakeTimers().setSystemTime(REFERENCE_DATE);
   dashboardRepository.loadDashboardPreferences.mockResolvedValue(null);
   dashboardRepository.saveDashboardPreferences.mockResolvedValue(undefined);
-  useSupabaseSession.mockReturnValue({ session: { user: { id: "u1" }, mode: "supabase" }, loading: false, isGuest: false });
+  // `reload` stands in for resolveSession() -- see useCareer.js's
+  // docstring on why every action awaits it now.
+  const supabaseSession = { user: { id: "u1" }, mode: "supabase" };
+  useSupabaseSession.mockReturnValue({ session: supabaseSession, loading: false, isGuest: false, reload: jest.fn().mockResolvedValue(supabaseSession) });
   useCareerContext.mockReturnValue(careerContextFixture());
 });
 
@@ -159,7 +162,8 @@ test("applyQuickAction runs the action through Career's applyHotelAdjustment and
 
 describe("guest mode", () => {
   beforeEach(() => {
-    useSupabaseSession.mockReturnValue({ session: { user: { id: "guest-1" }, mode: "guest" }, loading: false, isGuest: true });
+    const guestSession = { user: { id: "guest-1" }, mode: "guest" };
+    useSupabaseSession.mockReturnValue({ session: guestSession, loading: false, isGuest: true, reload: jest.fn().mockResolvedValue(guestSession) });
   });
 
   test("loadDashboardState/setViewMode bypass Supabase and use localStorage", async () => {
@@ -192,5 +196,30 @@ describe("guest mode", () => {
     });
 
     expect(second.result.current.dashboardState.viewMode).toBe("expert");
+  });
+
+  // Regression test: loadDashboardState() called before useSupabaseSession()
+  // has resolved must wait for the guest fallback instead of hitting
+  // Supabase's dashboardRepository (see the equivalent test in
+  // useCareer.test.js/useRestaurant.test.js).
+  test("loadDashboardState called before the session resolves still waits for the guest fallback", async () => {
+    let resolveSessionPromise;
+    const pendingReload = jest.fn(() => new Promise((resolve) => { resolveSessionPromise = resolve; }));
+    useSupabaseSession.mockReturnValue({ session: null, loading: true, isGuest: false, reload: pendingReload });
+
+    const { result } = renderHook(() => useDashboard());
+    let loadPromise;
+    act(() => {
+      loadPromise = result.current.loadDashboardState();
+    });
+
+    resolveSessionPromise({ user: { id: "guest-1" }, mode: "guest" });
+    await act(async () => {
+      await loadPromise;
+    });
+
+    expect(dashboardRepository.loadDashboardPreferences).not.toHaveBeenCalled();
+    expect(result.current.error).toBeNull();
+    expect(result.current.dashboardState).not.toBeNull();
   });
 });

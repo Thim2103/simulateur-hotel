@@ -26,8 +26,14 @@ const guestRestaurantRepository = createGuestRepository("restaurant", { defaultS
 // still runs through runDailyCycle()/useDailyCycle -- this hook's
 // runRestaurantCycle() is for dashboards that want to preview the engine
 // against the current state.
+//
+// Every async action resolves the session itself (via resolveSession(),
+// useSupabaseSession()'s `reload`) instead of trusting the `isGuest`
+// closed over at render time -- see useCareer.js's docstring for why:
+// a mount-time load can otherwise run before the guest fallback has
+// resolved and wrongly hit Supabase.
 export function useRestaurant() {
-  const { session } = useSupabaseSession();
+  const { session, reload: resolveSession } = useSupabaseSession();
   const isGuest = session?.mode === "guest";
 
   const [restaurantState, setRestaurantState] = useState(null);
@@ -39,7 +45,8 @@ export function useRestaurant() {
     setLoading(true);
     setError(null);
     try {
-      if (isGuest) {
+      const guestNow = (await resolveSession())?.mode === "guest";
+      if (guestNow) {
         const existing = await guestRestaurantRepository.get();
         const state = existing || createGuestHotelBundle().restaurantState;
         if (!existing) await guestRestaurantRepository.save(state);
@@ -56,7 +63,7 @@ export function useRestaurant() {
     } finally {
       setLoading(false);
     }
-  }, [isGuest]);
+  }, [resolveSession]);
 
   // Validates either the current state's structure, or a candidate object
   // (used by the Structure form before it has been saved to state).
@@ -89,9 +96,10 @@ export function useRestaurant() {
       setLoading(true);
       setError(null);
       try {
+        const guestNow = (await resolveSession())?.mode === "guest";
         const base = restaurantState || createInitialRestaurantState();
         const nextState = markRestaurantReady({ ...base, structure: { ...base.structure, ...structure } });
-        if (isGuest) {
+        if (guestNow) {
           await guestRestaurantRepository.save(nextState);
         } else {
           await saveRestaurantState(nextState);
@@ -106,7 +114,7 @@ export function useRestaurant() {
         setLoading(false);
       }
     },
-    [restaurantState, isGuest]
+    [restaurantState, resolveSession]
   );
 
   const runRestaurantCycle = useCallback(
