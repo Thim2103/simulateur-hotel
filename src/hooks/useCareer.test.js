@@ -131,6 +131,20 @@ test("claimReward removes the reward from the inbox", async () => {
   expect(result.current.careerState.rewardsInbox).toEqual([]);
 });
 
+test("applyHotelAdjustment applies a pure transform to the hotel bundle and persists it", async () => {
+  const { result } = renderHook(() => useCareer());
+  await act(async () => {
+    await result.current.startCareer("player-1");
+  });
+
+  await act(async () => {
+    await result.current.applyHotelAdjustment((hotel) => ({ ...hotel, reservations: hotel.reservations.map((r) => ({ ...r, price: 999 })) }));
+  });
+
+  expect(result.current.careerState.hotel.reservations.every((r) => r.price === 999)).toBe(true);
+  expect(careerRepository.saveCareerState).toHaveBeenCalled();
+});
+
 test("surfaces an error instead of silently failing", async () => {
   getHotelState.mockRejectedValue(new Error("Supabase indisponible"));
   const { result } = renderHook(() => useCareer());

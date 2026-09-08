@@ -150,6 +150,25 @@ export function useCareer() {
     [careerState, persistCareerState, runWithErrorHandling]
   );
 
+  // Applies a pure transform to the player's own hotel bundle (the
+  // { hotelState, restaurantState, rooms, reservations } shape careerState
+  // .hotel carries) and persists the result -- what Dashboard.jsx's Quick
+  // Actions (see lib/dashboard/dashboardActions.js's applyQuickAction())
+  // use to actually take effect, without useCareer.js needing to know
+  // anything about the Dashboard module itself: the caller supplies a
+  // plain (hotelBundle) => nextHotelBundle function.
+  const applyHotelAdjustment = useCallback(
+    (updater) =>
+      runWithErrorHandling(async () => {
+        const nextHotel = updater(careerState.hotel);
+        const nextState = { ...careerState, hotel: nextHotel };
+        setCareerState(nextState);
+        await persistCareerState(nextState);
+        return nextState;
+      }),
+    [careerState, persistCareerState, runWithErrorHandling]
+  );
+
   // Plays one sandboxed day, then analyzes it (see lib/analytics/
   // analyticsEngine.js) so CareerDashboard.jsx has real diagnostics/
   // recommendations to show, not a placeholder. runCareerDay() itself is
@@ -188,6 +207,7 @@ export function useCareer() {
     triggerStoryEvent,
     updateSkill,
     claimReward,
+    applyHotelAdjustment,
     nextDay,
   };
 }
