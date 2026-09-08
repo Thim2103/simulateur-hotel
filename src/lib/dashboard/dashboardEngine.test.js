@@ -73,6 +73,15 @@ test("computeKpis includes ROI from the Marketing module", async () => {
   expect(kpis.marketingRoi).toBeGreaterThanOrEqual(0);
 });
 
+// Refonte ESG's Dashboard integration: computeKpis() also folds in
+// lib/esg/esgEngine.js's own cycle.
+test("computeKpis includes the score from the ESG module", async () => {
+  const state = await playedCareerState();
+  const kpis = computeKpis(state);
+
+  expect(kpis.esgScore).toBeGreaterThanOrEqual(0);
+});
+
 test("buildReplaySummary returns null before any cycle exists", () => {
   expect(buildReplaySummary(baseCareerState())).toBeNull();
 });

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68 };
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);
@@ -59,4 +59,15 @@ test("shows the ROI Marketing KPI (see the Refonte Marketing request's Dashboard
 test("shows a placeholder dash when ROI Marketing isn't available yet", () => {
   render(<DashboardKpis kpis={{ ...kpis, marketingRoi: null }} viewMode="casual" />);
   expect(screen.getByText("ROI Marketing")).toBeInTheDocument();
+});
+
+test("shows the Score ESG KPI (see the Refonte ESG request's Dashboard integration)", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" />);
+  expect(screen.getByText("Score ESG")).toBeInTheDocument();
+  expect(screen.getByText("68/100")).toBeInTheDocument();
+});
+
+test("shows a placeholder dash when Score ESG isn't available yet", () => {
+  render(<DashboardKpis kpis={{ ...kpis, esgScore: null }} viewMode="casual" />);
+  expect(screen.getByText("Score ESG")).toBeInTheDocument();
 });

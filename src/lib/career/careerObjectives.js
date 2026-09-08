@@ -15,6 +15,9 @@ export const DEFAULT_CAREER_OBJECTIVES = [
   // Marketing objective -- see pages/MarketingDashboard.jsx's
   // "Progression marketing" section.
   { id: "marketing-revenue-day", label: "Générer 2 500 € de revenu net en une journée grâce au marketing", kpi: "hotelRevenue.netRevenue", comparator: "gte", target: 2500, weight: 1 },
+  // ESG objective -- see pages/EsgDashboard.jsx's "Progression ESG"
+  // section.
+  { id: "esg-reputation-70", label: "Atteindre 70 de réputation grâce à une démarche ESG", kpi: "progressionReport.reputation", comparator: "gte", target: 70, weight: 1 },
 ];
 
 export function seedObjectives(definitions = DEFAULT_CAREER_OBJECTIVES) {

@@ -17,6 +17,7 @@ import { normalizeViewMode } from "./dashboardViewMode";
 import { financeFromCareerState } from "../finance/financeEngine";
 import { staffFromCareerState } from "../staff/staffEngine";
 import { marketingFromCareerState } from "../marketing/marketingEngine";
+import { esgFromCareerState } from "../esg/esgEngine";
 
 // KPI aggregation: occupation, avg price / ADR, revenue, satisfaction,
 // staff -- pulled from today's DailyReport (careerState.lastDayReport,
@@ -52,6 +53,11 @@ export function computeKpis(careerState) {
   // that persists it).
   const marketingCycle = careerState?.hotel ? marketingFromCareerState(careerState) : null;
 
+  // Score ESG -- lib/esg/esgEngine.js's own cycle, same "computed fresh,
+  // not persisted here" contract as Finance/Staff/Marketing above (see
+  // hooks/useEsgEngine.js for the module that persists it).
+  const esgCycle = careerState?.hotel ? esgFromCareerState(careerState) : null;
+
   return {
     occupancyRate,
     averagePrice,
@@ -68,6 +74,7 @@ export function computeKpis(careerState) {
     staffOverload: staffCycle ? staffCycle.overload : null,
     payrollTotal: staffCycle ? staffCycle.payroll.total : null,
     marketingRoi: marketingCycle ? marketingCycle.roi.overallRoi : null,
+    esgScore: esgCycle ? esgCycle.score : null,
     date: dailyReport.date,
   };
 }

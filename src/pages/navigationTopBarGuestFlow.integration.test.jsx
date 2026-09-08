@@ -120,7 +120,11 @@ test("Hôtel -> PMS -> RM -> Finance -> Marketing -> Staff -> ESG -> Restaurant,
   expectNoSupabaseError();
   chainStaff.unmount();
 
-  // ESG (/esg) -- hotelRepository.js-backed hook again.
+  // ESG (/esg) -- now the Career/Guest-Mode ESG module (see the Refonte
+  // ESG request: lib/esg/, hooks/useEsgEngine.js, lib/esgRepository.js),
+  // same guest-aware pattern as Finance/Staff/Marketing above. Without a
+  // career yet it prompts to start one rather than showing figures,
+  // exactly like Finance/Staff/Marketing's own pages in this same flow.
   window.history.pushState({}, "", "/esg");
   const esg = render(<App />);
   await waitFor(() => expect(esg.getByRole("heading", { name: "ESG" })).toBeInTheDocument());
