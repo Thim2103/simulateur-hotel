@@ -14,6 +14,7 @@ import { buildNotifications } from "./dashboardNotifications";
 import { buildInsights } from "./dashboardInsights";
 import { QUICK_ACTION_CATALOG, applyQuickAction as applyQuickActionPure } from "./dashboardActions";
 import { normalizeViewMode } from "./dashboardViewMode";
+import { financeFromCareerState } from "../finance/financeEngine";
 
 // KPI aggregation: occupation, avg price / ADR, revenue, satisfaction,
 // staff -- pulled from today's DailyReport (careerState.lastDayReport,
@@ -32,6 +33,12 @@ export function computeKpis(careerState) {
   const restaurantReport = safeObject(dailyReport.restaurantReport);
   const staff = safeObject(restaurantReport.staff);
 
+  // GOPPAR/EBITDA -- lib/finance/financeEngine.js's own income statement,
+  // computed fresh from the same hotel bundle (pure, no persistence of
+  // its own here; the Finance module's own hooks/useFinance.js is what
+  // actually persists a finance cycle -- see its docstring).
+  const finance = careerState?.hotel ? financeFromCareerState(careerState) : null;
+
   return {
     occupancyRate,
     averagePrice,
@@ -42,6 +49,8 @@ export function computeKpis(careerState) {
     staffCount: safeNumber(staff.headcount, 0),
     staffSatisfaction: safeNumber(staff.satisfactionAvg, null),
     reputation: safeNumber(dailyReport.progressionReport?.reputation, null),
+    ebitda: finance ? finance.incomeStatement.ebitda : null,
+    goppar: finance ? finance.ratios.goppar : null,
     date: dailyReport.date,
   };
 }

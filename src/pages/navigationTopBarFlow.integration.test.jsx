@@ -33,6 +33,10 @@ beforeEach(() => {
   window.history.pushState({}, "", "/dashboard");
 });
 
+// Explicit timeout: 5 sequential full-<App/> renders/clicks with real
+// engine computation (now including lib/finance/ too) can run past
+// Jest's 5000ms default under full-suite parallel worker contention, even
+// though it finishes in ~2s in isolation.
 test("Dashboard -> Hôtel -> Restaurant -> RM -> Finance, all through the top-bar", async () => {
   render(<App />);
 
@@ -67,4 +71,4 @@ test("Dashboard -> Hôtel -> Restaurant -> RM -> Finance, all through the top-ba
   fireEvent.click(screen.getByRole("button", { name: "Finance" }));
   fireEvent.click(screen.getByRole("menuitem", { name: "Revenus" }));
   await waitFor(() => expect(screen.getByRole("heading", { name: "Finance" })).toBeInTheDocument());
-});
+}, 15000);

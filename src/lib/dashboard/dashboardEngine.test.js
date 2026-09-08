@@ -43,6 +43,16 @@ test("computeKpis aggregates occupancy, pricing, revenue, satisfaction and staff
   expect(kpis.date).toBe("2026-09-10");
 });
 
+// Refonte Finance's Dashboard integration: computeKpis() also folds in
+// lib/finance/financeEngine.js's own income statement.
+test("computeKpis includes EBITDA/GOPPAR from the Finance module", async () => {
+  const state = await playedCareerState();
+  const kpis = computeKpis(state);
+
+  expect(kpis.ebitda).toBeDefined();
+  expect(kpis.goppar).toBeDefined();
+});
+
 test("buildReplaySummary returns null before any cycle exists", () => {
   expect(buildReplaySummary(baseCareerState())).toBeNull();
 });

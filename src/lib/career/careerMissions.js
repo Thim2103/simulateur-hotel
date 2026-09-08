@@ -34,6 +34,19 @@ export const MISSION_CATALOG = [
     auto: false,
     rewardId: "cash-1000",
   },
+  // Finance mission -- see pages/FinanceDashboard.jsx's "Progression
+  // financière" section, which surfaces any mission/objective whose id/
+  // title/description mentions finance-flavored keywords.
+  {
+    id: "record-profit-day",
+    title: "Journée record",
+    description: "Réaliser un profit de plus de 5 000 € en une seule journée.",
+    kpi: "profit",
+    comparator: "gte",
+    target: 5000,
+    auto: true,
+    rewardId: "cash-1000",
+  },
 ];
 
 export function createMissionInstance(definition) {
