@@ -8,6 +8,7 @@ import { NavLink } from "react-router-dom";
 // or /analytics directly still works.
 const primaryLinks = [
   ["/", "Dashboard", true],
+  ["/guest", "Mode Invité"],
   ["/career", "Mode Carrière"],
   ["/chain", "Chaîne d'hôtels"],
   ["/staff", "Personnel"],

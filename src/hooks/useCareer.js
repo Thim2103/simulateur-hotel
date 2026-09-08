@@ -14,6 +14,12 @@ import { analyzeRun } from "../lib/analytics/analyticsEngine";
 import { getHotelState } from "../lib/hotelRepository";
 import { getRestaurantState } from "../lib/restaurantRepository";
 import { listRooms, listReservations } from "../lib/pmsRepository";
+import { useSupabaseSession } from "./useSupabaseSession";
+import { createGuestHotelBundle, createGuestRepository } from "../lib/guest";
+
+// One localStorage slot for the whole career -- stateless factory, safe
+// to build once at module scope (see lib/guest/guestAdapter.js).
+const guestCareerRepository = createGuestRepository("career", { defaultState: null });
 
 // Drives the Solo/Career mode: the player's own hotel, run day by day
 // through runDailyCycle() (sandboxed, see lib/career/careerEngine.js's
@@ -21,10 +27,22 @@ import { listRooms, listReservations } from "../lib/pmsRepository";
 // layered on top and synced with the existing progressionEngine (already
 // run inside runDailyCycle). Every day is also recorded into a replay log
 // (see lib/replay/) and analyzed (see lib/analytics/) so
-// CareerDashboard.jsx can show real insights, not placeholders. State is
-// mirrored to Supabase via careerRepository.js; a load/save failure
-// surfaces as `error` rather than silently reverting to demo data.
+// CareerDashboard.jsx can show real insights, not placeholders.
+//
+// In guest mode (see hooks/useSupabaseSession.js -- no Supabase session,
+// no anonymous auth available) this bypasses careerRepository.js and the
+// hotel/restaurant/PMS repositories entirely: the starting hotel comes
+// from a locally-seeded bundle (lib/guest/guestAdapter.js's
+// createGuestHotelBundle(), ready to play immediately) and every save
+// goes to localStorage instead of Supabase. runCareerDay() already runs
+// runDailyCycle() sandboxed (persist: false) regardless of mode, so guest
+// mode needed no changes there. A real Supabase session keeps the
+// existing behaviour unchanged; a load/save failure there still surfaces
+// as `error` rather than silently reverting to demo data.
 export function useCareer() {
+  const { session } = useSupabaseSession();
+  const isGuest = session?.mode === "guest";
+
   const [careerState, setCareerState] = useState(null);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState(null);
@@ -43,33 +61,38 @@ export function useCareer() {
     }
   }, []);
 
+  const persistCareerState = useCallback(
+    (state) => (isGuest ? guestCareerRepository.save(state) : careerRepository.saveCareerState(state)),
+    [isGuest]
+  );
+
   // Starts a brand-new career against the player's real (persisted) hotel
-  // -- the same hotel runDailyCycle()/chainEngine already know about.
+  // -- the same hotel runDailyCycle()/chainEngine already know about -- or,
+  // in guest mode, a freshly-seeded local one (no hotel to load yet).
   const startCareer = useCallback(
     (playerId) =>
       runWithErrorHandling(async () => {
-        const [hotelState, restaurantState, rooms, reservations] = await Promise.all([
-          getHotelState(),
-          getRestaurantState(),
-          listRooms(),
-          listReservations(),
-        ]);
-        const state = startCareerEngine({ playerId, hotelState, restaurantState, rooms, reservations });
+        const bundle = isGuest
+          ? createGuestHotelBundle()
+          : await Promise.all([getHotelState(), getRestaurantState(), listRooms(), listReservations()]).then(
+              ([hotelState, restaurantState, rooms, reservations]) => ({ hotelState, restaurantState, rooms, reservations })
+            );
+        const state = startCareerEngine({ playerId, ...bundle });
         setCareerState(state);
-        await careerRepository.saveCareerState(state);
+        await persistCareerState(state);
         return state;
       }),
-    [runWithErrorHandling]
+    [isGuest, persistCareerState, runWithErrorHandling]
   );
 
   const loadCareerState = useCallback(
     () =>
       runWithErrorHandling(async () => {
-        const state = await careerRepository.loadCareerState();
+        const state = isGuest ? await guestCareerRepository.get() : await careerRepository.loadCareerState();
         setCareerState(state);
         return state;
       }),
-    [runWithErrorHandling]
+    [isGuest, runWithErrorHandling]
   );
 
   const acceptMission = useCallback(
@@ -77,10 +100,10 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const nextState = acceptMissionEngine(careerState, missionId);
         setCareerState(nextState);
-        await careerRepository.saveCareerState(nextState);
+        await persistCareerState(nextState);
         return nextState;
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   const completeMission = useCallback(
@@ -88,10 +111,10 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const { state: nextState } = completeMissionEngine(careerState, missionId);
         setCareerState(nextState);
-        await careerRepository.saveCareerState(nextState);
+        await persistCareerState(nextState);
         return nextState;
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   const triggerStoryEvent = useCallback(
@@ -99,10 +122,10 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const { state: nextState, consequence } = triggerStoryEventEngine(careerState, eventId, choiceId);
         setCareerState(nextState);
-        await careerRepository.saveCareerState(nextState);
+        await persistCareerState(nextState);
         return consequence;
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   const updateSkill = useCallback(
@@ -110,10 +133,10 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const nextState = updateSkillPoints(careerState, skillId, delta);
         setCareerState(nextState);
-        await careerRepository.saveCareerState(nextState);
+        await persistCareerState(nextState);
         return nextState;
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   const claimReward = useCallback(
@@ -121,15 +144,16 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const { state: nextState } = claimRewardEngine(careerState, rewardId);
         setCareerState(nextState);
-        await careerRepository.saveCareerState(nextState);
+        await persistCareerState(nextState);
         return nextState;
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   // Plays one sandboxed day, then analyzes it (see lib/analytics/
   // analyticsEngine.js) so CareerDashboard.jsx has real diagnostics/
-  // recommendations to show, not a placeholder.
+  // recommendations to show, not a placeholder. runCareerDay() itself is
+  // already fully sandboxed (persist: false) in every mode.
   const nextDay = useCallback(
     (decisions = {}) =>
       runWithErrorHandling(async () => {
@@ -146,16 +170,17 @@ export function useCareer() {
 
         const stateWithAnalysis = { ...nextState, lastAnalysis };
         setCareerState(stateWithAnalysis);
-        await careerRepository.saveCareerState(stateWithAnalysis);
+        await persistCareerState(stateWithAnalysis);
         return { state: stateWithAnalysis, report, analysis: lastAnalysis };
       }),
-    [careerState, runWithErrorHandling]
+    [careerState, persistCareerState, runWithErrorHandling]
   );
 
   return {
     careerState,
     isRunning,
     error,
+    isGuest,
     startCareer,
     loadCareerState,
     acceptMission,
