@@ -4,6 +4,7 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { useCareerContext } from "../context/CareerContext";
 import { useDashboard } from "../hooks/useDashboard";
+import { useTfeEngine } from "../hooks/useTfeEngine";
 import { skillLabel } from "../lib/career/careerSkills";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
@@ -33,8 +34,18 @@ export default function Dashboard() {
     applyQuickAction,
   } = useDashboard();
 
+  // Reads the player's TFE Solo run, if any, purely to surface its score
+  // on this shared Dashboard (see components/dashboard/DashboardKpis.jsx's
+  // own docstring for why this is kept separate from useDashboard.js's
+  // own regular-CareerState pipeline: a TFE run is a self-contained
+  // playthrough, see lib/tfe/tfeState.js). Never starts or advances a
+  // TFE run from here -- loadTfeState() only reads whatever is already
+  // persisted, and a player with no TFE run in progress simply sees "—".
+  const { tfeState, loadTfeState } = useTfeEngine();
+
   useEffect(() => {
     loadDashboardState().catch(() => undefined);
+    loadTfeState().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -122,7 +133,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      <DashboardKpis kpis={dashboardState?.kpis} viewMode={viewMode} />
+      <DashboardKpis kpis={dashboardState?.kpis ? { ...dashboardState.kpis, tfeScore: tfeState?.score?.total ?? null } : null} viewMode={viewMode} />
 
       <DashboardNotifications notifications={dashboardState?.notifications} />
 

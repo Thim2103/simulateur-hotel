@@ -99,6 +99,7 @@ const PRIMARY_MENUS = [
 const MORE_MENU_ITEMS = [
   { label: "Mode Carrière", to: "/career" },
   { label: "Mode Invité", to: "/guest" },
+  { label: "Mode TFE Solo", to: "/tfe" },
   { label: "Chaîne d'hôtels", to: "/chain" },
   { label: "RH multi-sites", to: "/chain/staff" },
   { label: "Progression", to: "/progression" },

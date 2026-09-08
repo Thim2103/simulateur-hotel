@@ -35,6 +35,11 @@ import CareerSkills from "./pages/CareerSkills";
 import CareerRewards from "./pages/CareerRewards";
 import CareerNextDay from "./pages/CareerNextDay";
 import GuestMode from "./pages/GuestMode";
+import TfeMenu from "./pages/TfeMenu";
+import TfeDashboard from "./pages/TfeDashboard";
+import TfeStoryline from "./pages/TfeStoryline";
+import TfeReport from "./pages/TfeReport";
+import TfeForecast from "./pages/TfeForecast";
 import MainMenu from "./pages/MainMenu";
 import PlayMenu from "./pages/PlayMenu";
 import SelectMode from "./pages/SelectMode";
@@ -86,6 +91,11 @@ function App() {
                   <Route path="/scenarios" element={<Scenarios />} />
                   <Route path="/challenges" element={<Challenges />} />
                   <Route path="/guest" element={<GuestMode />} />
+                  <Route path="/tfe" element={<TfeMenu />} />
+                  <Route path="/tfe/dashboard" element={<TfeDashboard />} />
+                  <Route path="/tfe/storyline" element={<TfeStoryline />} />
+                  <Route path="/tfe/report" element={<TfeReport />} />
+                  <Route path="/tfe/forecast" element={<TfeForecast />} />
                   <Route path="/career" element={<CareerDashboard />} />
                   <Route path="/career/missions" element={<CareerMissions />} />
                   <Route path="/career/story" element={<CareerStory />} />
