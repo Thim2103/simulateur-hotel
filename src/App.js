@@ -32,6 +32,15 @@ import CareerSkills from "./pages/CareerSkills";
 import CareerRewards from "./pages/CareerRewards";
 import CareerNextDay from "./pages/CareerNextDay";
 import GuestMode from "./pages/GuestMode";
+import MainMenu from "./pages/MainMenu";
+import PlayMenu from "./pages/PlayMenu";
+import SelectMode from "./pages/SelectMode";
+import Options from "./pages/Options";
+import Credits from "./pages/Credits";
+import Solo from "./pages/Solo";
+import Sandbox from "./pages/Sandbox";
+import Scenarios from "./pages/Scenarios";
+import Challenges from "./pages/Challenges";
 import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
@@ -53,6 +62,15 @@ function App() {
             <CareerProvider>
               <Layout>
                 <Routes>
+                  <Route path="/menu" element={<MainMenu />} />
+                  <Route path="/play" element={<PlayMenu />} />
+                  <Route path="/select-mode" element={<SelectMode />} />
+                  <Route path="/options" element={<Options />} />
+                  <Route path="/credits" element={<Credits />} />
+                  <Route path="/solo" element={<Solo />} />
+                  <Route path="/sandbox" element={<Sandbox />} />
+                  <Route path="/scenarios" element={<Scenarios />} />
+                  <Route path="/challenges" element={<Challenges />} />
                   <Route path="/guest" element={<GuestMode />} />
                   <Route path="/career" element={<CareerDashboard />} />
                   <Route path="/career/missions" element={<CareerMissions />} />

@@ -39,9 +39,13 @@ jest.mock('./lib/calculs/rm', () => ({
   })),
 }));
 
-test('renders restaurant simulator entry in navigation', () => {
+// The vertical Sidebar.jsx (with its "Restaurant Simulator" link) was
+// replaced by the horizontal TopBar.jsx (see layout/Layout.jsx and
+// components/navigation/TopBar.jsx) -- the Restaurant module is now
+// reached through the top-bar's "Restaurant" dropdown instead.
+test('renders the Restaurant dropdown in the top-bar navigation', () => {
   render(<App />);
-  expect(screen.getByText(/restaurant simulator/i)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: /restaurant/i })).toBeInTheDocument();
 });
 
 test('renders PMS housekeeping and reservation editor controls', async () => {
