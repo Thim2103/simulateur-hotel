@@ -1,7 +1,18 @@
 export const HOUSEKEEPING_STAFF = ["Sophie", "Marc", "Julie", "Lina"];
 
+// Bug found while building lib/housekeeping/ (the Refonte Housekeeping
+// module): a plain `String(value)` on a Date object yields its
+// human-readable form ("Wed Sep 10 2026 ..."), not an ISO date, so it
+// never matched a reservation's own "YYYY-MM-DD" arrival/departure
+// string. Since every caller (pages/PMS.jsx, components/pms/
+// PMSHousekeepingPanel.jsx) calls applyTurnover()/deriveHousekeepingTasks
+// () with the default `referenceDate = new Date()` (never a pre-
+// formatted string), `checkoutRoomIds` below was always empty in
+// practice: no room was ever automatically flagged dirty on checkout.
+// Matches the `toDateOnly()` pattern every other engine in this app
+// already uses (see e.g. lib/finance/financeEngine.js's own toDateOnly()).
 function toDateOnly(value) {
-  return String(value || "").slice(0, 10);
+  return String(value?.toISOString ? value.toISOString() : value || "").slice(0, 10);
 }
 
 function isActiveReservation(reservation) {

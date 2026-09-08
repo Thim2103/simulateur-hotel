@@ -18,6 +18,7 @@ import { financeFromCareerState } from "../finance/financeEngine";
 import { staffFromCareerState } from "../staff/staffEngine";
 import { marketingFromCareerState } from "../marketing/marketingEngine";
 import { esgFromCareerState } from "../esg/esgEngine";
+import { housekeepingFromCareerState } from "../housekeeping/housekeepingEngine";
 
 // KPI aggregation: occupation, avg price / ADR, revenue, satisfaction,
 // staff -- pulled from today's DailyReport (careerState.lastDayReport,
@@ -58,6 +59,12 @@ export function computeKpis(careerState) {
   // hooks/useEsgEngine.js for the module that persists it).
   const esgCycle = careerState?.hotel ? esgFromCareerState(careerState) : null;
 
+  // Qualité housekeeping -- lib/housekeeping/housekeepingEngine.js's own
+  // cycle, same "computed fresh, not persisted here" contract as
+  // Finance/Staff/Marketing/ESG above (see hooks/useHousekeepingEngine.js
+  // for the module that persists it).
+  const housekeepingCycle = careerState?.hotel ? housekeepingFromCareerState(careerState) : null;
+
   return {
     occupancyRate,
     averagePrice,
@@ -75,6 +82,7 @@ export function computeKpis(careerState) {
     payrollTotal: staffCycle ? staffCycle.payroll.total : null,
     marketingRoi: marketingCycle ? marketingCycle.roi.overallRoi : null,
     esgScore: esgCycle ? esgCycle.score : null,
+    housekeepingQuality: housekeepingCycle ? housekeepingCycle.quality : null,
     date: dailyReport.date,
   };
 }

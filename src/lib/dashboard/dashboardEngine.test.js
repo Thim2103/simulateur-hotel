@@ -73,6 +73,15 @@ test("computeKpis includes ROI from the Marketing module", async () => {
   expect(kpis.marketingRoi).toBeGreaterThanOrEqual(0);
 });
 
+// Refonte Housekeeping's Dashboard integration: computeKpis() also
+// folds in lib/housekeeping/housekeepingEngine.js's own cycle.
+test("computeKpis includes the quality score from the Housekeeping module", async () => {
+  const state = await playedCareerState();
+  const kpis = computeKpis(state);
+
+  expect(kpis.housekeepingQuality).toBeGreaterThanOrEqual(0);
+});
+
 // Refonte ESG's Dashboard integration: computeKpis() also folds in
 // lib/esg/esgEngine.js's own cycle.
 test("computeKpis includes the score from the ESG module", async () => {

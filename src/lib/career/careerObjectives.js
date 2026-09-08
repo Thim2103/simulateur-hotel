@@ -18,6 +18,11 @@ export const DEFAULT_CAREER_OBJECTIVES = [
   // ESG objective -- see pages/EsgDashboard.jsx's "Progression ESG"
   // section.
   { id: "esg-reputation-70", label: "Atteindre 70 de réputation grâce à une démarche ESG", kpi: "progressionReport.reputation", comparator: "gte", target: 70, weight: 1 },
+  // Housekeeping objective -- see pages/HousekeepingDashboard.jsx's
+  // "Progression Housekeeping" section. Same
+  // restaurantReport.customerSatisfaction KPI as careerMissions.js's
+  // "spotless-rooms" mission, at a lower, always-on bar.
+  { id: "clean-rooms-satisfaction", label: "Maintenir 4/5 de satisfaction grâce à des chambres bien tenues", kpi: "restaurantReport.customerSatisfaction", comparator: "gte", target: 4, weight: 1 },
 ];
 
 export function seedObjectives(definitions = DEFAULT_CAREER_OBJECTIVES) {
