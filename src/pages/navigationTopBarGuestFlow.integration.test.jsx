@@ -94,14 +94,26 @@ test("Hôtel -> PMS -> RM -> Finance -> Marketing -> Staff -> ESG -> Restaurant,
   expectNoSupabaseError();
   marketing.unmount();
 
-  // Staff (/staff) -- hooks/useStaff.js/useChain.js are pure in-memory
-  // state (no Supabase dependency at all), so this was already guest-safe
-  // by construction; asserted here so that stays true.
+  // Staff (/staff) -- now the Career/Guest-Mode HR module (see the
+  // Refonte RH request: lib/staff/, hooks/useStaffEngine.js,
+  // lib/staffRepository.js), same guest-aware pattern as Finance above.
+  // Without a career yet it prompts to start one rather than showing
+  // figures, exactly like Finance's own /finance in this same flow.
   window.history.pushState({}, "", "/staff");
   const staff = render(<App />);
-  await waitFor(() => expect(staff.getByRole("heading", { name: "Gestion du personnel" })).toBeInTheDocument());
+  await waitFor(() => expect(staff.getByRole("heading", { name: "Staff" })).toBeInTheDocument());
   expectNoSupabaseError();
   staff.unmount();
+
+  // Chain's own multi-site Staff page moved to /chain/staff (see
+  // pages/ChainStaffDashboard.jsx) -- hooks/useStaff.js/useChain.js are
+  // pure in-memory state (no Supabase dependency at all), so this was
+  // already guest-safe by construction; asserted here so that stays true.
+  window.history.pushState({}, "", "/chain/staff");
+  const chainStaff = render(<App />);
+  await waitFor(() => expect(chainStaff.getByRole("heading", { name: "Gestion du personnel" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  chainStaff.unmount();
 
   // ESG (/esg) -- hotelRepository.js-backed hook again.
   window.history.pushState({}, "", "/esg");

@@ -9,7 +9,10 @@ import DashboardRM from "./pages/DashboardRM";
 import RMDashboard from "./pages/RMDashboard";
 import ProgressionDashboard from "./pages/ProgressionDashboard";
 import ChainDashboard from "./pages/ChainDashboard";
+import ChainStaffDashboard from "./pages/ChainStaffDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
+import StaffReport from "./pages/StaffReport";
+import StaffForecast from "./pages/StaffForecast";
 import AcademyDashboard from "./pages/AcademyDashboard";
 import AcademyClass from "./pages/AcademyClass";
 import AcademyGroup from "./pages/AcademyGroup";
@@ -84,7 +87,10 @@ function App() {
                   <Route path="/rm-dashboard" element={<RMDashboard />} />
                   <Route path="/progression" element={<ProgressionDashboard />} />
                   <Route path="/chain" element={<ChainDashboard />} />
+                  <Route path="/chain/staff" element={<ChainStaffDashboard />} />
                   <Route path="/staff" element={<StaffDashboard />} />
+                  <Route path="/staff/report" element={<StaffReport />} />
+                  <Route path="/staff/forecast" element={<StaffForecast />} />
                   <Route path="/academy" element={<AcademyDashboard />} />
                   <Route path="/academy/:classId" element={<AcademyClass />} />
                   <Route path="/academy/:classId/group/:groupId" element={<AcademyGroup />} />

@@ -5,12 +5,15 @@ import TopBarDropdown from "./TopBarDropdown";
 // The 9 primary menus asked for, in order, each with the sub-menu items
 // specified. A plain link (no `items`) renders without a dropdown (see
 // TopBarDropdown.jsx). Where the spec names a sub-page that doesn't exist
-// as its own route (RM's Pricing/Forecast/Segments, Finance's Revenus/
-// Charges/Bilan/Cash-flow, Marketing's Campagnes/Canaux/ROI, Staff's RH/
-// Planning/Productivité, ESG's 4 items), the item deep-links to the
+// as its own route (RM's Pricing/Forecast/Segments, Marketing's
+// Campagnes/Canaux/ROI, ESG's 4 items), the item deep-links to the
 // existing page's matching section by id when one exists (RM ->
 // /rm-dashboard#rm-pricing etc., see RMDashboard.jsx) or to the page
 // itself otherwise -- no dead links, but not every item is its own route.
+// Finance's Revenus/Charges/Bilan/Cash-flow and Staff's RH/Planning/
+// Productivité DO each have their own routes (see pages/FinanceDashboard
+// .jsx/FinanceReport.jsx/FinanceForecast.jsx and pages/StaffDashboard.jsx
+// /StaffReport.jsx/StaffForecast.jsx).
 const PRIMARY_MENUS = [
   { label: "Dashboard", to: "/dashboard" },
   {
@@ -67,8 +70,8 @@ const PRIMARY_MENUS = [
     label: "Staff",
     items: [
       { label: "RH", to: "/staff" },
-      { label: "Planning", to: "/staff" },
-      { label: "Productivité", to: "/staff" },
+      { label: "Planning", to: "/staff/forecast" },
+      { label: "Productivité", to: "/staff/report" },
     ],
   },
   {
@@ -94,6 +97,7 @@ const MORE_MENU_ITEMS = [
   { label: "Mode Carrière", to: "/career" },
   { label: "Mode Invité", to: "/guest" },
   { label: "Chaîne d'hôtels", to: "/chain" },
+  { label: "RH multi-sites", to: "/chain/staff" },
   { label: "Progression", to: "/progression" },
   { label: "Expansion", to: "/expansion" },
   { label: "Retour au menu principal", to: "/menu" },

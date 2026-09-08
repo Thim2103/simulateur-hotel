@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72 };
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);
@@ -37,4 +37,15 @@ test("shows the EBITDA KPI (see the Refonte Finance request's Dashboard integrat
 test("shows a placeholder dash when EBITDA isn't available yet", () => {
   render(<DashboardKpis kpis={{ ...kpis, ebitda: null }} viewMode="casual" />);
   expect(screen.getByText("EBITDA")).toBeInTheDocument();
+});
+
+test("shows the Moral RH KPI (see the Refonte RH request's Dashboard integration)", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" />);
+  expect(screen.getByText("Moral RH")).toBeInTheDocument();
+  expect(screen.getByText("72/100")).toBeInTheDocument();
+});
+
+test("shows a placeholder dash when Moral RH isn't available yet", () => {
+  render(<DashboardKpis kpis={{ ...kpis, staffMorale: null }} viewMode="casual" />);
+  expect(screen.getByText("Moral RH")).toBeInTheDocument();
 });
