@@ -47,6 +47,22 @@ export const MISSION_CATALOG = [
     auto: true,
     rewardId: "cash-1000",
   },
+  // Marketing mission -- see pages/MarketingDashboard.jsx's "Progression
+  // marketing" section, which surfaces any mission/objective whose id/
+  // title/description mentions marketing-flavored keywords. Reuses the
+  // same progressionReport.reputation KPI path careerObjectives.js's
+  // "reputation-60" objective already reads (see
+  // lib/progression/reputation.js), at a higher bar.
+  {
+    id: "brand-reputation-75",
+    title: "Image de marque",
+    description: "Atteindre 75 de réputation grâce à une stratégie marketing efficace.",
+    kpi: "progressionReport.reputation",
+    comparator: "gte",
+    target: 75,
+    auto: true,
+    rewardId: "skill-point-management",
+  },
 ];
 
 export function createMissionInstance(definition) {

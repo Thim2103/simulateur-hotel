@@ -64,6 +64,15 @@ test("computeKpis includes moral/surcharge/payroll from the Staff module", async
   expect(kpis.payrollTotal).toBeGreaterThan(0);
 });
 
+// Refonte Marketing's Dashboard integration: computeKpis() also folds in
+// lib/marketing/marketingEngine.js's own cycle.
+test("computeKpis includes ROI from the Marketing module", async () => {
+  const state = await playedCareerState();
+  const kpis = computeKpis(state);
+
+  expect(kpis.marketingRoi).toBeGreaterThanOrEqual(0);
+});
+
 test("buildReplaySummary returns null before any cycle exists", () => {
   expect(buildReplaySummary(baseCareerState())).toBeNull();
 });

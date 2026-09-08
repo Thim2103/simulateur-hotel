@@ -12,6 +12,9 @@ export const DEFAULT_CAREER_OBJECTIVES = [
   // Finance objective -- see pages/FinanceDashboard.jsx's "Progression
   // financière" section.
   { id: "healthy-revenue-day", label: "Atteindre 2 000 € de revenu net en une journée", kpi: "hotelRevenue.netRevenue", comparator: "gte", target: 2000, weight: 1 },
+  // Marketing objective -- see pages/MarketingDashboard.jsx's
+  // "Progression marketing" section.
+  { id: "marketing-revenue-day", label: "Générer 2 500 € de revenu net en une journée grâce au marketing", kpi: "hotelRevenue.netRevenue", comparator: "gte", target: 2500, weight: 1 },
 ];
 
 export function seedObjectives(definitions = DEFAULT_CAREER_OBJECTIVES) {
