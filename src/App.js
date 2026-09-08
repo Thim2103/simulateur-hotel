@@ -53,7 +53,11 @@ import FinanceReport from "./pages/FinanceReport";
 import FinanceForecast from "./pages/FinanceForecast";
 import Housekeeping from "./pages/Housekeeping";
 import PMS from "./pages/PMS";
-import Marketing from "./pages/Marketing";
+import MarketingDashboard from "./pages/MarketingDashboard";
+import MarketingCampaigns from "./pages/MarketingCampaigns";
+import MarketingChannels from "./pages/MarketingChannels";
+import MarketingForecast from "./pages/MarketingForecast";
+import MarketingReport from "./pages/MarketingReport";
 import ESG from "./pages/ESG";
 import Expansion from "./pages/Expansion";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
@@ -121,7 +125,11 @@ function App() {
                   <Route path="/finance/forecast" element={<FinanceForecast />} />
                   <Route path="/housekeeping" element={<Housekeeping />} />
                   <Route path="/pms" element={<PMS />} />
-                  <Route path="/marketing" element={<Marketing />} />
+                  <Route path="/marketing" element={<MarketingDashboard />} />
+                  <Route path="/marketing/campaigns" element={<MarketingCampaigns />} />
+                  <Route path="/marketing/channels" element={<MarketingChannels />} />
+                  <Route path="/marketing/forecast" element={<MarketingForecast />} />
+                  <Route path="/marketing/report" element={<MarketingReport />} />
                   <Route path="/esg" element={<ESG />} />
                   <Route path="/expansion" element={<Expansion />} />
                   <Route path="/restaurant/*" element={<RestaurantSimulator />} />

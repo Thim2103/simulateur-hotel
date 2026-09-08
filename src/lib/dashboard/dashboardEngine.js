@@ -16,6 +16,7 @@ import { QUICK_ACTION_CATALOG, applyQuickAction as applyQuickActionPure } from "
 import { normalizeViewMode } from "./dashboardViewMode";
 import { financeFromCareerState } from "../finance/financeEngine";
 import { staffFromCareerState } from "../staff/staffEngine";
+import { marketingFromCareerState } from "../marketing/marketingEngine";
 
 // KPI aggregation: occupation, avg price / ADR, revenue, satisfaction,
 // staff -- pulled from today's DailyReport (careerState.lastDayReport,
@@ -45,6 +46,12 @@ export function computeKpis(careerState) {
   // above (see hooks/useStaffEngine.js for the module that persists it).
   const staffCycle = careerState?.hotel ? staffFromCareerState(careerState) : null;
 
+  // Budget/ROI marketing -- lib/marketing/marketingEngine.js's own
+  // cycle, same "computed fresh, not persisted here" contract as
+  // Finance/Staff above (see hooks/useMarketingEngine.js for the module
+  // that persists it).
+  const marketingCycle = careerState?.hotel ? marketingFromCareerState(careerState) : null;
+
   return {
     occupancyRate,
     averagePrice,
@@ -60,6 +67,7 @@ export function computeKpis(careerState) {
     staffMorale: staffCycle ? staffCycle.morale : null,
     staffOverload: staffCycle ? staffCycle.overload : null,
     payrollTotal: staffCycle ? staffCycle.payroll.total : null,
+    marketingRoi: marketingCycle ? marketingCycle.roi.overallRoi : null,
     date: dailyReport.date,
   };
 }

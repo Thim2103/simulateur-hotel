@@ -87,7 +87,12 @@ test("Hôtel -> PMS -> RM -> Finance -> Marketing -> Staff -> ESG -> Restaurant,
   expectNoSupabaseError();
   finance.unmount();
 
-  // Marketing (/marketing) -- same hotelRepository.js-backed hook.
+  // Marketing (/marketing) -- now the Career/Guest-Mode Marketing module
+  // (see the Refonte Marketing request: lib/marketing/, hooks/
+  // useMarketingEngine.js, lib/marketingRepository.js), same guest-aware
+  // pattern as Finance/Staff above. Without a career yet it prompts to
+  // start one rather than showing figures, exactly like Finance/Staff's
+  // own pages in this same flow.
   window.history.pushState({}, "", "/marketing");
   const marketing = render(<App />);
   await waitFor(() => expect(marketing.getByRole("heading", { name: "Marketing" })).toBeInTheDocument());
