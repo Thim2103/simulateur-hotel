@@ -1,6 +1,16 @@
 import { renderHook, act } from "@testing-library/react";
 import { useStaff } from "./useStaff";
 
+// useStaff.js (and the useChain.js hotels it operates on -- see
+// StaffDashboard.jsx) never imports anything from lib/supabase.js or any
+// repository: it's pure in-memory state built on lib/staffMulti/
+// staffEngine.js. It was already guest-safe by construction before this
+// pass, with nothing to branch on -- every test below exercises that
+// same behaviour regardless of session mode, no separate "guest mode"
+// describe block needed (see navigationTopBarGuestFlow.integration.test
+// .jsx's Staff step for the real end-to-end confirmation that /staff
+// shows zero Supabase errors as a guest).
+
 function hotel(overrides = {}) {
   return {
     id: "a",

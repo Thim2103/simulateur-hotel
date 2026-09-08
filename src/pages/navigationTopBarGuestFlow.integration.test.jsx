@@ -1,36 +1,26 @@
 // Integration test: top-bar navigation while running as a guest session
-// (see hooks/useSupabaseSession.js's fallback) -- confirms the pages
-// Guest Mode actually covers (Dashboard, Mode Carrière) navigate and load
-// cleanly with zero Supabase errors, and honestly documents where that
-// coverage currently ends (see the comment on the last test below) rather
-// than asserting something that isn't true yet.
+// (see hooks/useSupabaseSession.js's fallback) -- confirms every business
+// page reachable from the top-bar now loads cleanly in Guest Mode, with
+// zero Supabase errors, after extending the guest branch from Career/
+// Restaurant(Structure)/Dashboard (the original Guest Mode PR's scope) to
+// the rest of the app's persistence layer: lib/pmsRepository.js,
+// lib/hotelRepository.js and lib/restaurantRepository.js (see each
+// file's own guest-branch tests for the unit-level coverage; this file
+// is the "does it actually work end to end, through the real navigation"
+// proof).
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../App";
-
-jest.mock("../lib/calculs/rm", () => ({
-  getRooms: jest.fn(async () => []),
-  getReservations: jest.fn(async () => []),
-  occupationRate: jest.fn(() => 0),
-  adr: jest.fn(() => 0),
-  revpar: jest.fn(() => 0),
-  integratedHotelReputation: jest.fn(() => 0),
-  getRMStats: jest.fn(async () => ({
-    occupancy: 0,
-    adr: 0,
-    revpar: 0,
-    revenue: 0,
-    forecastAdvanced: { next30: 0 },
-    pickup: {},
-    segmentation: { corporate: 0, leisure: 0, ota: 0, groups: 0 },
-    revenueByRoomType: {},
-    heatmap: {},
-  })),
-}));
 
 beforeEach(() => {
   window.localStorage.clear();
   window.history.pushState({}, "", "/play");
 });
+
+function expectNoSupabaseError() {
+  expect(screen.queryByText(/session supabase non authentifiee/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/pas configure/i)).not.toBeInTheDocument();
+  expect(screen.queryByText(/indisponible/i)).not.toBeInTheDocument();
+}
 
 test("Play -> Mode invité -> Sélection du mode -> Carrière -> Dashboard, no Supabase error surfaced anywhere", async () => {
   render(<App />);
@@ -40,44 +30,98 @@ test("Play -> Mode invité -> Sélection du mode -> Carrière -> Dashboard, no S
 
   fireEvent.click(screen.getByRole("link", { name: /^carrière/i }));
   await waitFor(() => expect(screen.getByRole("button", { name: /démarrer ma carrière/i })).toBeInTheDocument());
-  expect(screen.queryByText(/session supabase non authentifiee/i)).not.toBeInTheDocument();
+  expectNoSupabaseError();
 
   fireEvent.click(screen.getByRole("button", { name: /démarrer ma carrière/i }));
   await waitFor(() => expect(screen.getByText(/vue globale/i)).toBeInTheDocument());
-  expect(screen.queryByText(/session supabase non authentifiee/i)).not.toBeInTheDocument();
+  expectNoSupabaseError();
 
   // Dashboard (/dashboard), reached through the top-bar itself now that a
   // career (hence a resolved guest session) exists.
   fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
   await waitFor(() => expect(screen.getByText(/mon hôtel/i)).toBeInTheDocument());
-  expect(screen.queryByText(/session supabase non authentifiee/i)).not.toBeInTheDocument();
+  expectNoSupabaseError();
 });
 
-// Guest Mode's coverage today is exactly what the original Guest Mode PR
-// scoped it to: Career (lib/career/, useCareer.js) and the general
-// Dashboard (lib/dashboard/, useDashboard.js), both fixed for the mount-
-// time session race in this PR. The standalone Hôtel/Restaurant/RM/PMS/
-// Finance/Marketing/Staff/ESG pages reached from the top-bar's other
-// dropdowns still read through the pre-Guest-Mode, Supabase-only data
-// layer (lib/pmsRepository.js, lib/calculs/rm.js, hooks/useHotelSimulator
-// .js, hooks/useRM.js, hooks/useStaff.js) and will still show a
-// connection-error state for a guest session -- extending Guest Mode
-// there is a much larger, separate project (a second data layer per
-// module, the same shape Career/Restaurant/Dashboard already went
-// through), not a navigation fix. This test documents that boundary
-// instead of silently asserting something that isn't true yet.
-test("a standalone Hôtel/PMS page not covered by Guest Mode still shows its own Supabase error (documented, pre-existing scope boundary)", async () => {
-  const first = render(<App />);
+// The full business-page tour: every page the top-bar's own dropdowns
+// (see components/navigation/TopBar.jsx) can reach, played as a guest,
+// asserting real content loaded (not just "no error text") wherever
+// that's cheap to check, and at minimum the absence of any Supabase
+// error text everywhere.
+test("Hôtel -> PMS -> RM -> Finance -> Marketing -> Staff -> ESG -> Restaurant, all playable as a guest with zero Supabase errors", async () => {
+  const initial = render(<App />);
   fireEvent.click(screen.getByRole("button", { name: "Mode invité" }));
   await waitFor(() => expect(screen.getByRole("heading", { name: /choisissez votre mode de jeu/i })).toBeInTheDocument());
-  first.unmount();
+  initial.unmount();
 
+  // Hôtel -> Chambres (/rooms) -- lib/pmsRepository.js's guest branch.
   window.history.pushState({}, "", "/rooms");
-  render(<App />);
+  const rooms = render(<App />);
+  await waitFor(() => expect(rooms.getByRole("heading", { name: "Chambres" })).toBeInTheDocument());
+  // The guest-seeded rooms (see lib/guest/guestPmsSeed.js) are listed, not
+  // an empty/error table.
+  await waitFor(() => expect(rooms.getByText("101")).toBeInTheDocument());
+  rooms.unmount();
 
-  // lib/pmsRepository.js's listRooms() has no guest/localStorage fallback
-  // at all -- it throws straight from assertSupabaseConfigured() in this
-  // (Supabase-less) test environment, same as it would for a real guest
-  // session.
-  await waitFor(() => expect(screen.getAllByText(/pas configure/i).length).toBeGreaterThan(0));
+  // PMS -> Planning (/pms) -- lib/calculs/rm.js's getRooms/getReservations
+  // wrap the same pmsRepository.js functions.
+  window.history.pushState({}, "", "/pms");
+  const pms = render(<App />);
+  await waitFor(() => expect(pms.getByRole("heading", { name: "Planning PMS" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  pms.unmount();
+
+  // RM -> Pricing (/rm-dashboard#rm-pricing) -- hooks/useRM.js, itself
+  // built on the now guest-aware pmsRepository.js.
+  window.history.pushState({}, "", "/rm-dashboard");
+  const rm = render(<App />);
+  await waitFor(() => expect(rm.getByRole("heading", { name: /prévisions & pricing/i })).toBeInTheDocument());
+  expectNoSupabaseError();
+  rm.unmount();
+
+  // Finance (/finance) -- hooks/useHotelSimulator.js -> useSupabaseHotel.js
+  // -> lib/hotelRepository.js's guest branch.
+  window.history.pushState({}, "", "/finance");
+  const finance = render(<App />);
+  await waitFor(() => expect(finance.getByRole("heading", { name: "Finance" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  finance.unmount();
+
+  // Marketing (/marketing) -- same hotelRepository.js-backed hook.
+  window.history.pushState({}, "", "/marketing");
+  const marketing = render(<App />);
+  await waitFor(() => expect(marketing.getByRole("heading", { name: "Marketing" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  marketing.unmount();
+
+  // Staff (/staff) -- hooks/useStaff.js/useChain.js are pure in-memory
+  // state (no Supabase dependency at all), so this was already guest-safe
+  // by construction; asserted here so that stays true.
+  window.history.pushState({}, "", "/staff");
+  const staff = render(<App />);
+  await waitFor(() => expect(staff.getByRole("heading", { name: "Gestion du personnel" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  staff.unmount();
+
+  // ESG (/esg) -- hotelRepository.js-backed hook again.
+  window.history.pushState({}, "", "/esg");
+  const esg = render(<App />);
+  await waitFor(() => expect(esg.getByRole("heading", { name: "ESG" })).toBeInTheDocument());
+  expectNoSupabaseError();
+  esg.unmount();
+
+  // Restaurant -> Menu (/restaurant/menu) -- hooks/useRestaurantSimulator.js
+  // -> useSupabaseRestaurant.js -> lib/restaurantRepository.js's guest
+  // branch (shares the "restaurant" namespace with useRestaurant.js's own
+  // bypass, see restaurantRepository.js's header comment). Pre-existing,
+  // unrelated quirk: lib/normalizers.js's normalizeProgression() strips
+  // `ready`, so RestaurantSimulator.jsx's own gate always shows the
+  // "Structure de l'établissement" form on this hook's first load
+  // regardless of Supabase vs guest -- what matters here is that it does
+  // so cleanly, with no Supabase error, not which of its two views renders.
+  window.history.pushState({}, "", "/restaurant/menu");
+  const restaurant = render(<App />);
+  await waitFor(() => expect(restaurant.getByRole("heading", { name: /pilotez votre établissement/i })).toBeInTheDocument());
+  expectNoSupabaseError();
+  restaurant.unmount();
 });
