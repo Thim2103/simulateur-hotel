@@ -1,8 +1,9 @@
-// Integration test: HotelViewIsometric (v3) through the real daily loop --
-// guest mode, MorningBriefing -> MyHotel (isometric by default) ->
-// décisions -> animations iso -> DailyReview -- with zero Supabase errors
-// anywhere. Same pattern as pages/dailyLoopGuestFlow.integration.test.jsx
-// and ui/hotelView/v2/hotelView2D.integration.test.jsx.
+// Integration test: RetroView (the retro-modern isometric view) through
+// the real daily loop -- guest mode, MorningBriefing -> MyHotel (retro
+// isometric by default) -> décisions -> DailyReview -- with zero Supabase
+// errors anywhere. Same pattern as
+// pages/dailyLoopGuestFlow.integration.test.jsx and
+// ui/hotelView/v2/hotelView2D.integration.test.jsx.
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../../../App";
 
@@ -18,7 +19,7 @@ function expectNoSupabaseError() {
 }
 
 test(
-  "Mode invité → Carrière → MorningBriefing → MyHotel (isométrique) → décisions → animations iso → DailyReview",
+  "Mode invité → Carrière → MorningBriefing → MyHotel (isométrique rétro-moderne) → décisions → DailyReview",
   async () => {
     render(<App />);
 
@@ -32,11 +33,11 @@ test(
     fireEvent.click(screen.getByRole("button", { name: /démarrer ma carrière/i }));
     await waitFor(() => expect(screen.getByText(/vue globale/i)).toBeInTheDocument());
 
-    // MyHotel: the isometric view is the default (HotelViewIsometric, v3).
+    // MyHotel: the retro-modern isometric view is the default (RetroView).
     fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
     expectNoSupabaseError();
-    expect(screen.getByText(/vue isométrique de l'hôtel/i)).toBeInTheDocument();
+    expect(screen.getByText(/vue isométrique rétro de l'hôtel/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /vue 2d/i })).toBeInTheDocument();
 
     // Morning Briefing.
@@ -45,11 +46,10 @@ test(
     await waitFor(() => expect(screen.getByText(/situation/i)).toBeInTheDocument());
     expectNoSupabaseError();
 
-    // Back to MyHotel, apply a decision -- the isometric stage keeps
-    // showing zero Supabase errors and stays on the isometric view.
+    // Back to MyHotel, apply a decision -- stays on the retro view.
     fireEvent.click(screen.getByRole("link", { name: /aller à l'hôtel/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
-    expect(screen.getByText(/vue isométrique de l'hôtel/i)).toBeInTheDocument();
+    expect(screen.getByText(/vue isométrique rétro de l'hôtel/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole("button", { name: /appliquer/i })[0]);
     expectNoSupabaseError();

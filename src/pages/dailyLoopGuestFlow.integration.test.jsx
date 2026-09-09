@@ -38,9 +38,9 @@ test(
     await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
     expectNoSupabaseError();
 
-    // MyHotel: hotel view (isometric by default, see HotelViewIsometric.jsx),
-    // attention panel, décisions du jour.
-    expect(screen.getByText(/vue isométrique de l'hôtel/i)).toBeInTheDocument();
+    // MyHotel: hotel view (retro-modern isometric by default, see
+    // RetroView.jsx), attention panel, décisions du jour.
+    expect(screen.getByText(/vue isométrique rétro de l'hôtel/i)).toBeInTheDocument();
     expect(screen.getByText(/ce qui demande votre attention/i)).toBeInTheDocument();
     expect(screen.getByText(/décisions du jour/i)).toBeInTheDocument();
 
