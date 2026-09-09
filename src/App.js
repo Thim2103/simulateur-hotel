@@ -40,6 +40,14 @@ import TfeDashboard from "./pages/TfeDashboard";
 import TfeStoryline from "./pages/TfeStoryline";
 import TfeReport from "./pages/TfeReport";
 import TfeForecast from "./pages/TfeForecast";
+import ProMenu from "./pages/ProMenu";
+import ProDashboard from "./pages/ProDashboard";
+import ProCrises from "./pages/ProCrises";
+import ProOpportunities from "./pages/ProOpportunities";
+import ProAudits from "./pages/ProAudits";
+import ProObjectives from "./pages/ProObjectives";
+import ProForecast from "./pages/ProForecast";
+import ProReport from "./pages/ProReport";
 import MainMenu from "./pages/MainMenu";
 import PlayMenu from "./pages/PlayMenu";
 import SelectMode from "./pages/SelectMode";
@@ -107,6 +115,14 @@ function App() {
                   <Route path="/tfe/storyline" element={<TfeStoryline />} />
                   <Route path="/tfe/report" element={<TfeReport />} />
                   <Route path="/tfe/forecast" element={<TfeForecast />} />
+                  <Route path="/pro" element={<ProMenu />} />
+                  <Route path="/pro/dashboard" element={<ProDashboard />} />
+                  <Route path="/pro/crises" element={<ProCrises />} />
+                  <Route path="/pro/opportunities" element={<ProOpportunities />} />
+                  <Route path="/pro/audits" element={<ProAudits />} />
+                  <Route path="/pro/objectives" element={<ProObjectives />} />
+                  <Route path="/pro/forecast" element={<ProForecast />} />
+                  <Route path="/pro/report" element={<ProReport />} />
                   <Route path="/career" element={<CareerDashboard />} />
                   <Route path="/career/missions" element={<CareerMissions />} />
                   <Route path="/career/story" element={<CareerStory />} />

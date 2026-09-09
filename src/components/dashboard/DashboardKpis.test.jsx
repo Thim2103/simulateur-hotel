@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82, clientsSatisfaction: 76, rmAdvancedMix: 55 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82, clientsSatisfaction: 76, rmAdvancedMix: 55, proScore: 71 };
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);
@@ -114,4 +114,15 @@ test("shows the Mix optimal RM KPI (see the Refonte RM avancée request's Dashbo
 test("shows a placeholder dash when no RM Advanced cycle has run yet", () => {
   render(<DashboardKpis kpis={{ ...kpis, rmAdvancedMix: null }} viewMode="casual" />);
   expect(screen.getByText("Mix optimal RM")).toBeInTheDocument();
+});
+
+test("shows the Score Professionnel KPI (see the Mode Professionnel Solo request's Dashboard integration)", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" />);
+  expect(screen.getByText("Score Professionnel")).toBeInTheDocument();
+  expect(screen.getByText("71/100")).toBeInTheDocument();
+});
+
+test("shows a placeholder dash when no Pro run is active", () => {
+  render(<DashboardKpis kpis={{ ...kpis, proScore: null }} viewMode="casual" />);
+  expect(screen.getByText("Score Professionnel")).toBeInTheDocument();
 });
