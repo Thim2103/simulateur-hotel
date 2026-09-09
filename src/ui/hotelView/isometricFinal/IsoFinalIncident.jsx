@@ -1,4 +1,5 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import { incidentSprite } from "./IsoFinalSprites";
 import { PALETTE, SHADOW_FILTER } from "./IsoFinalStyle";
 import "./isoFinalView.css";
@@ -8,7 +9,7 @@ import "./isoFinalView.css";
 // positioning wrapper + an animated inner disc, same reasoning as
 // IsoFinalCharacter.jsx's own docstring.
 export default function IsoFinalIncident({ col, row, type = "breakdown", message }) {
-  const { x, y } = toIsoFinal(col, row);
+  const { x, y } = tileToScreen({ col, row }, ISO_FINAL_PROJECTION);
   return (
     <span title={message} className="absolute -translate-x-1/2 -translate-y-full" style={{ left: x, top: y }}>
       <span

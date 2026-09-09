@@ -1,4 +1,5 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import { ROOM_STATE_PALETTE, STROKE_WIDTH, SHADOW_FILTER } from "./IsoFinalStyle";
 import { roomProps } from "./IsoFinalSprites";
 import { roomTransitionClassName } from "./IsoFinalAnimations";
@@ -11,7 +12,7 @@ const STATE_LABEL = { clean: "propre", dirty: "sale", occupied: "occupée", clea
 // luggage + clothes when occupied...) so it reads as a furnished room
 // rather than a bare status marker.
 export default function IsoFinalRoom({ col, row, state, number }) {
-  const { x, y } = toIsoFinal(col, row);
+  const { x, y } = tileToScreen({ col, row }, ISO_FINAL_PROJECTION);
   const palette = ROOM_STATE_PALETTE[state] || ROOM_STATE_PALETTE.clean;
   const props = roomProps(state);
 

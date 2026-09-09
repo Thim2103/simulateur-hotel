@@ -1,11 +1,12 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import { PALETTE, STROKE_WIDTH, SHADOW_FILTER } from "./IsoFinalStyle";
 import { RESTAURANT_PROPS } from "./IsoFinalSprites";
 
 // Ground-floor room: restaurant -- round tables, cartoon chairs, visible
 // dishes (see IsoFinalSprites.js's RESTAURANT_PROPS).
 export default function IsoFinalRestaurant({ col, row }) {
-  const { x, y } = toIsoFinal(col, row);
+  const { x, y } = tileToScreen({ col, row }, ISO_FINAL_PROJECTION);
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: x, top: y }}>
       <div
