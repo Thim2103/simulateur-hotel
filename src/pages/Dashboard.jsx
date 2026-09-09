@@ -7,6 +7,7 @@ import { useDashboard } from "../hooks/useDashboard";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
+import { useProEngine } from "../hooks/useProEngine";
 import { skillLabel } from "../lib/career/careerSkills";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
@@ -55,11 +56,20 @@ export default function Dashboard() {
   // this is kept separate from useDashboard.js.
   const { rmAdvancedState, loadRmAdvancedState } = useRmAdvancedEngine();
 
+  // Reads the Mode Professionnel Solo run's own score, purely to surface
+  // it on this Dashboard as the 14th KPI. Never plays a month or applies
+  // Pro actions from here -- same read-only pattern as tfeState/
+  // clientsState/rmAdvancedState above. No Pro run yet simply shows "—".
+  // See hooks/useProEngine.js's own docstring for why this is kept
+  // separate from useDashboard.js.
+  const { proState, loadProState } = useProEngine();
+
   useEffect(() => {
     loadDashboardState().catch(() => undefined);
     loadTfeState().catch(() => undefined);
     loadClientsState().catch(() => undefined);
     loadRmAdvancedState().catch(() => undefined);
+    loadProState().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -153,6 +163,7 @@ export default function Dashboard() {
           tfeScore: tfeState?.score?.total ?? null,
           clientsSatisfaction: clientsState?.satisfaction ?? null,
           rmAdvancedMix: rmAdvancedState?.otaStrategy?.directShare ?? null,
+          proScore: proState?.score?.total ?? null,
         } : null}
         viewMode={viewMode}
       />

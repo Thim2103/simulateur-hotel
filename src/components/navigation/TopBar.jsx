@@ -99,6 +99,19 @@ const PRIMARY_MENUS = [
       { label: "Eau", to: "/esg" },
       { label: "Certifications", to: "/esg/certifications" },
     ],
+  },
+  {
+    label: "Mode Professionnel",
+    items: [
+      { label: "Nouveau programme", to: "/pro" },
+      { label: "Tableau de bord", to: "/pro/dashboard" },
+      { label: "Crises", to: "/pro/crises" },
+      { label: "Opportunités", to: "/pro/opportunities" },
+      { label: "Audits", to: "/pro/audits" },
+      { label: "Objectifs", to: "/pro/objectives" },
+      { label: "Prévisions", to: "/pro/forecast" },
+      { label: "Rapport", to: "/pro/report" },
+    ],
     align: "right",
   },
 ];
