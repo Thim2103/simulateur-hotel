@@ -7,6 +7,7 @@ import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 import { useProEngine } from "../hooks/useProEngine";
+import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 
 jest.mock("../context/CareerContext");
 jest.mock("../hooks/useDashboard");
@@ -14,6 +15,10 @@ jest.mock("../hooks/useTfeEngine");
 jest.mock("../hooks/useClientsEngine");
 jest.mock("../hooks/useRmAdvancedEngine");
 jest.mock("../hooks/useProEngine");
+jest.mock("../ui/gmDesk/GmDeskProvider", () => ({
+  ...jest.requireActual("../ui/gmDesk/GmDeskProvider"),
+  useGmDesk: jest.fn(),
+}));
 
 function careerState(overrides = {}) {
   return {
@@ -79,6 +84,7 @@ beforeEach(() => {
   useClientsEngine.mockReturnValue({ clientsState: null, loadClientsState: jest.fn().mockResolvedValue(null) });
   useRmAdvancedEngine.mockReturnValue({ rmAdvancedState: null, loadRmAdvancedState: jest.fn().mockResolvedValue(null) });
   useProEngine.mockReturnValue({ proState: null, loadProState: jest.fn().mockResolvedValue(null) });
+  useGmDesk.mockReturnValue({ messages: [], applyMessageDecision: jest.fn() });
 });
 
 test("loads the dashboard state on mount", () => {

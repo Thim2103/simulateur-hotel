@@ -93,6 +93,8 @@ import EsgReport from "./pages/EsgReport";
 import Expansion from "./pages/Expansion";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 import { GameThemeProvider } from "./ui/designSystem/GameThemeProvider";
+import { GmDeskProvider } from "./ui/gmDesk/GmDeskProvider";
+import GmDesk from "./ui/gmDesk/GmDesk";
 
 function App() {
   return (
@@ -102,6 +104,7 @@ function App() {
         <AcademyProvider>
           <CompetitionProvider>
             <CareerProvider>
+              <GmDeskProvider>
               <Layout>
                 <Routes>
                   <Route path="/menu" element={<MainMenu />} />
@@ -197,8 +200,10 @@ function App() {
                   <Route path="/esg/report" element={<EsgReport />} />
                   <Route path="/expansion" element={<Expansion />} />
                   <Route path="/restaurant/*" element={<RestaurantSimulator />} />
+                  <Route path="/gm-desk" element={<GmDesk />} />
                 </Routes>
               </Layout>
+              </GmDeskProvider>
             </CareerProvider>
           </CompetitionProvider>
         </AcademyProvider>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -22,6 +22,8 @@ import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
+import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
+import GameNotification from "../ui/components/GameNotification";
 import { fadeIn } from "../ui/animations";
 
 // The general Dashboard ("Mon Hôtel") -- the living, narrative home page:
@@ -77,6 +79,22 @@ export default function Dashboard() {
   // local UI state, never persisted, reset by the next decision.
   const [decisionFeedback, setDecisionFeedback] = useState(null);
   const [cleaningRoomIds, setCleaningRoomIds] = useState(new Set());
+
+  // GM Desk (see ui/gmDesk/GmDeskProvider.jsx, mounted once in App.js):
+  // the "📬 GM Desk" link's own unread-style badge, plus a GameNotification
+  // the first time new messages appear after this page has already loaded
+  // once (so it doesn't fire on the very first render, only when the
+  // inbox actually grows -- e.g. after "Jouer la journée").
+  const { messages: gmMessages } = useGmDesk();
+  const [gmNotification, setGmNotification] = useState(null);
+  const previousGmMessageCount = useRef(null);
+
+  useEffect(() => {
+    if (previousGmMessageCount.current !== null && gmMessages.length > previousGmMessageCount.current) {
+      setGmNotification(`${gmMessages.length - previousGmMessageCount.current} nouveau(x) message(s) au GM Desk.`);
+    }
+    previousGmMessageCount.current = gmMessages.length;
+  }, [gmMessages.length]);
 
   useEffect(() => {
     loadDashboardState().catch(() => undefined);
@@ -187,6 +205,14 @@ export default function Dashboard() {
         </p>
         <div className="flex items-center gap-3">
           <Link to="/briefing" className="text-sm font-medium text-cyan-700 hover:underline">Briefing du matin →</Link>
+          <Link to="/gm-desk" className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline">
+            📬 GM Desk
+            {gmMessages.length > 0 && (
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1 text-xs font-semibold text-white">
+                {gmMessages.length}
+              </span>
+            )}
+          </Link>
           <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
         </div>
       </div>
@@ -271,6 +297,8 @@ export default function Dashboard() {
       <DashboardInsights insights={dashboardState?.insights} />
 
       <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
+
+      {gmNotification && <GameNotification tone="info" message={gmNotification} onDismiss={() => setGmNotification(null)} />}
     </div>
   );
 }
