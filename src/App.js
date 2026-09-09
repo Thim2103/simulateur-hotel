@@ -58,6 +58,12 @@ import ClientsSegments from "./pages/ClientsSegments";
 import ClientsReviews from "./pages/ClientsReviews";
 import ClientsForecast from "./pages/ClientsForecast";
 import ClientsReport from "./pages/ClientsReport";
+import RmAdvancedDashboard from "./pages/RmAdvancedDashboard";
+import RmPickup from "./pages/RmPickup";
+import RmCompression from "./pages/RmCompression";
+import RmDisplacement from "./pages/RmDisplacement";
+import RmAdvancedForecast from "./pages/RmAdvancedForecast";
+import RmAdvancedReport from "./pages/RmAdvancedReport";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import FinanceReport from "./pages/FinanceReport";
 import FinanceForecast from "./pages/FinanceForecast";
@@ -145,6 +151,12 @@ function App() {
                   <Route path="/clients/reviews" element={<ClientsReviews />} />
                   <Route path="/clients/forecast" element={<ClientsForecast />} />
                   <Route path="/clients/report" element={<ClientsReport />} />
+                  <Route path="/rm-advanced" element={<RmAdvancedDashboard />} />
+                  <Route path="/rm-advanced/pickup" element={<RmPickup />} />
+                  <Route path="/rm-advanced/compression" element={<RmCompression />} />
+                  <Route path="/rm-advanced/displacement" element={<RmDisplacement />} />
+                  <Route path="/rm-advanced/forecast" element={<RmAdvancedForecast />} />
+                  <Route path="/rm-advanced/report" element={<RmAdvancedReport />} />
                   <Route path="/finance" element={<FinanceDashboard />} />
                   <Route path="/finance/report" element={<FinanceReport />} />
                   <Route path="/finance/forecast" element={<FinanceForecast />} />

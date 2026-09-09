@@ -5,11 +5,13 @@ import { useCareerContext } from "../context/CareerContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
+import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 
 jest.mock("../context/CareerContext");
 jest.mock("../hooks/useDashboard");
 jest.mock("../hooks/useTfeEngine");
 jest.mock("../hooks/useClientsEngine");
+jest.mock("../hooks/useRmAdvancedEngine");
 
 function careerState(overrides = {}) {
   return {
@@ -64,13 +66,15 @@ function dashboardHook(overrides = {}) {
   };
 }
 
-// Dashboard also reads any in-progress TFE Solo run and the Clients
-// satisfaction score purely to surface them as KPIs -- no test here
-// varies them, so default stubs prevent the real hooks (with their
-// real guest-mode repository calls) from leaking into every test.
+// Dashboard also reads any in-progress TFE Solo run, the Clients
+// satisfaction score and the RM Advanced OTA-vs-direct mix purely to
+// surface them as KPIs -- no test here varies them, so default stubs
+// prevent the real hooks (with their real guest-mode repository calls)
+// from leaking into every test.
 beforeEach(() => {
   useTfeEngine.mockReturnValue({ tfeState: null, loadTfeState: jest.fn().mockResolvedValue(null) });
   useClientsEngine.mockReturnValue({ clientsState: null, loadClientsState: jest.fn().mockResolvedValue(null) });
+  useRmAdvancedEngine.mockReturnValue({ rmAdvancedState: null, loadRmAdvancedState: jest.fn().mockResolvedValue(null) });
 });
 
 test("loads the dashboard state on mount", () => {

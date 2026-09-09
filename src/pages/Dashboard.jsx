@@ -6,6 +6,7 @@ import { useCareerContext } from "../context/CareerContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
+import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 import { skillLabel } from "../lib/career/careerSkills";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
@@ -46,10 +47,19 @@ export default function Dashboard() {
   // docstring for why this is kept separate from useDashboard.js.
   const { clientsState, loadClientsState } = useClientsEngine();
 
+  // Reads the RM Advanced module's own OTA-vs-direct mix, purely to
+  // surface it on this Dashboard as the 13th KPI. Never applies RM
+  // Advanced actions from here -- same read-only pattern as tfeState/
+  // clientsState above. A career with no RM Advanced cycle yet simply
+  // shows "—". See hooks/useRmAdvancedEngine.js's own docstring for why
+  // this is kept separate from useDashboard.js.
+  const { rmAdvancedState, loadRmAdvancedState } = useRmAdvancedEngine();
+
   useEffect(() => {
     loadDashboardState().catch(() => undefined);
     loadTfeState().catch(() => undefined);
     loadClientsState().catch(() => undefined);
+    loadRmAdvancedState().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -142,6 +152,7 @@ export default function Dashboard() {
           ...dashboardState.kpis,
           tfeScore: tfeState?.score?.total ?? null,
           clientsSatisfaction: clientsState?.satisfaction ?? null,
+          rmAdvancedMix: rmAdvancedState?.otaStrategy?.directShare ?? null,
         } : null}
         viewMode={viewMode}
       />
