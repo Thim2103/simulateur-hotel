@@ -25,6 +25,8 @@ const PRIMARY_MENUS = [
       { label: "Chambres", to: "/rooms" },
       { label: "Housekeeping", to: "/housekeeping" },
       { label: "Clients", to: "/clients" },
+      { label: "Segments", to: "/clients/segments" },
+      { label: "Avis", to: "/clients/reviews" },
     ],
   },
   {
