@@ -53,6 +53,11 @@ import Dashboard from "./pages/Dashboard";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
 import Clients from "./pages/Clients";
+import ClientsDashboard from "./pages/ClientsDashboard";
+import ClientsSegments from "./pages/ClientsSegments";
+import ClientsReviews from "./pages/ClientsReviews";
+import ClientsForecast from "./pages/ClientsForecast";
+import ClientsReport from "./pages/ClientsReport";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import FinanceReport from "./pages/FinanceReport";
 import FinanceForecast from "./pages/FinanceForecast";
@@ -134,7 +139,12 @@ function App() {
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/reservations" element={<Reservations />} />
                   <Route path="/rooms" element={<Rooms />} />
-                  <Route path="/clients" element={<Clients />} />
+                  <Route path="/clients" element={<ClientsDashboard />} />
+                  <Route path="/clients/legacy" element={<Clients />} />
+                  <Route path="/clients/segments" element={<ClientsSegments />} />
+                  <Route path="/clients/reviews" element={<ClientsReviews />} />
+                  <Route path="/clients/forecast" element={<ClientsForecast />} />
+                  <Route path="/clients/report" element={<ClientsReport />} />
                   <Route path="/finance" element={<FinanceDashboard />} />
                   <Route path="/finance/report" element={<FinanceReport />} />
                   <Route path="/finance/forecast" element={<FinanceForecast />} />

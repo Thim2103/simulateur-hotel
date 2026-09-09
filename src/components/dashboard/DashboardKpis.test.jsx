@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82, clientsSatisfaction: 76 };
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);
@@ -92,4 +92,15 @@ test("shows the Score TFE KPI (see the Mode TFE Solo request's Dashboard integra
 test("shows a placeholder dash when no TFE run is active", () => {
   render(<DashboardKpis kpis={{ ...kpis, tfeScore: null }} viewMode="casual" />);
   expect(screen.getByText("Score TFE")).toBeInTheDocument();
+});
+
+test("shows the Satisfaction Clients KPI (see the Refonte Clients request's Dashboard integration)", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" />);
+  expect(screen.getByText("Satisfaction Clients")).toBeInTheDocument();
+  expect(screen.getByText("76/100")).toBeInTheDocument();
+});
+
+test("shows a placeholder dash when no Clients cycle has run yet", () => {
+  render(<DashboardKpis kpis={{ ...kpis, clientsSatisfaction: null }} viewMode="casual" />);
+  expect(screen.getByText("Satisfaction Clients")).toBeInTheDocument();
 });
