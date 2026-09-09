@@ -19,6 +19,7 @@ import DashboardNotifications from "../components/dashboard/DashboardNotificatio
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
+import HotelViewIsometric from "../ui/hotelView/isometric/HotelViewIsometric";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
@@ -80,6 +81,13 @@ export default function Dashboard() {
   // local UI state, never persisted, reset by the next decision.
   const [decisionFeedback, setDecisionFeedback] = useState(null);
   const [cleaningRoomIds, setCleaningRoomIds] = useState(new Set());
+
+  // HotelViewIsometric (v3) is now the default hotel view ("remplacer la
+  // vue 2D actuelle"), with a toggle back to v2's flat HotelView2DAnimated
+  // -- both read the exact same props (see either component's own
+  // docstring), so this is a pure presentation switch, nothing about the
+  // underlying data changes.
+  const [isIsometric, setIsIsometric] = useState(true);
 
   // GM Desk (see ui/gmDesk/GmDeskProvider.jsx, mounted once in App.js):
   // the "📬 GM Desk" link's own unread-style badge, plus a GameNotification
@@ -221,6 +229,13 @@ export default function Dashboard() {
           >
             🎯 Radial Navigation
           </button>
+          <button
+            type="button"
+            onClick={() => setIsIsometric((value) => !value)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline"
+          >
+            {isIsometric ? "🗺️ Vue 2D" : "🏙️ Vue isométrique"}
+          </button>
           <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
         </div>
       </div>
@@ -244,17 +259,31 @@ export default function Dashboard() {
         viewMode={viewMode}
       />
 
-      <HotelView2DAnimated
-        day={careerState.day}
-        rooms={careerState?.hotel?.rooms ?? []}
-        staffCount={dashboardState?.kpis?.staffCount ?? 0}
-        todaysEvents={dashboardState?.replaySummary?.events ?? []}
-        diagnostics={dashboardState?.insights?.diagnostics ?? []}
-        decisionFeedback={decisionFeedback}
-        cleaningRoomIds={cleaningRoomIds}
-        onNextDay={handleNextDay}
-        isRunning={isRunning}
-      />
+      {isIsometric ? (
+        <HotelViewIsometric
+          day={careerState.day}
+          rooms={careerState?.hotel?.rooms ?? []}
+          staffCount={dashboardState?.kpis?.staffCount ?? 0}
+          todaysEvents={dashboardState?.replaySummary?.events ?? []}
+          diagnostics={dashboardState?.insights?.diagnostics ?? []}
+          decisionFeedback={decisionFeedback}
+          cleaningRoomIds={cleaningRoomIds}
+          onNextDay={handleNextDay}
+          isRunning={isRunning}
+        />
+      ) : (
+        <HotelView2DAnimated
+          day={careerState.day}
+          rooms={careerState?.hotel?.rooms ?? []}
+          staffCount={dashboardState?.kpis?.staffCount ?? 0}
+          todaysEvents={dashboardState?.replaySummary?.events ?? []}
+          diagnostics={dashboardState?.insights?.diagnostics ?? []}
+          decisionFeedback={decisionFeedback}
+          cleaningRoomIds={cleaningRoomIds}
+          onNextDay={handleNextDay}
+          isRunning={isRunning}
+        />
+      )}
 
       <div className={fadeIn}>
         <AttentionPanel items={attentionItems} />
