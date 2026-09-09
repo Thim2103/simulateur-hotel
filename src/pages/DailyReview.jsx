@@ -4,7 +4,11 @@ import GameButton from "../ui/components/GameButton";
 import GameCard from "../ui/components/GameCard";
 import GameSection from "../ui/components/GameSection";
 import { useDailyReview } from "../hooks/useDailyReview";
+import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
+import { messageTypeMeta } from "../ui/gmDesk/GmMessageTypes";
 import { fadeIn, slideUp, delay } from "../ui/animations";
+
+const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
 
 function StatTile({ label, icon, value, tone = "default", index = 0 }) {
   return (
@@ -50,6 +54,7 @@ function RevenueProfitBar({ revenue, profit }) {
 // every heading/label/link text is unchanged from before.
 export default function DailyReview() {
   const { review, isRunning, error, loadReview } = useDailyReview();
+  const { messages: gmMessages } = useGmDesk();
 
   useEffect(() => {
     loadReview().catch(() => undefined);
@@ -113,6 +118,32 @@ export default function DailyReview() {
                 </li>
               ))}
             </ul>
+          )}
+        </GameCard>
+      </GameSection>
+
+      <GameSection id="review-messages" title="Messages reçus aujourd'hui" icon="📬">
+        <GameCard>
+          {gmMessages.length === 0 ? (
+            <p className="text-sm text-slate-500">Aucun message au GM Desk pour l'instant.</p>
+          ) : (
+            <>
+              <ul className="flex flex-col gap-2">
+                {gmMessages
+                  .slice()
+                  .sort((a, b) => (SEVERITY_ORDER[a.severity] ?? 3) - (SEVERITY_ORDER[b.severity] ?? 3))
+                  .slice(0, 5)
+                  .map((message) => (
+                    <li key={message.id} className="flex items-center gap-2 rounded-lg border border-slate-200 p-2 text-sm">
+                      <span aria-hidden="true">{messageTypeMeta(message.type).icon}</span>
+                      <span className="flex-1 truncate">{message.title}</span>
+                    </li>
+                  ))}
+              </ul>
+              <Link to="/gm-desk" className="mt-3 inline-block text-xs font-semibold text-cyan-700 hover:underline">
+                Voir tous les messages au GM Desk →
+              </Link>
+            </>
           )}
         </GameCard>
       </GameSection>

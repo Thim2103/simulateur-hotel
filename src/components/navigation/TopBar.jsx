@@ -32,6 +32,7 @@ import { icons } from "../../ui/designSystem/icons";
 // bar under the new name App.js/Layout.jsx actually renders.
 const PRIMARY_MENUS = [
   { label: "Dashboard", to: "/dashboard" },
+  { label: "GM Desk", to: "/gm-desk", icon: "📬" },
   {
     label: "Hôtel",
     icon: icons.hotel,

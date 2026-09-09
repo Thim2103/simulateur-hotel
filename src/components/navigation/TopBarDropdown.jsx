@@ -50,6 +50,7 @@ export default function TopBarDropdown({ label, to, items, align = "left", icon 
   if (!items || items.length === 0) {
     return (
       <NavLink to={to} end className={linkClass}>
+        {icon && <span aria-hidden="true" className="mr-1">{icon}</span>}
         {label}
       </NavLink>
     );
