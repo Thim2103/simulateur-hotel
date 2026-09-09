@@ -21,7 +21,7 @@ function fromCsv(value) {
 // hooks/useRestaurant.js's submitStructure()) and sets
 // progression.ready = true, which unlocks every other restaurant tab (see
 // pages/RestaurantSimulator.jsx).
-export default function RestaurantStructure() {
+export default function RestaurantStructure({ onValidated } = {}) {
   const { restaurantState, loading, error, loadRestaurantState, submitStructure } = useRestaurant();
   const [form, setForm] = useState({ name: "", concept: "", location: "", capacity: "", materials: [], equipment: [] });
   const [fieldErrors, setFieldErrors] = useState([]);
@@ -61,7 +61,15 @@ export default function RestaurantStructure() {
     try {
       const result = await submitStructure({ ...form, capacity: Number(form.capacity || 0), seats: Number(form.capacity || 0) });
       setFieldErrors(result.errors || []);
-      if (result.valid) setSubmitted(true);
+      if (result.valid) {
+        setSubmitted(true);
+        // Tells the parent (see pages/RestaurantSimulator.jsx) to re-read
+        // progression.ready from its own hook -- submitStructure() persists
+        // through useRestaurant()'s own repository call, a separate hook
+        // instance from useRestaurantSimulator()'s, which would otherwise
+        // keep showing Étape 1 forever (stale state, never re-fetched).
+        if (onValidated) await onValidated();
+      }
     } catch {
       // error is already surfaced via `error` from the hook.
     } finally {

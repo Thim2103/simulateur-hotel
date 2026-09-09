@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from "react-router-dom";
+import { NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import RestaurantStructure from "./RestaurantStructure";
 import RestaurantDashboard from "./RestaurantDashboard";
 import RestaurantFinance from "./RestaurantFinance";
@@ -8,6 +8,12 @@ import RestaurantOperations from "./RestaurantOperations";
 import RestaurantMarketing from "./RestaurantMarketing";
 import RestaurantESG from "./RestaurantESG";
 import RestaurantExpansion from "./RestaurantExpansion";
+import RestaurantMenuEngineering from "./RestaurantMenuEngineering";
+import RestaurantFoodCost from "./RestaurantFoodCost";
+import RestaurantPopularity from "./RestaurantPopularity";
+import RestaurantProfitability from "./RestaurantProfitability";
+import RestaurantForecast from "./RestaurantForecast";
+import RestaurantReport from "./RestaurantReport";
 import Card from "../components/ui/Card";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 
@@ -17,6 +23,12 @@ const tabs = [
   { to: "finance", label: "Finance" },
   { to: "hr", label: "RH" },
   { to: "menu", label: "Menu" },
+  { to: "menu-engineering", label: "Menu Engineering" },
+  { to: "food-cost", label: "Food Cost" },
+  { to: "popularity", label: "Popularité" },
+  { to: "profitability", label: "Rentabilité" },
+  { to: "forecast", label: "Forecast" },
+  { to: "report", label: "Rapport" },
   { to: "operations", label: "Opérations" },
   { to: "marketing", label: "Marketing" },
   { to: "esg", label: "ESG" },
@@ -24,7 +36,18 @@ const tabs = [
 ];
 
 export default function RestaurantSimulator() {
-  const { progression, setDifficulty, loading, error } = useRestaurantSimulator();
+  const navigate = useNavigate();
+  const { progression, setDifficulty, loading, error, reload } = useRestaurantSimulator();
+
+  // Called once the "Structure de l'établissement" form (a separate hook
+  // instance, see useRestaurant.js) has persisted progression.ready = true
+  // -- re-fetches this page's own state so `progression.ready` below picks
+  // it up immediately, then moves the player straight into the Menu tab
+  // instead of leaving them stranded on the now-redundant Étape 1 screen.
+  const handleStructureValidated = async () => {
+    await reload();
+    navigate("menu");
+  };
 
   if (loading) return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500"><span className="inline-flex items-center gap-2" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />Chargement des données restaurant…</span></div>;
 
@@ -49,7 +72,7 @@ export default function RestaurantSimulator() {
             <p className="mt-1 text-sm text-slate-500">Commencez par décrire votre établissement.</p>
           </div>
         </header>
-        <RestaurantStructure />
+        <RestaurantStructure onValidated={handleStructureValidated} />
       </div>
     );
   }
@@ -133,11 +156,17 @@ export default function RestaurantSimulator() {
       </div>
 
       <Routes>
-        <Route path="overview" element={<RestaurantStructure />} />
+        <Route path="overview" element={<RestaurantStructure onValidated={reload} />} />
         <Route path="dashboard" element={<RestaurantDashboard />} />
         <Route path="finance" element={<RestaurantFinance />} />
         <Route path="hr" element={<RestaurantHR />} />
         <Route path="menu" element={<RestaurantMenu />} />
+        <Route path="menu-engineering" element={<RestaurantMenuEngineering />} />
+        <Route path="food-cost" element={<RestaurantFoodCost />} />
+        <Route path="popularity" element={<RestaurantPopularity />} />
+        <Route path="profitability" element={<RestaurantProfitability />} />
+        <Route path="forecast" element={<RestaurantForecast />} />
+        <Route path="report" element={<RestaurantReport />} />
         <Route path="operations" element={<RestaurantOperations />} />
         <Route path="marketing" element={<RestaurantMarketing />} />
         <Route path="esg" element={<RestaurantESG />} />

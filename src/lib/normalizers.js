@@ -140,6 +140,15 @@ export function normalizeProgression(input) {
     unlockedAchievements: safeStringArray(source.unlockedAchievements, []),
     difficulty: safeString(source.difficulty, "easy"),
     cycles: safeNumber(source.cycles, 0),
+    // Set once the player validates the "Structure de l'établissement"
+    // form (see markRestaurantReady() in lib/restaurant/restaurantState.js
+    // and pages/RestaurantStructure.jsx's submitStructure()) and read by
+    // pages/RestaurantSimulator.jsx to unlock every other restaurant tab.
+    // Dropping this field here used to silently reset progression.ready
+    // to falsy on every normalizeRestaurant() pass -- see
+    // useSupabaseRestaurant.js's reload() -- leaving the player stuck on
+    // Étape 1 even after a successful submit.
+    ready: Boolean(source.ready),
   };
 }
 
