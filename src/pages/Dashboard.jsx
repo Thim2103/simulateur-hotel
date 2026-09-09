@@ -19,7 +19,7 @@ import DashboardNotifications from "../components/dashboard/DashboardNotificatio
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
-import HotelViewIsometric from "../ui/hotelView/isometric/HotelViewIsometric";
+import RetroView from "../ui/hotelView/isometricRetro/RetroView";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
@@ -82,11 +82,14 @@ export default function Dashboard() {
   const [decisionFeedback, setDecisionFeedback] = useState(null);
   const [cleaningRoomIds, setCleaningRoomIds] = useState(new Set());
 
-  // HotelViewIsometric (v3) is now the default hotel view ("remplacer la
-  // vue 2D actuelle"), with a toggle back to v2's flat HotelView2DAnimated
-  // -- both read the exact same props (see either component's own
-  // docstring), so this is a pure presentation switch, nothing about the
-  // underlying data changes.
+  // RetroView (the retro-modern isometric view) is now the default hotel
+  // view ("isométrique retro-moderne par défaut"), with a toggle back to
+  // v2's flat HotelView2DAnimated -- both read the exact same props (see
+  // either component's own docstring), so this is a pure presentation
+  // switch, nothing about the underlying data changes. v3's own
+  // HotelViewIsometric (the "technical" isometric view) stays in the
+  // codebase, fully tested, but is no longer wired into this toggle --
+  // RetroView replaces it here per the spec.
   const [isIsometric, setIsIsometric] = useState(true);
 
   // GM Desk (see ui/gmDesk/GmDeskProvider.jsx, mounted once in App.js):
@@ -260,7 +263,7 @@ export default function Dashboard() {
       />
 
       {isIsometric ? (
-        <HotelViewIsometric
+        <RetroView
           day={careerState.day}
           rooms={careerState?.hotel?.rooms ?? []}
           staffCount={dashboardState?.kpis?.staffCount ?? 0}

@@ -1,0 +1,61 @@
+/* Retro-modern keyframes -- cartoon-style motion (steps() timing for a
+   genuine discrete "frame" feel on the walk cycle, per the spec's "4-8
+   frames"), never animating the translate a sprite already carries for
+   its own isometric position (see RetroGrid.jsx's toIsoRetro()) -- same
+   lesson as ui/radialNav/radialNav.css's own docstring on this exact
+   pitfall: every keyframe here only touches secondary transforms/filters
+   applied via a wrapping element, never the positioning translate. */
+@keyframes retro-walk-cycle {
+  0% { transform: translateY(0) rotate(-4deg); }
+  25% { transform: translateY(-3px) rotate(4deg); }
+  50% { transform: translateY(0) rotate(-4deg); }
+  75% { transform: translateY(-3px) rotate(4deg); }
+  100% { transform: translateY(0) rotate(-4deg); }
+}
+@keyframes retro-clean-cycle {
+  0%, 100% { transform: rotate(-12deg); }
+  50% { transform: rotate(12deg); }
+}
+@keyframes retro-eat-cycle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@keyframes retro-checkin-cycle {
+  0% { transform: translateY(6px); opacity: 0.4; }
+  60% { transform: translateY(-4px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+@keyframes retro-incident-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(219, 39, 119, 0)); }
+  50% { transform: scale(1.25); filter: drop-shadow(0 0 6px rgba(219, 39, 119, 0.55)); }
+}
+@keyframes retro-room-clean { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.06); } }
+@keyframes retro-room-dirty { 0%, 100% { filter: saturate(0.75); } 50% { filter: saturate(0.55); } }
+/* RetroRoom.jsx applies this class to the same element that also carries
+   its base `-translate-x-1/2 -translate-y-1/2 rotate-45` positioning
+   transform (Tailwind utilities) -- an `animation` replaces `transform`
+   outright rather than composing with it, so that base transform has to
+   be baked into every step here too, or the tile would visibly jump to
+   its un-rotated, off-centre position for the animation's duration. */
+@keyframes retro-room-occupied {
+  from { transform: translate(-50%, -50%) rotate(45deg) scale(0.9); opacity: 0.5; }
+  to { transform: translate(-50%, -50%) rotate(45deg) scale(1); opacity: 1; }
+}
+@keyframes retro-room-cleaning { 0%, 100% { filter: brightness(1) saturate(1.3); } 50% { filter: brightness(1.15) saturate(1.6); } }
+
+.retro-walk-cycle { animation: retro-walk-cycle 0.8s steps(4) infinite; }
+.retro-clean-cycle { animation: retro-clean-cycle 0.5s ease-in-out infinite; }
+.retro-eat-cycle { animation: retro-eat-cycle 0.9s ease-in-out infinite; }
+.retro-checkin-cycle { animation: retro-checkin-cycle 0.5s ease-out both; }
+.retro-incident-pulse { animation: retro-incident-pulse 1.2s ease-in-out infinite; }
+.retro-room-clean { animation: retro-room-clean 2.4s ease-in-out infinite; }
+.retro-room-dirty { animation: retro-room-dirty 2.4s ease-in-out infinite; }
+.retro-room-occupied { animation: retro-room-occupied 0.4s ease-out both; }
+.retro-room-cleaning { animation: retro-room-cleaning 0.9s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .retro-walk-cycle, .retro-clean-cycle, .retro-eat-cycle, .retro-checkin-cycle, .retro-incident-pulse,
+  .retro-room-clean, .retro-room-dirty, .retro-room-occupied, .retro-room-cleaning {
+    animation: none !important;
+  }
+}
