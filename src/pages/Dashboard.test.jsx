@@ -102,7 +102,7 @@ test("shows the header, kpis, notifications, quick actions once a career is acti
   render(<Dashboard />, { wrapper: MemoryRouter });
 
   expect(screen.getByText(/mon hôtel/i)).toBeInTheDocument();
-  expect(screen.getByText(/jour 3/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/jour 3/i).length).toBeGreaterThan(0);
   expect(screen.getByText("Prix moyen")).toBeInTheDocument();
   expect(screen.getByText(/aucun problème détecté/i)).toBeInTheDocument();
   expect(screen.getByText("Augmenter les prix de 5 %")).toBeInTheDocument();

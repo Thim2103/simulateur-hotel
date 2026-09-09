@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -11,13 +11,15 @@ import { useProEngine } from "../hooks/useProEngine";
 import { skillLabel } from "../lib/career/careerSkills";
 import { buildAttentionItems } from "../lib/dashboard/attentionItems";
 import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
+import { findQuickAction } from "../lib/dashboard/dashboardActions";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
 import DashboardNotifications from "../components/dashboard/DashboardNotifications";
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
-import HotelView2D from "../ui/hotelView/HotelView2D";
+import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
+import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
 import { fadeIn } from "../ui/animations";
@@ -70,6 +72,12 @@ export default function Dashboard() {
   // separate from useDashboard.js.
   const { proState, loadProState } = useProEngine();
 
+  // HotelView2D v2's visual feedback for the player's last decision (see
+  // ui/hotelView/v2/decisionFeedback.js/HotelView2DAnimated.jsx) -- purely
+  // local UI state, never persisted, reset by the next decision.
+  const [decisionFeedback, setDecisionFeedback] = useState(null);
+  const [cleaningRoomIds, setCleaningRoomIds] = useState(new Set());
+
   useEffect(() => {
     loadDashboardState().catch(() => undefined);
     loadTfeState().catch(() => undefined);
@@ -102,6 +110,23 @@ export default function Dashboard() {
   };
 
   const handleQuickAction = async (actionId) => {
+    // Trigger the hotel's own visual reaction to this decision (pulse the
+    // rooms, staff walking, shimmer the reception...) immediately -- it's
+    // purely cosmetic feedback, so it doesn't wait for applyQuickAction()
+    // to resolve, and `nonce` makes it retrigger even for the same
+    // actionId twice in a row (see HotelAnimations.js's retriggerAnimation()).
+    const category = findQuickAction(actionId)?.category;
+    const feedback = { ...feedbackForAction(actionId, category), nonce: Date.now() };
+    setDecisionFeedback(feedback);
+    if (feedback.target === "housekeeping") {
+      const rooms = careerState?.hotel?.rooms || [];
+      const targetRoom = rooms.find((room) => room.housekeeping_status === "dirty") || rooms[0];
+      if (targetRoom) {
+        setCleaningRoomIds(new Set([targetRoom.id]));
+        setTimeout(() => setCleaningRoomIds(new Set()), 3000);
+      }
+    }
+
     try {
       await applyQuickAction(actionId);
     } catch {
@@ -185,10 +210,16 @@ export default function Dashboard() {
         viewMode={viewMode}
       />
 
-      <HotelView2D
-        roomCount={careerState?.hotel?.rooms?.length ?? 0}
-        occupancyRate={dashboardState?.kpis?.occupancyRate ?? 0}
-        hasIncident={attentionItems.length > 0}
+      <HotelView2DAnimated
+        day={careerState.day}
+        rooms={careerState?.hotel?.rooms ?? []}
+        staffCount={dashboardState?.kpis?.staffCount ?? 0}
+        todaysEvents={dashboardState?.replaySummary?.events ?? []}
+        diagnostics={dashboardState?.insights?.diagnostics ?? []}
+        decisionFeedback={decisionFeedback}
+        cleaningRoomIds={cleaningRoomIds}
+        onNextDay={handleNextDay}
+        isRunning={isRunning}
       />
 
       <div className={fadeIn}>
