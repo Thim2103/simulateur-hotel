@@ -58,6 +58,8 @@ import Sandbox from "./pages/Sandbox";
 import Scenarios from "./pages/Scenarios";
 import Challenges from "./pages/Challenges";
 import Dashboard from "./pages/Dashboard";
+import MorningBriefing from "./pages/MorningBriefing";
+import DailyReview from "./pages/DailyReview";
 import Reservations from "./pages/Reservations";
 import Rooms from "./pages/Rooms";
 import Clients from "./pages/Clients";
@@ -159,6 +161,8 @@ function App() {
                       points there (see TopBar.jsx). */}
                   <Route path="/" element={<Navigate to="/menu" replace />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/briefing" element={<MorningBriefing />} />
+                  <Route path="/daily-review" element={<DailyReview />} />
                   <Route path="/reservations" element={<Reservations />} />
                   <Route path="/rooms" element={<Rooms />} />
                   <Route path="/clients" element={<ClientsDashboard />} />

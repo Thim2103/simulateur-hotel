@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { useCareerContext } from "../context/CareerContext";
@@ -9,13 +9,17 @@ import { useClientsEngine } from "../hooks/useClientsEngine";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 import { useProEngine } from "../hooks/useProEngine";
 import { skillLabel } from "../lib/career/careerSkills";
+import { buildAttentionItems } from "../lib/dashboard/attentionItems";
+import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
 import DashboardNotifications from "../components/dashboard/DashboardNotifications";
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
-import DashboardQuickActions from "../components/dashboard/DashboardQuickActions";
+import HotelView from "../components/dashboard/HotelView";
+import AttentionPanel from "../components/dashboard/AttentionPanel";
+import DecisionsPanel from "../components/dashboard/DecisionsPanel";
 
 // The general Dashboard ("Mon Hôtel") -- the living, narrative home page:
 // the hotel as a character (KPIs, notifications, yesterday's story),
@@ -26,6 +30,7 @@ import DashboardQuickActions from "../components/dashboard/DashboardQuickActions
 // (see hooks/useSupabaseSession.js) -- useCareer.js/useDashboard.js
 // already bypass Supabase transparently in guest mode.
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, nextDay } = useCareerContext();
   const {
     dashboardState,
@@ -84,6 +89,12 @@ export default function Dashboard() {
       // value until the next render (see useDashboard.js's
       // loadDashboardState() docstring).
       await loadDashboardState(outcome.state);
+      // Closes the daily loop (Morning -> MyHotel -> Decisions -> Day ->
+      // Results): "Passer la journée" lands on DailyReview.jsx, which
+      // rebuilds its own view straight from the same CareerState/
+      // DashboardState (see hooks/useDailyReview.js) rather than anything
+      // passed through navigation state.
+      navigate("/daily-review");
     } catch {
       // error surfaced via `error`.
     }
@@ -136,6 +147,8 @@ export default function Dashboard() {
 
   const viewMode = dashboardState?.viewMode || "casual";
   const careerSummary = dashboardState?.careerSummary;
+  const attentionItems = buildAttentionItems(dashboardState?.notifications);
+  const decisionGroups = buildDecisionGroups(dashboardState?.quickActions);
 
   return (
     <div className="flex flex-col gap-6">
@@ -146,7 +159,10 @@ export default function Dashboard() {
           Statut : {careerState.status}
           {careerSummary && ` · Objectifs atteints : ${careerSummary.achievedObjectivesCount}/${careerSummary.totalObjectives}`}
         </p>
-        <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
+        <div className="flex items-center gap-3">
+          <Link to="/briefing" className="text-sm font-medium text-cyan-700 hover:underline">Briefing du matin →</Link>
+          <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
+        </div>
       </div>
 
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">Une erreur est survenue : {error.message}</div>}
@@ -167,6 +183,10 @@ export default function Dashboard() {
         } : null}
         viewMode={viewMode}
       />
+
+      <HotelView roomCount={careerState?.hotel?.rooms?.length ?? 0} occupancyRate={dashboardState?.kpis?.occupancyRate ?? 0} />
+
+      <AttentionPanel items={attentionItems} />
 
       <DashboardNotifications notifications={dashboardState?.notifications} />
 
@@ -212,7 +232,7 @@ export default function Dashboard() {
 
       <DashboardInsights insights={dashboardState?.insights} />
 
-      <DashboardQuickActions quickActions={dashboardState?.quickActions} onRunAction={handleQuickAction} isRunning={isRunning} />
+      <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
     </div>
   );
 }

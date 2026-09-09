@@ -77,6 +77,7 @@ export function computeKpis(careerState) {
     reputation: safeNumber(dailyReport.progressionReport?.reputation, null),
     ebitda: finance ? finance.incomeStatement.ebitda : null,
     goppar: finance ? finance.ratios.goppar : null,
+    cash: finance ? finance.cash : null,
     staffMorale: staffCycle ? staffCycle.morale : null,
     staffOverload: staffCycle ? staffCycle.overload : null,
     payrollTotal: staffCycle ? staffCycle.payroll.total : null,

@@ -22,6 +22,7 @@ const PRIMARY_MENUS = [
   {
     label: "Hôtel",
     items: [
+      { label: "Briefing du matin", to: "/briefing" },
       { label: "Chambres", to: "/rooms" },
       { label: "Housekeeping", to: "/housekeeping" },
       { label: "Clients", to: "/clients" },

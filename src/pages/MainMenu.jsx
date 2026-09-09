@@ -16,6 +16,7 @@ export default function MainMenu() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-cyan-400">Simulateur de gestion hôtelière</p>
           <h1 className="mt-3 text-4xl font-extrabold tracking-tight sm:text-6xl">Hospitality Lab</h1>
+          <p className="mt-2 text-sm font-medium text-slate-400">Build it. Run it. Master it.</p>
         </div>
 
         <nav aria-label="Menu principal" className="flex w-64 flex-col gap-3">
@@ -38,6 +39,22 @@ export default function MainMenu() {
             </button>
           )}
         </nav>
+
+        <div className="grid w-full max-w-2xl grid-cols-1 gap-6 sm:grid-cols-2">
+          <section aria-labelledby="main-menu-new-game" className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-left">
+            <h2 id="main-menu-new-game" className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Nouvelle partie</h2>
+            <Link to="/career" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">🎮 Carrière</Link>
+            <Link to="/sandbox" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">🏗 Sandbox</Link>
+            <Link to="/challenges" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">⚡ Défis</Link>
+            <Link to="/scenarios" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">🧪 Scénarios</Link>
+          </section>
+          <section aria-labelledby="main-menu-academy" className="flex flex-col gap-2 rounded-xl border border-slate-800 bg-slate-900/40 p-4 text-left">
+            <h2 id="main-menu-academy" className="text-xs font-semibold uppercase tracking-widest text-cyan-400">Académie</h2>
+            <Link to="/academy" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">🎓 Academy</Link>
+            <Link to="/tfe" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">📚 TFE / Case Study</Link>
+            <Link to="/competition" className="rounded-md px-2 py-1.5 text-sm text-slate-200 hover:bg-slate-800">🏆 Compétition</Link>
+          </section>
+        </div>
       </div>
     </div>
   );
