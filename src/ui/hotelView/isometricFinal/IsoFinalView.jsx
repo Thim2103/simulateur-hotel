@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import IsoFinalGrid from "./IsoFinalGrid";
 import IsoFinalFloor from "./IsoFinalFloor";
+import IsoFinalRoom from "./IsoFinalRoom";
 import IsoFinalReception from "./IsoFinalReception";
 import IsoFinalRestaurant from "./IsoFinalRestaurant";
 import IsoFinalKitchen from "./IsoFinalKitchen";
@@ -10,6 +11,7 @@ import IsoFinalHall from "./IsoFinalHall";
 import IsoFinalCharacter from "./IsoFinalCharacter";
 import IsoFinalIncident from "./IsoFinalIncident";
 import { walkCycle, cleanCycle, eatCycle } from "./IsoFinalAnimations";
+import { sortEntitiesByDepth } from "../engine/DepthSort";
 import HotelTimeline from "../v2/HotelTimeline";
 import { fadeIn } from "../../animations";
 
@@ -43,6 +45,28 @@ const PHASE_STAFF_ACTIVITY = { morning: "reception", noon: "cooking", afternoon:
 // same props as v3's HotelViewIsometric.jsx / RetroView.jsx (drop-in, see
 // pages/Dashboard.jsx's toggle), composing all 7 room types the Bible
 // asks for: chambres, réception, restaurant, cuisine, bar, laundry, hall.
+//
+// Render order is no longer "whatever order these ended up in the JSX"
+// (floors, then ground-floor blocks, then guests, then staff, then
+// incidents, in that fixed sequence regardless of where anything actually
+// is) -- every room/ground-floor block/character/incident is first
+// collected into a flat list of scene entities (`{x, y, render()}`, world-
+// space tile coordinates, see ui/hotelView/engine/IsoProjection.js's own
+// docstring for what "world space" means here) and handed to
+// ui/hotelView/engine/DepthSort.js's `sortEntitiesByDepth()`, which is now
+// the single source of truth for "what draws in front of what". Every
+// entity here is still a zero-footprint point (no `width`/`depth`/`height`
+// given) -- exactly what the old, now-retired `depthSortFinal(items)`
+// this replaces also assumed (col+row only) -- so this pass only *turns
+// on* real depth-sorting, it doesn't yet model any entity's actual size;
+// footprint-aware sorting (a wide reception desk, a two-tile-deep
+// restaurant...) is available in DepthSort.js already, ready for whenever
+// these entities gain real dimensions.
+//
+// Floor labels are rendered separately, outside the sorted list: they're
+// decorative chrome off to the side of the grid (col -1) that never
+// visually overlaps a room/character/incident, so they don't need to
+// compete for depth with anything.
 export default function IsoFinalView({
   day,
   rooms = [],
@@ -100,6 +124,48 @@ export default function IsoFinalView({
 
   const incidents = diagnostics.filter((d) => d.type === "error" || d.severity === "high").slice(0, 3);
 
+  // The flat list of scene entities DepthSort.js sorts. `x`/`y` are the
+  // entity's own world-space tile position (col/row); `render()` is a
+  // closure producing that entity's already-keyed JSX, called only after
+  // sorting, in the order the sort decided.
+  const roomEntities = floors.flatMap((floor) =>
+    floor.rooms.map((room, index) => ({
+      x: index,
+      y: floor.row,
+      render: () => <IsoFinalRoom key={`room-${room.id}`} col={index} row={floor.row} state={room.state} number={room.number} />,
+    }))
+  );
+
+  const groundEntities = [
+    { x: 0, y: GROUND_ROW, render: () => <IsoFinalReception key="reception" col={0} row={GROUND_ROW} /> },
+    { x: 2, y: GROUND_ROW, render: () => <IsoFinalRestaurant key="restaurant" col={2} row={GROUND_ROW} /> },
+    { x: 4, y: GROUND_ROW, render: () => <IsoFinalKitchen key="kitchen" col={4} row={GROUND_ROW} /> },
+    { x: 6, y: GROUND_ROW, render: () => <IsoFinalBar key="bar" col={6} row={GROUND_ROW} /> },
+    { x: 8, y: GROUND_ROW, render: () => <IsoFinalLaundry key="laundry" col={8} row={GROUND_ROW} hasIncident={hasIncident} /> },
+    { x: 10, y: GROUND_ROW, render: () => <IsoFinalHall key="hall" col={10} row={GROUND_ROW} /> },
+  ];
+
+  const characterEntities = [
+    ...guests.map((character) => ({
+      x: character.col,
+      y: character.row,
+      render: () => <IsoFinalCharacter key={character.id} kind="guest" col={character.col} row={character.row} activity={guestActivity} />,
+    })),
+    ...staff.map((character) => ({
+      x: character.col,
+      y: character.row,
+      render: () => <IsoFinalCharacter key={character.id} kind="staff" col={character.col} row={character.row} activity={staffActivity} />,
+    })),
+  ];
+
+  const incidentEntities = incidents.map((incident, index) => ({
+    x: 11 + index,
+    y: GROUND_ROW,
+    render: () => <IsoFinalIncident key={`incident-${index}`} col={11 + index} row={GROUND_ROW} type="breakdown" message={incident.message} />,
+  }));
+
+  const sceneEntities = sortEntitiesByDepth([...roomEntities, ...groundEntities, ...characterEntities, ...incidentEntities]);
+
   return (
     <div className={`flex flex-col gap-4 ${fadeIn}`}>
       <HotelTimeline day={day} eventCount={todaysEvents.length} onNextDay={onNextDay} isRunning={isRunning} />
@@ -112,26 +178,10 @@ export default function IsoFinalView({
         ) : (
           <IsoFinalGrid>
             {floors.map((floor) => (
-              <IsoFinalFloor key={floor.level} level={floor.level} row={floor.row} rooms={floor.rooms} />
+              <IsoFinalFloor key={`floor-label-${floor.level}`} level={floor.level} row={floor.row} rooms={[]} />
             ))}
 
-            <IsoFinalReception col={0} row={GROUND_ROW} />
-            <IsoFinalRestaurant col={2} row={GROUND_ROW} />
-            <IsoFinalKitchen col={4} row={GROUND_ROW} />
-            <IsoFinalBar col={6} row={GROUND_ROW} />
-            <IsoFinalLaundry col={8} row={GROUND_ROW} hasIncident={hasIncident} />
-            <IsoFinalHall col={10} row={GROUND_ROW} />
-
-            {guests.map((character) => (
-              <IsoFinalCharacter key={character.id} kind="guest" col={character.col} row={character.row} activity={guestActivity} />
-            ))}
-            {staff.map((character) => (
-              <IsoFinalCharacter key={character.id} kind="staff" col={character.col} row={character.row} activity={staffActivity} />
-            ))}
-
-            {incidents.map((incident, index) => (
-              <IsoFinalIncident key={index} col={11 + index} row={GROUND_ROW} type="breakdown" message={incident.message} />
-            ))}
+            {sceneEntities.map((entity) => entity.render())}
           </IsoFinalGrid>
         )}
       </div>

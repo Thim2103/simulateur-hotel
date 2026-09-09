@@ -1,28 +1,51 @@
 import { PALETTE } from "./IsoFinalStyle";
+import { tileToScreen } from "../engine/IsoProjection";
+import { sortEntitiesByDepth } from "../engine/DepthSort";
 
-// The premium view's grid: same isometric projection math every other
-// view in this codebase uses (there's only one correct way to project
-// x-y,(x+y)/2) -- a fresh, independent copy so isometricFinal/ stays a
-// self-contained art-direction module, per the spec's "créer /src/ui/
-// hotelView/isometricFinal/" (no v2/v3/RetroView component reused).
+// The premium view's grid. Projection and depth-sorting are no longer
+// implemented here -- ui/hotelView/engine/IsoProjection.js and
+// DepthSort.js are now the single source of truth for that math, shared
+// by every isometric view (see their own docstrings). This file just
+// carries isometricFinal/'s own tile size as a named projection config
+// (`ISO_FINAL_PROJECTION`) and, below, keeps `toIsoFinal`/`depthSortFinal`
+// as thin backward-compatible wrappers around the engine -- every sibling
+// component (IsoFinalRoom.jsx, IsoFinalCharacter.jsx, etc.) now imports
+// `tileToScreen`/`sortEntitiesByDepth` from the engine directly instead of
+// these two, but keeping them here means nothing that already depended on
+// this module's own exports (see IsoFinalGrid.test.jsx) needs to change.
 export const GRID_SIZE = 12;
 export const TILE_WIDTH = 76;
 export const TILE_HEIGHT = 38;
 
+export const ISO_FINAL_PROJECTION = {
+  tileWidth: TILE_WIDTH,
+  tileHeight: TILE_HEIGHT,
+  elevationHeight: TILE_HEIGHT,
+  originX: 0,
+  originY: 0,
+  scale: 1,
+};
+
+// Deprecated: use `tileToScreen({ col, row }, ISO_FINAL_PROJECTION)` from
+// ui/hotelView/engine/IsoProjection.js directly in new code.
 export function toIsoFinal(col, row, tileWidth = TILE_WIDTH, tileHeight = TILE_HEIGHT) {
-  return {
-    x: (col - row) * (tileWidth / 2),
-    y: (col + row) * (tileHeight / 2),
-  };
+  return tileToScreen({ col, row }, { ...ISO_FINAL_PROJECTION, tileWidth, tileHeight });
 }
 
-// Painter's algorithm depth sort: farther tiles (small col+row) drawn
-// first, nearer ones last.
+// Deprecated: use `sortEntitiesByDepth()` from
+// ui/hotelView/engine/DepthSort.js directly in new code -- it works on
+// world-space {x, y, z, width, depth, height} entities rather than
+// {col, row} tiles, so a real footprint/elevation can be given. This
+// wrapper adapts the old {col, row}-only call shape onto the same
+// underlying algorithm (a zero-footprint, ground-level entity's depth key
+// is exactly `col + row`, identical to what this function computed by
+// hand before).
 export function depthSortFinal(items, getCoords = (item) => item) {
-  return items
-    .map((item, index) => ({ item, index, ...getCoords(item) }))
-    .sort((a, b) => (a.col + a.row - (b.col + b.row) || a.index - b.index))
-    .map(({ item }) => item);
+  const wrapped = items.map((item) => {
+    const { col, row } = getCoords(item);
+    return { x: col, y: row, __item: item };
+  });
+  return sortEntitiesByDepth(wrapped).map((entity) => entity.__item);
 }
 
 // The stage: a tiled (8x8px, see IsoFinalStyle.js's tileTexture()) pastel

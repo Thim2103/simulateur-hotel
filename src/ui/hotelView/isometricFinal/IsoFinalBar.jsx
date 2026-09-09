@@ -1,11 +1,12 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import { PALETTE, STROKE_WIDTH, SHADOW_FILTER } from "./IsoFinalStyle";
 import { BAR_PROPS } from "./IsoFinalSprites";
 
 // Ground-floor room: bar -- comptoir stylisé, tabourets, bouteilles (see
 // IsoFinalSprites.js's BAR_PROPS).
 export default function IsoFinalBar({ col, row }) {
-  const { x, y } = toIsoFinal(col, row);
+  const { x, y } = tileToScreen({ col, row }, ISO_FINAL_PROJECTION);
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: x, top: y }}>
       <div

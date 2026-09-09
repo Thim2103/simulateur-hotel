@@ -1,4 +1,5 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import IsoFinalRoom from "./IsoFinalRoom";
 import { PALETTE } from "./IsoFinalStyle";
 
@@ -6,7 +7,7 @@ import { PALETTE } from "./IsoFinalStyle";
 // -- "escaliers visibles" between floors is implied by the label sitting
 // just past each row's own first tile, marking the transition.
 export default function IsoFinalFloor({ level, row, rooms }) {
-  const labelPos = toIsoFinal(-1, row);
+  const labelPos = tileToScreen({ col: -1, row }, ISO_FINAL_PROJECTION);
   return (
     <>
       <div

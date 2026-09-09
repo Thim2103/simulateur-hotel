@@ -1,4 +1,5 @@
-import { toIsoFinal } from "./IsoFinalGrid";
+import { tileToScreen } from "../engine/IsoProjection";
+import { ISO_FINAL_PROJECTION } from "./IsoFinalGrid";
 import { PALETTE, STROKE_WIDTH, SHADOW_FILTER } from "./IsoFinalStyle";
 import { LAUNDRY_PROPS } from "./IsoFinalSprites";
 import "./isoFinalView.css";
@@ -8,7 +9,7 @@ import "./isoFinalView.css";
 // `hasIncident` is true, same "surfaced on the hotel itself" idea every
 // earlier view's back-office block had.
 export default function IsoFinalLaundry({ col, row, hasIncident = false }) {
-  const { x, y } = toIsoFinal(col, row);
+  const { x, y } = tileToScreen({ col, row }, ISO_FINAL_PROJECTION);
   return (
     <div className="absolute -translate-x-1/2 -translate-y-1/2 text-center" style={{ left: x, top: y }}>
       <div
