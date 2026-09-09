@@ -24,6 +24,7 @@ import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
+import { openRadialNav } from "../ui/radialNav/radialNavBus";
 import { fadeIn } from "../ui/animations";
 
 // The general Dashboard ("Mon Hôtel") -- the living, narrative home page:
@@ -213,6 +214,13 @@ export default function Dashboard() {
               </span>
             )}
           </Link>
+          <button
+            type="button"
+            onClick={openRadialNav}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline"
+          >
+            🎯 Radial Navigation
+          </button>
           <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
         </div>
       </div>
