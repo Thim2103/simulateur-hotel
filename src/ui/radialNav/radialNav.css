@@ -1,0 +1,55 @@
+/* Keyframes specific to the Radial Navigation -- branches scaling/fading
+   in around the hub, the hub's own pulse/glow, and hover/select feedback
+   on a branch. The generic fadeIn/slideUp/pulse/bounce/shimmer keyframes
+   already live in ui/animations/animations.css and are reused as-is where
+   they fit (see radialAnimations.js); these are the ones unique to the
+   circular layout itself.
+
+   Every element here is `position: absolute; left: 50%; top: 50%` (see
+   RadialHub.jsx/RadialBranch.jsx) so it's anchored at the *center* of the
+   stage and needs `translate(-50%, -50%)` to actually center itself on
+   that point -- a branch additionally offsets by its own `--rn-x`/`--rn-y`
+   (in px, set inline from radialConfig.js's branchPosition()) to sit
+   around the hub. Each keyframe below bakes that base translate into
+   every step (not just a plain `scale(...)`) precisely so that applying
+   an animation class never *replaces* the centering/offset transform --
+   only Tailwind's own static transform utilities would be overwritten by
+   an animation's `transform`, so this file owns the translate offset,
+   not `className="-translate-x-1/2 ..."` on the elements themselves. */
+@keyframes rn-branch-enter {
+  from { opacity: 0; transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(0.4); }
+  to { opacity: 1; transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(1); }
+}
+@keyframes rn-branch-exit {
+  from { opacity: 1; transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(1); }
+  to { opacity: 0; transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(0.4); }
+}
+@keyframes rn-hub-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.05); }
+}
+@keyframes rn-hub-glow {
+  0%, 100% { box-shadow: 0 0 0px 0px rgba(233, 171, 31, 0.55); }
+  50% { box-shadow: 0 0 28px 6px rgba(233, 171, 31, 0.55); }
+}
+@keyframes rn-branch-hover {
+  from { transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(1); }
+  to { transform: translate(calc(-50% + var(--rn-x, 0px)), calc(-50% + var(--rn-y, 0px))) scale(1.12); }
+}
+@keyframes rn-branch-select {
+  0% { box-shadow: 0 0 0 0 rgba(233, 171, 31, 0.65); }
+  100% { box-shadow: 0 0 0 14px rgba(233, 171, 31, 0); }
+}
+
+.rn-branch-enter { animation: rn-branch-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.rn-branch-exit { animation: rn-branch-exit 0.2s ease-in both; }
+.rn-hub-pulse { animation: rn-hub-pulse 2.2s ease-in-out infinite; }
+.rn-hub-glow { animation: rn-hub-glow 2.2s ease-in-out infinite; }
+.rn-branch-hover { animation: rn-branch-hover 0.15s ease-out forwards; }
+.rn-branch-select { animation: rn-branch-select 0.5s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rn-branch-enter, .rn-branch-exit, .rn-hub-pulse, .rn-hub-glow, .rn-branch-hover, .rn-branch-select {
+    animation: none !important;
+  }
+}

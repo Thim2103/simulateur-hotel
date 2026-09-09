@@ -2,6 +2,9 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import GmDesk from "./GmDesk";
 import { useGmDesk } from "./GmDeskProvider";
+import { openRadialNav } from "../radialNav/radialNavBus";
+
+jest.mock("../radialNav/radialNavBus", () => ({ openRadialNav: jest.fn() }));
 
 jest.mock("./GmDeskProvider", () => ({
   ...jest.requireActual("./GmDeskProvider"),
@@ -27,6 +30,13 @@ test("shows priority counts and the inbox", () => {
 
   expect(screen.getByRole("heading", { name: /la voix de l'hôtel/i })).toBeInTheDocument();
   expect(screen.getByText("Moral bas")).toBeInTheDocument();
+});
+
+test("the 'Retour à la navigation' button opens the Radial Navigation", () => {
+  useGmDesk.mockReturnValue({ messages: [], applyMessageDecision: jest.fn() });
+  render(<GmDesk />, { wrapper: MemoryRouter });
+  fireEvent.click(screen.getByRole("button", { name: /retour à la navigation/i }));
+  expect(openRadialNav).toHaveBeenCalledTimes(1);
 });
 
 test("opening a message and applying a decision shows a confirmation notification", async () => {

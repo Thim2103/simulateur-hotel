@@ -5,6 +5,7 @@ import GameNotification from "../components/GameNotification";
 import { useGmDesk } from "./GmDeskProvider";
 import GmInbox from "./GmInbox";
 import GmMessageModal from "./GmMessageModal";
+import { openRadialNav } from "../radialNav/radialNavBus";
 import { fadeIn } from "../animations";
 
 // The GM Desk (route /gm-desk): the narrative + decisional inbox that
@@ -44,7 +45,12 @@ export default function GmDesk() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">La voix de l'hôtel</h1>
           <p className="mt-1 text-sm text-slate-500">RH, Staff, Housekeeping, Restaurant, Finance, Marketing, RM, ESG, Clients, Owner -- tout au même endroit.</p>
         </div>
-        <Link to="/dashboard" className="text-sm font-medium text-cyan-700 hover:underline">← Retour à l'hôtel</Link>
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={openRadialNav} className="text-sm font-medium text-cyan-700 hover:underline">
+            🎯 Retour à la navigation
+          </button>
+          <Link to="/dashboard" className="text-sm font-medium text-cyan-700 hover:underline">← Retour à l'hôtel</Link>
+        </div>
       </header>
 
       <div className="grid grid-cols-3 gap-3">
