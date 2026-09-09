@@ -1,0 +1,42 @@
+/* Keyframes specific to HotelView2D v2 -- room-state transitions,
+   character movement and incident emphasis. The generic fadeIn/slideUp/
+   pulse/bounce/shimmer keyframes already live in ui/animations/animations.css
+   and are reused as-is (see HotelAnimations.js); these are the ones that
+   only make sense inside the hotel view itself. */
+
+@keyframes hv-fade-clean {
+  from { background-color: #fef9c3; }
+  to { background-color: #dbeafe; }
+}
+@keyframes hv-pulse-dirty {
+  0%, 100% { background-color: #e2e8f0; }
+  50% { background-color: #cbd5e1; }
+}
+@keyframes hv-slide-occupied {
+  from { transform: translateX(-4px); opacity: 0.4; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes hv-cleaning-sweep {
+  0%, 100% { background-color: #d1fae5; }
+  50% { background-color: #a7f3d0; }
+}
+
+.hv-room-clean { animation: hv-fade-clean 0.6s ease-out both; }
+.hv-room-dirty { animation: hv-pulse-dirty 1.6s ease-in-out infinite; }
+.hv-room-occupied { animation: hv-slide-occupied 0.4s ease-out both; }
+.hv-room-cleaning { animation: hv-cleaning-sweep 0.9s ease-in-out infinite; }
+
+/* One character sprite walking back and forth along its lane -- each
+   instance gets its own animation-delay (see HotelCharactersLayer.jsx) so
+   a room full of them doesn't move in lockstep. */
+@keyframes hv-walk-lane {
+  0%, 100% { left: 4%; }
+  50% { left: 92%; }
+}
+.hv-character { position: absolute; top: 50%; transform: translateY(-50%); animation: hv-walk-lane linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hv-room-clean, .hv-room-dirty, .hv-room-occupied, .hv-room-cleaning, .hv-character {
+    animation: none !important;
+  }
+}
