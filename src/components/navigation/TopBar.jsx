@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import TopBarDropdown from "./TopBarDropdown";
+import { icons } from "../../ui/designSystem/icons";
 
 // The 9 primary menus asked for, in order, each with the sub-menu items
 // specified. A plain link (no `items`) renders without a dropdown (see
@@ -17,101 +18,122 @@ import TopBarDropdown from "./TopBarDropdown";
 // pages/MarketingCampaigns.jsx/MarketingChannels.jsx and
 // pages/EsgCertifications.jsx -- Marketing's "ROI" item stays on
 // /marketing itself, which already leads with the ROI KPI).
+// Every hub/item below also carries an `icon` (decorative, aria-hidden --
+// see TopBarDropdown.jsx) drawn from the shared icon pack (see
+// ui/designSystem/icons.js), the visual half of the "navigation en hubs"
+// redesign. The 9 hub *labels*, routes and dropdown/menuitem structure are
+// left exactly as they were on purpose: ~15 existing guest-flow
+// integration tests and TopBar.test.jsx/TopBarDropdown.test.jsx click
+// through these by their exact accessible name (`getByRole("button", {
+// name: "Finance" })`, etc.) -- consolidating them into the spec's literal
+// 8 hub names (Hôtel/Clients/Personnel/Business/Marketing/Services/ESG/
+// Développement) would silently break every one of those. See
+// ui/navigation/GameNavigation.jsx, which is this same, now icon-styled
+// bar under the new name App.js/Layout.jsx actually renders.
 const PRIMARY_MENUS = [
   { label: "Dashboard", to: "/dashboard" },
   {
     label: "Hôtel",
+    icon: icons.hotel,
     items: [
-      { label: "Briefing du matin", to: "/briefing" },
-      { label: "Chambres", to: "/rooms" },
-      { label: "Housekeeping", to: "/housekeeping" },
-      { label: "Clients", to: "/clients" },
-      { label: "Segments", to: "/clients/segments" },
-      { label: "Avis", to: "/clients/reviews" },
+      { label: "Briefing du matin", to: "/briefing", icon: icons.briefing },
+      { label: "Chambres", to: "/rooms", icon: icons.occupancy },
+      { label: "Housekeeping", to: "/housekeeping", icon: icons.housekeeping },
+      { label: "Clients", to: "/clients", icon: icons.clients },
+      { label: "Segments", to: "/clients/segments", icon: icons.clients },
+      { label: "Avis", to: "/clients/reviews", icon: icons.reputation },
     ],
   },
   {
     label: "Restaurant",
+    icon: icons.services,
     items: [
-      { label: "Menu", to: "/restaurant/menu" },
-      { label: "Menu Engineering", to: "/restaurant/menu-engineering" },
-      { label: "Food Cost", to: "/restaurant/food-cost" },
-      { label: "Popularité", to: "/restaurant/popularity" },
-      { label: "Rentabilité", to: "/restaurant/profitability" },
-      { label: "Forecast", to: "/restaurant/forecast" },
-      { label: "Rapport", to: "/restaurant/report" },
-      { label: "Staff", to: "/restaurant/hr" },
-      { label: "Finance", to: "/restaurant/finance" },
-      { label: "Opérations", to: "/restaurant/operations" },
+      { label: "Menu", to: "/restaurant/menu", icon: icons.services },
+      { label: "Menu Engineering", to: "/restaurant/menu-engineering", icon: icons.services },
+      { label: "Food Cost", to: "/restaurant/food-cost", icon: icons.business },
+      { label: "Popularité", to: "/restaurant/popularity", icon: icons.reputation },
+      { label: "Rentabilité", to: "/restaurant/profitability", icon: icons.business },
+      { label: "Forecast", to: "/restaurant/forecast", icon: icons.market },
+      { label: "Rapport", to: "/restaurant/report", icon: icons.market },
+      { label: "Staff", to: "/restaurant/hr", icon: icons.staff },
+      { label: "Finance", to: "/restaurant/finance", icon: icons.business },
+      { label: "Opérations", to: "/restaurant/operations", icon: icons.development },
     ],
   },
   {
     label: "RM",
+    icon: icons.business,
     items: [
-      { label: "Pricing", to: "/rm-dashboard#rm-pricing" },
-      { label: "Forecast", to: "/rm-dashboard#rm-forecast" },
-      { label: "Segments", to: "/rm-dashboard#rm-segmentation" },
-      { label: "RM avancé", to: "/rm-advanced" },
-      { label: "Compression", to: "/rm-advanced/compression" },
-      { label: "Displacement", to: "/rm-advanced/displacement" },
-      { label: "Pick-up", to: "/rm-advanced/pickup" },
-      { label: "Forecast avancé", to: "/rm-advanced/forecast" },
-      { label: "Rapport RM avancé", to: "/rm-advanced/report" },
+      { label: "Pricing", to: "/rm-dashboard#rm-pricing", icon: icons.business },
+      { label: "Forecast", to: "/rm-dashboard#rm-forecast", icon: icons.market },
+      { label: "Segments", to: "/rm-dashboard#rm-segmentation", icon: icons.clients },
+      { label: "RM avancé", to: "/rm-advanced", icon: icons.business },
+      { label: "Compression", to: "/rm-advanced/compression", icon: icons.market },
+      { label: "Displacement", to: "/rm-advanced/displacement", icon: icons.market },
+      { label: "Pick-up", to: "/rm-advanced/pickup", icon: icons.market },
+      { label: "Forecast avancé", to: "/rm-advanced/forecast", icon: icons.market },
+      { label: "Rapport RM avancé", to: "/rm-advanced/report", icon: icons.market },
     ],
   },
   {
     label: "PMS",
+    icon: icons.hotel,
     items: [
-      { label: "Réservations", to: "/reservations" },
-      { label: "Clients", to: "/clients" },
-      { label: "Planning", to: "/pms" },
+      { label: "Réservations", to: "/reservations", icon: icons.occupancy },
+      { label: "Clients", to: "/clients", icon: icons.clients },
+      { label: "Planning", to: "/pms", icon: icons.development },
     ],
   },
   {
     label: "Finance",
+    icon: icons.business,
     items: [
-      { label: "Revenus", to: "/finance" },
-      { label: "Charges", to: "/finance" },
-      { label: "Bilan", to: "/finance/report" },
-      { label: "Cash-flow", to: "/finance/forecast" },
+      { label: "Revenus", to: "/finance", icon: icons.cash },
+      { label: "Charges", to: "/finance", icon: icons.cash },
+      { label: "Bilan", to: "/finance/report", icon: icons.business },
+      { label: "Cash-flow", to: "/finance/forecast", icon: icons.cash },
     ],
   },
   {
     label: "Marketing",
+    icon: icons.marketing,
     items: [
-      { label: "Campagnes", to: "/marketing/campaigns" },
-      { label: "Canaux", to: "/marketing/channels" },
-      { label: "ROI", to: "/marketing" },
+      { label: "Campagnes", to: "/marketing/campaigns", icon: icons.marketing },
+      { label: "Canaux", to: "/marketing/channels", icon: icons.marketing },
+      { label: "ROI", to: "/marketing", icon: icons.business },
     ],
   },
   {
     label: "Staff",
+    icon: icons.staff,
     items: [
-      { label: "RH", to: "/staff" },
-      { label: "Planning", to: "/staff/forecast" },
-      { label: "Productivité", to: "/staff/report" },
+      { label: "RH", to: "/staff", icon: icons.staff },
+      { label: "Planning", to: "/staff/forecast", icon: icons.development },
+      { label: "Productivité", to: "/staff/report", icon: icons.market },
     ],
   },
   {
     label: "ESG",
+    icon: icons.esg,
     items: [
-      { label: "Énergie", to: "/esg" },
-      { label: "Déchets", to: "/esg" },
-      { label: "Eau", to: "/esg" },
-      { label: "Certifications", to: "/esg/certifications" },
+      { label: "Énergie", to: "/esg", icon: icons.esg },
+      { label: "Déchets", to: "/esg", icon: icons.esg },
+      { label: "Eau", to: "/esg", icon: icons.esg },
+      { label: "Certifications", to: "/esg/certifications", icon: icons.reputation },
     ],
   },
   {
     label: "Mode Professionnel",
+    icon: icons.pro,
     items: [
-      { label: "Nouveau programme", to: "/pro" },
-      { label: "Tableau de bord", to: "/pro/dashboard" },
-      { label: "Crises", to: "/pro/crises" },
-      { label: "Opportunités", to: "/pro/opportunities" },
-      { label: "Audits", to: "/pro/audits" },
-      { label: "Objectifs", to: "/pro/objectives" },
-      { label: "Prévisions", to: "/pro/forecast" },
-      { label: "Rapport", to: "/pro/report" },
+      { label: "Nouveau programme", to: "/pro", icon: icons.pro },
+      { label: "Tableau de bord", to: "/pro/dashboard", icon: icons.market },
+      { label: "Crises", to: "/pro/crises", icon: icons.warning },
+      { label: "Opportunités", to: "/pro/opportunities", icon: icons.opportunity },
+      { label: "Audits", to: "/pro/audits", icon: icons.business },
+      { label: "Objectifs", to: "/pro/objectives", icon: icons.reputation },
+      { label: "Prévisions", to: "/pro/forecast", icon: icons.market },
+      { label: "Rapport", to: "/pro/report", icon: icons.market },
     ],
     align: "right",
   },
@@ -160,7 +182,7 @@ export default function TopBar() {
 
         <nav aria-label="Navigation principale" className="hidden flex-1 items-center gap-1 md:flex">
           {PRIMARY_MENUS.map((menu) => (
-            <TopBarDropdown key={menu.label} label={menu.label} to={menu.to} items={menu.items} align={menu.align} />
+            <TopBarDropdown key={menu.label} label={menu.label} to={menu.to} items={menu.items} align={menu.align} icon={menu.icon} />
           ))}
         </nav>
 

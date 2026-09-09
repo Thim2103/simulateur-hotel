@@ -1,13 +1,53 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import Card from "../components/ui/Card";
-import Button from "../components/ui/Button";
+import GameButton from "../ui/components/GameButton";
+import GameCard from "../ui/components/GameCard";
+import GameSection from "../ui/components/GameSection";
 import { useDailyReview } from "../hooks/useDailyReview";
+import { fadeIn, slideUp, delay } from "../ui/animations";
+
+function StatTile({ label, icon, value, tone = "default", index = 0 }) {
+  return (
+    <GameCard className={slideUp}>
+      <div style={delay(index)} className="flex items-center gap-2">
+        <span aria-hidden="true" className="text-lg">{icon}</span>
+        <p className="text-xs text-slate-500">{label}</p>
+      </div>
+      <p className={`mt-1 text-lg font-semibold ${tone === "danger" ? "text-rose-700" : "text-slate-900"}`}>{value}</p>
+    </GameCard>
+  );
+}
+
+// A small, dependency-free "stylised graph": a horizontal bar whose fill
+// width reflects revenue vs. profit, so the summary reads visually rather
+// than as bare numbers alone -- no chart library needed for two bars.
+function RevenueProfitBar({ revenue, profit }) {
+  const max = Math.max(Math.abs(revenue), Math.abs(profit), 1);
+  const revenueWidth = Math.round((Math.abs(revenue) / max) * 100);
+  const profitWidth = Math.round((Math.abs(profit) / max) * 100);
+  return (
+    <div className="mt-4 flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="w-16 shrink-0">Revenu</span>
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className="h-full rounded-full bg-[#0b1730] transition-all duration-500" style={{ width: `${revenueWidth}%` }} />
+        </div>
+      </div>
+      <div className="flex items-center gap-2 text-xs text-slate-500">
+        <span className="w-16 shrink-0">Profit</span>
+        <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100">
+          <div className={`h-full rounded-full transition-all duration-500 ${profit >= 0 ? "bg-[#e9ab1f]" : "bg-rose-500"}`} style={{ width: `${profitWidth}%` }} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // "DailyReview" -- the last step of the daily loop (Morning -> MyHotel ->
 // Decisions -> Day -> Results), reached from Dashboard.jsx's "Jouer la
 // journée" button. Route: /daily-review. See hooks/useDailyReview.js/
-// lib/dashboard/dailyReview.js.
+// lib/dashboard/dailyReview.js. Restyled with the game design system --
+// every heading/label/link text is unchanged from before.
 export default function DailyReview() {
   const { review, isRunning, error, loadReview } = useDailyReview();
 
@@ -27,7 +67,7 @@ export default function DailyReview() {
           </div>
         </header>
         <Link to="/dashboard">
-          <Button>Aller à l'hôtel</Button>
+          <GameButton icon="🏨">Aller à l'hôtel</GameButton>
         </Link>
       </div>
     );
@@ -37,48 +77,49 @@ export default function DailyReview() {
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="page-header">
+      <header className={`page-header ${slideUp}`}>
         <div>
-          <p className="eyebrow">Résultats</p>
+          <p className="eyebrow">🌙 Résultats</p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Que s'est-il passé ? — Jour {review.day}</h1>
           {review.date && <p className="mt-1 text-sm text-slate-500">{review.date}</p>}
         </div>
         <Link to="/dashboard">
-          <Button disabled={isRunning}>Retour à l'hôtel</Button>
+          <GameButton disabled={isRunning}>Retour à l'hôtel</GameButton>
         </Link>
       </header>
 
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">Une erreur est survenue : {error.message}</div>}
 
-      <section aria-labelledby="review-summary" className="flex flex-col gap-2">
-        <h2 id="review-summary" className="text-base font-semibold text-slate-900">Résumé</h2>
+      <GameSection id="review-summary" title="Résumé" icon="📊" className={fadeIn}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Card><p className="text-xs text-slate-500">Revenu</p><p className="mt-1 text-lg font-semibold text-slate-900">{summary.revenue.toLocaleString()} €</p></Card>
-          <Card><p className="text-xs text-slate-500">Profit</p><p className={`mt-1 text-lg font-semibold ${summary.profit >= 0 ? "text-slate-900" : "text-rose-700"}`}>{summary.profit.toLocaleString()} €</p></Card>
-          <Card><p className="text-xs text-slate-500">Satisfaction</p><p className="mt-1 text-lg font-semibold text-slate-900">{summary.satisfaction === null ? "—" : `${summary.satisfaction.toFixed(1)}/5`}</p></Card>
-          <Card><p className="text-xs text-slate-500">Moral du personnel</p><p className="mt-1 text-lg font-semibold text-slate-900">{summary.staffMorale === null || summary.staffMorale === undefined ? "—" : `${summary.staffMorale}/100`}</p></Card>
+          <StatTile label="Revenu" icon="💵" value={`${summary.revenue.toLocaleString()} €`} index={0} />
+          <StatTile label="Profit" icon="💰" tone={summary.profit >= 0 ? "default" : "danger"} value={`${summary.profit.toLocaleString()} €`} index={1} />
+          <StatTile label="Satisfaction" icon="⭐" value={summary.satisfaction === null ? "—" : `${summary.satisfaction.toFixed(1)}/5`} index={2} />
+          <StatTile label="Moral du personnel" icon="👔" value={summary.staffMorale === null || summary.staffMorale === undefined ? "—" : `${summary.staffMorale}/100`} index={3} />
         </div>
-      </section>
+        <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
+      </GameSection>
 
-      <section aria-labelledby="review-why" className="flex flex-col gap-2">
-        <h2 id="review-why" className="text-base font-semibold text-slate-900">Pourquoi ?</h2>
-        <Card>
+      <GameSection id="review-why" title="Pourquoi ?" icon="🧭">
+        <GameCard>
           {review.causalChain.length === 0 ? (
             <p className="text-sm text-slate-500">Rien de notable à expliquer aujourd'hui.</p>
           ) : (
             <ul className="flex flex-col gap-2 text-sm text-slate-700">
               {review.causalChain.map((line, index) => (
-                <li key={index}>→ {line}</li>
+                <li key={index} style={delay(index)} className={`flex items-start gap-2 ${slideUp}`}>
+                  <span aria-hidden="true" className="mt-0.5 text-[#e9ab1f]">→</span>
+                  <span>{line}</span>
+                </li>
               ))}
             </ul>
           )}
-        </Card>
-      </section>
+        </GameCard>
+      </GameSection>
 
       {review.attentionItems.length > 0 && (
-        <section aria-labelledby="review-more" className="flex flex-col gap-2">
-          <h2 id="review-more" className="text-base font-semibold text-slate-900">En savoir plus</h2>
-          <Card>
+        <GameSection id="review-more" title="En savoir plus" icon="🔎">
+          <GameCard>
             <ul className="flex flex-col gap-2">
               {review.attentionItems.map((item) => (
                 <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 p-2 text-sm">
@@ -89,8 +130,8 @@ export default function DailyReview() {
                 </li>
               ))}
             </ul>
-          </Card>
-        </section>
+          </GameCard>
+        </GameSection>
       )}
     </div>
   );
