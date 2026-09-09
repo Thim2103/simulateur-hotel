@@ -112,6 +112,7 @@ describe("normalizeProgression", () => {
       unlockedAchievements: [],
       difficulty: "easy",
       cycles: 0,
+      ready: false,
     });
   });
 
@@ -119,6 +120,18 @@ describe("normalizeProgression", () => {
     const result = normalizeProgression({ completedTutorials: "overview", unlockedAchievements: { 0: "first-cycle" } });
     expect(Array.isArray(result.completedTutorials)).toBe(true);
     expect(result.unlockedAchievements).toEqual(["first-cycle"]);
+  });
+
+  // Regression test: normalizeProgression() used to silently drop `ready`
+  // (it wasn't in its whitelist of copied fields), which reset
+  // progression.ready to falsy on every normalizeRestaurant() pass --
+  // see useSupabaseRestaurant.js's reload() -- leaving the player stuck
+  // on "Étape 1" (pages/RestaurantStructure.jsx) even after a successful
+  // "Valider l'établissement" submit (see pages/RestaurantSimulator.jsx).
+  test("preserves progression.ready once the establishment has been validated", () => {
+    expect(normalizeProgression({ ready: true }).ready).toBe(true);
+    expect(normalizeProgression({ ready: false }).ready).toBe(false);
+    expect(normalizeProgression(null).ready).toBe(false);
   });
 });
 

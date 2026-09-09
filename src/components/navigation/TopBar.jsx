@@ -33,6 +33,12 @@ const PRIMARY_MENUS = [
     label: "Restaurant",
     items: [
       { label: "Menu", to: "/restaurant/menu" },
+      { label: "Menu Engineering", to: "/restaurant/menu-engineering" },
+      { label: "Food Cost", to: "/restaurant/food-cost" },
+      { label: "Popularité", to: "/restaurant/popularity" },
+      { label: "Rentabilité", to: "/restaurant/profitability" },
+      { label: "Forecast", to: "/restaurant/forecast" },
+      { label: "Rapport", to: "/restaurant/report" },
       { label: "Staff", to: "/restaurant/hr" },
       { label: "Finance", to: "/restaurant/finance" },
       { label: "Opérations", to: "/restaurant/operations" },
