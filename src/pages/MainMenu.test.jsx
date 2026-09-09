@@ -25,3 +25,14 @@ test("shows a Quitter button when running as a desktop build", () => {
   expect(screen.getByRole("button", { name: /quitter/i })).toBeInTheDocument();
   delete window.electronAPI;
 });
+
+test("shows the 'Nouvelle partie' and 'Académie' sections with their game modes", () => {
+  render(<MainMenu />, { wrapper: MemoryRouter });
+  expect(screen.getByRole("link", { name: /carrière/i })).toHaveAttribute("href", "/career");
+  expect(screen.getByRole("link", { name: /sandbox/i })).toHaveAttribute("href", "/sandbox");
+  expect(screen.getByRole("link", { name: /défis/i })).toHaveAttribute("href", "/challenges");
+  expect(screen.getByRole("link", { name: /scénarios/i })).toHaveAttribute("href", "/scenarios");
+  expect(screen.getByRole("link", { name: /academy/i })).toHaveAttribute("href", "/academy");
+  expect(screen.getByRole("link", { name: /tfe/i })).toHaveAttribute("href", "/tfe");
+  expect(screen.getByRole("link", { name: /compétition/i })).toHaveAttribute("href", "/competition");
+});
