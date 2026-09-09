@@ -1,5 +1,5 @@
 import { useLocation } from "react-router-dom";
-import TopBar from "../components/navigation/TopBar";
+import GameNavigation from "../ui/navigation/GameNavigation";
 import ErrorBoundary from "../components/ErrorBoundary";
 
 // Pre-game screens (see pages/MainMenu.jsx, PlayMenu.jsx, SelectMode.jsx,
@@ -17,7 +17,7 @@ export default function Layout({ children }) {
 
   return (
     <div className="min-h-screen">
-      <TopBar />
+      <GameNavigation />
       <main className="min-w-0 bg-slate-50 px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
         <ErrorBoundary>{children}</ErrorBoundary>
       </main>

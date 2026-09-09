@@ -17,9 +17,10 @@ import DashboardKpis from "../components/dashboard/DashboardKpis";
 import DashboardNotifications from "../components/dashboard/DashboardNotifications";
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
-import HotelView from "../components/dashboard/HotelView";
+import HotelView2D from "../ui/hotelView/HotelView2D";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
+import { fadeIn } from "../ui/animations";
 
 // The general Dashboard ("Mon Hôtel") -- the living, narrative home page:
 // the hotel as a character (KPIs, notifications, yesterday's story),
@@ -184,9 +185,15 @@ export default function Dashboard() {
         viewMode={viewMode}
       />
 
-      <HotelView roomCount={careerState?.hotel?.rooms?.length ?? 0} occupancyRate={dashboardState?.kpis?.occupancyRate ?? 0} />
+      <HotelView2D
+        roomCount={careerState?.hotel?.rooms?.length ?? 0}
+        occupancyRate={dashboardState?.kpis?.occupancyRate ?? 0}
+        hasIncident={attentionItems.length > 0}
+      />
 
-      <AttentionPanel items={attentionItems} />
+      <div className={fadeIn}>
+        <AttentionPanel items={attentionItems} />
+      </div>
 
       <DashboardNotifications notifications={dashboardState?.notifications} />
 

@@ -9,7 +9,15 @@ import { NavLink } from "react-router-dom";
 // leftward instead of rightward -- used by the last couple of items so
 // the dropdown never overflows past the viewport's right edge ("ne
 // déborde jamais du cadre").
-export default function TopBarDropdown({ label, to, items, align = "left" }) {
+//
+// `icon` (trigger) and each item's own `icon`/`description` are optional,
+// purely additive visuals for the game-styled hub navigation (see
+// ui/navigation/GameNavigation.jsx) -- every icon is aria-hidden and, when
+// an item has a description, its accessible name is pinned to `item.label`
+// via aria-label, so existing callers/tests that only ever passed
+// `{label, to}` keep exactly the same rendered accessible name and click
+// behaviour as before.
+export default function TopBarDropdown({ label, to, items, align = "left", icon }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
 
@@ -58,6 +66,7 @@ export default function TopBarDropdown({ label, to, items, align = "left" }) {
           open ? "bg-slate-800 text-white" : "text-slate-200 hover:bg-slate-800 hover:text-white"
         }`}
       >
+        {icon && <span aria-hidden="true">{icon}</span>}
         {label}
         <svg viewBox="0 0 20 20" fill="currentColor" className={`h-3.5 w-3.5 transition-transform duration-150 ${open ? "rotate-180" : ""}`} aria-hidden="true">
           <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.19l3.71-3.96a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
@@ -88,14 +97,19 @@ export default function TopBarDropdown({ label, to, items, align = "left" }) {
             key={`${label}-${item.label}`}
             to={item.to}
             role="menuitem"
+            aria-label={item.description ? item.label : undefined}
             onClick={() => setOpen(false)}
             className={({ isActive }) =>
-              `block rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
+              `flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors duration-150 ${
                 isActive ? "bg-cyan-50 font-medium text-cyan-700" : "text-slate-700 hover:bg-slate-100"
               }`
             }
           >
-            {item.label}
+            {item.icon && <span aria-hidden="true">{item.icon}</span>}
+            <span className="flex-1">
+              <span className="block">{item.label}</span>
+              {item.description && <span className="block text-xs font-normal text-slate-400">{item.description}</span>}
+            </span>
           </NavLink>
         ))}
       </div>

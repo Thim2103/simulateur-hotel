@@ -92,9 +92,11 @@ import EsgForecast from "./pages/EsgForecast";
 import EsgReport from "./pages/EsgReport";
 import Expansion from "./pages/Expansion";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
+import { GameThemeProvider } from "./ui/designSystem/GameThemeProvider";
 
 function App() {
   return (
+    <GameThemeProvider className="min-h-screen">
     <BrowserRouter>
       <ChainProvider>
         <AcademyProvider>
@@ -202,6 +204,7 @@ function App() {
         </AcademyProvider>
       </ChainProvider>
     </BrowserRouter>
+    </GameThemeProvider>
   );
 }
 
