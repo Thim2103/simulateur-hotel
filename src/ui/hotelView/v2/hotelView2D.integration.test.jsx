@@ -34,12 +34,17 @@ test(
     fireEvent.click(screen.getByRole("button", { name: /démarrer ma carrière/i }));
     await waitFor(() => expect(screen.getByText(/vue globale/i)).toBeInTheDocument());
 
-    // MyHotel (/dashboard) -- the animated HotelView2D v2: timeline,
-    // "Vue de l'hôtel", ground floor blocks.
+    // MyHotel (/dashboard) -- isometric (HotelViewIsometric, v3) is now
+    // the default view (see pages/Dashboard.jsx's own toggle), so switch
+    // to v2's flat view via its own "Vue 2D" button before asserting on
+    // HotelView2DAnimated's own content: timeline, "Vue de l'hôtel",
+    // ground floor blocks.
     fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
     await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
     expectNoSupabaseError();
     expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
     expect(screen.getByText(/vue de l'hôtel/i)).toBeInTheDocument();
     expect(screen.getByText("Réception")).toBeInTheDocument();
 
@@ -49,10 +54,13 @@ test(
     await waitFor(() => expect(screen.getByText(/situation/i)).toBeInTheDocument());
     expectNoSupabaseError();
 
-    // Back to MyHotel, apply a decision -- its visual feedback (a
-    // transient event badge on the hotel) should appear.
+    // Back to MyHotel -- Dashboard.jsx's isometric/2D toggle is local
+    // state, reset on remount, so switch to the 2D view again here too --
+    // then apply a decision: its visual feedback (a transient event
+    // badge on the hotel) should appear.
     fireEvent.click(screen.getByRole("link", { name: /aller à l'hôtel/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
 
     fireEvent.click(screen.getAllByRole("button", { name: /appliquer/i })[0]);
     await waitFor(() => expect(screen.getByText(/décision :/i)).toBeInTheDocument());
@@ -60,7 +68,10 @@ test(
 
     // "Avancer la journée" (HotelTimeline's own button, replacing the
     // header's "Jouer la journée" as the primary way to close the day) ->
-    // DailyReview.
+    // DailyReview. Wait for applyQuickAction()'s own async reload to
+    // settle (the button reads "Calcul en cours…" while isRunning) before
+    // clicking it by its resting name.
+    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: /avancer la journée/i }));
     await waitFor(() => expect(screen.getByRole("heading", { name: /que s'est-il passé/i })).toBeInTheDocument());
     expectNoSupabaseError();

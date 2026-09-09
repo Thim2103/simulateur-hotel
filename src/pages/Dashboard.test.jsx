@@ -157,3 +157,16 @@ test("shows a banner linking to the story page when a narrative event is pending
   render(<Dashboard />, { wrapper: MemoryRouter });
   expect(screen.getByRole("link", { name: /le consulter/i })).toHaveAttribute("href", "/career/story");
 });
+
+test("shows the isometric hotel view by default, with a toggle back to the 2D view", () => {
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(<Dashboard />, { wrapper: MemoryRouter });
+
+  expect(screen.getByText(/vue isométrique de l'hôtel/i)).toBeInTheDocument();
+  const toggle = screen.getByRole("button", { name: /vue 2d/i });
+
+  fireEvent.click(toggle);
+  expect(screen.getByText(/vue de l'hôtel/i)).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: /vue isométrique/i })).toBeInTheDocument();
+});
