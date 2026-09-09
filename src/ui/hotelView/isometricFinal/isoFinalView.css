@@ -1,0 +1,59 @@
+/* "Premium" keyframes -- every character/prop cycle uses steps() timing
+   for a genuine discrete-frame cartoon feel (6 frames for walking per the
+   Bible, 4 for every other cycle). None of these ever touch the
+   `transform` an element uses for its own isometric *position*
+   (translate, see IsoFinalGrid.jsx's toIsoFinal()) -- IsoFinalCharacter.jsx/
+   IsoFinalIncident.jsx split positioning (outer, static) from motion
+   (inner, animated) precisely to avoid the "animation replaces transform
+   outright" pitfall already documented in ui/radialNav/radialNav.css and
+   ui/hotelView/isometricRetro/retroView.css. */
+@keyframes if-walk-cycle {
+  0% { transform: translateY(0) rotate(-5deg); }
+  16.6% { transform: translateY(-2px) rotate(-2deg); }
+  33.3% { transform: translateY(-4px) rotate(2deg); }
+  50% { transform: translateY(-2px) rotate(5deg); }
+  66.6% { transform: translateY(0) rotate(2deg); }
+  83.3% { transform: translateY(-2px) rotate(-2deg); }
+  100% { transform: translateY(0) rotate(-5deg); }
+}
+@keyframes if-clean-cycle { 0%, 100% { transform: rotate(-14deg); } 50% { transform: rotate(14deg); } }
+@keyframes if-eat-cycle { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+@keyframes if-checkin-cycle { 0% { transform: translateY(8px); opacity: 0.3; } 60% { transform: translateY(-4px); opacity: 1; } 100% { transform: translateY(0); opacity: 1; } }
+@keyframes if-cook-cycle { 0%, 100% { transform: rotate(-8deg) scale(1); } 50% { transform: rotate(8deg) scale(1.08); } }
+@keyframes if-bar-cycle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px) rotate(6deg); } }
+@keyframes if-laundry-cycle { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(360deg); } }
+@keyframes if-incident-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(226, 90, 90, 0)); }
+  50% { transform: scale(1.3); filter: drop-shadow(0 0 8px rgba(226, 90, 90, 0.6)); }
+}
+
+@keyframes if-room-clean { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.07); } }
+@keyframes if-room-dirty { 0%, 100% { filter: saturate(0.75); } 50% { filter: saturate(0.5); } }
+@keyframes if-room-cleaning { 0%, 100% { filter: brightness(1) saturate(1.35); } 50% { filter: brightness(1.18) saturate(1.7); } }
+/* room-occupied bakes in IsoFinalRoom.jsx's own base transform
+   (translate(-50%,-50%) rotate(45deg)) -- see the file-level docstring
+   above. */
+@keyframes if-room-occupied {
+  from { transform: translate(-50%, -50%) rotate(45deg) scale(0.85); opacity: 0.4; }
+  to { transform: translate(-50%, -50%) rotate(45deg) scale(1); opacity: 1; }
+}
+
+.if-walk-cycle { animation: if-walk-cycle 1s steps(6) infinite; }
+.if-clean-cycle { animation: if-clean-cycle 0.6s steps(4) infinite; }
+.if-eat-cycle { animation: if-eat-cycle 0.8s steps(4) infinite; }
+.if-checkin-cycle { animation: if-checkin-cycle 0.6s steps(4) both; }
+.if-cook-cycle { animation: if-cook-cycle 0.8s steps(4) infinite; }
+.if-bar-cycle { animation: if-bar-cycle 0.8s steps(4) infinite; }
+.if-laundry-cycle { animation: if-laundry-cycle 1.4s steps(4) infinite; }
+.if-incident-pulse { animation: if-incident-pulse 1.1s ease-in-out infinite; }
+.if-room-clean { animation: if-room-clean 2.4s ease-in-out infinite; }
+.if-room-dirty { animation: if-room-dirty 2.4s ease-in-out infinite; }
+.if-room-cleaning { animation: if-room-cleaning 0.9s ease-in-out infinite; }
+.if-room-occupied { animation: if-room-occupied 0.4s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .if-walk-cycle, .if-clean-cycle, .if-eat-cycle, .if-checkin-cycle, .if-cook-cycle, .if-bar-cycle,
+  .if-laundry-cycle, .if-incident-pulse, .if-room-clean, .if-room-dirty, .if-room-cleaning, .if-room-occupied {
+    animation: none !important;
+  }
+}

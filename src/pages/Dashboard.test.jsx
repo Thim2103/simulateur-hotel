@@ -163,7 +163,7 @@ test("shows the isometric hotel view by default, with a toggle back to the 2D vi
   useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
   render(<Dashboard />, { wrapper: MemoryRouter });
 
-  expect(screen.getByText(/vue isométrique rétro de l'hôtel/i)).toBeInTheDocument();
+  expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
   const toggle = screen.getByRole("button", { name: /vue 2d/i });
 
   fireEvent.click(toggle);
