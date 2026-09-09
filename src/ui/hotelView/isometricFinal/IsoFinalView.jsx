@@ -1,44 +1,13 @@
 import { useEffect, useRef } from "react";
 import IsoFinalGrid from "./IsoFinalGrid";
 import IsoFinalFloor from "./IsoFinalFloor";
-import IsoFinalRoom from "./IsoFinalRoom";
-import IsoFinalReception from "./IsoFinalReception";
-import IsoFinalRestaurant from "./IsoFinalRestaurant";
-import IsoFinalKitchen from "./IsoFinalKitchen";
-import IsoFinalBar from "./IsoFinalBar";
-import IsoFinalLaundry from "./IsoFinalLaundry";
-import IsoFinalHall from "./IsoFinalHall";
-import IsoFinalCharacter from "./IsoFinalCharacter";
-import IsoFinalIncident from "./IsoFinalIncident";
+import IsoFinalEntityRenderer from "./IsoFinalEntityRenderer";
 import { walkCycle, cleanCycle, eatCycle } from "./IsoFinalAnimations";
 import { sortEntitiesByDepth } from "../engine/DepthSort";
+import { createSceneState } from "../engine/SceneState";
+import { buildHotelSceneEntities, computeFloors } from "../engine/EntityFactory";
 import HotelTimeline from "../v2/HotelTimeline";
 import { fadeIn } from "../../animations";
-
-const FLOOR_COUNT = 4;
-const GROUND_ROW = FLOOR_COUNT;
-const MAX_CHARACTERS = 6;
-
-// Same wall-clock-driven "which ambient activity feels right now" idea as
-// every earlier isometric view's own dayPhase() -- kept as its own copy
-// (isometricFinal/ is a self-contained art-direction module, see
-// IsoFinalGrid.jsx's own docstring) rather than imported from v3/RetroView.
-function dayPhase(date = new Date()) {
-  const hour = date.getHours();
-  if (hour < 6) return "night";
-  if (hour < 11) return "morning";
-  if (hour < 14) return "noon";
-  if (hour < 18) return "afternoon";
-  if (hour < 22) return "evening";
-  return "night";
-}
-
-const PHASE_GUEST_ACTIVITY = { morning: "checkin", noon: "eating", afternoon: "walking", evening: "idle", night: "sleeping" };
-// Staff activity now spans the richer set of rooms the Bible asks for --
-// cooking at noon (kitchen), bartending in the evening (bar), laundry in
-// the afternoon (housekeeping), on top of the reception/cleaning/
-// maintenance rotation earlier views already had.
-const PHASE_STAFF_ACTIVITY = { morning: "reception", noon: "cooking", afternoon: "laundry", evening: "bartending", night: "idle" };
 
 // IsoFinalView -- the "Retro-Moderne Premium" isometric hotel view (see
 // the Bible Artistique). Same read-only, real-data contract and exact
@@ -46,27 +15,25 @@ const PHASE_STAFF_ACTIVITY = { morning: "reception", noon: "cooking", afternoon:
 // pages/Dashboard.jsx's toggle), composing all 7 room types the Bible
 // asks for: chambres, réception, restaurant, cuisine, bar, laundry, hall.
 //
-// Render order is no longer "whatever order these ended up in the JSX"
-// (floors, then ground-floor blocks, then guests, then staff, then
-// incidents, in that fixed sequence regardless of where anything actually
-// is) -- every room/ground-floor block/character/incident is first
-// collected into a flat list of scene entities (`{x, y, render()}`, world-
-// space tile coordinates, see ui/hotelView/engine/IsoProjection.js's own
-// docstring for what "world space" means here) and handed to
-// ui/hotelView/engine/DepthSort.js's `sortEntitiesByDepth()`, which is now
-// the single source of truth for "what draws in front of what". Every
-// entity here is still a zero-footprint point (no `width`/`depth`/`height`
-// given) -- exactly what the old, now-retired `depthSortFinal(items)`
-// this replaces also assumed (col+row only) -- so this pass only *turns
-// on* real depth-sorting, it doesn't yet model any entity's actual size;
-// footprint-aware sorting (a wide reception desk, a two-tile-deep
-// restaurant...) is available in DepthSort.js already, ready for whenever
-// these entities gain real dimensions.
+// This view no longer interprets business data itself: it hands its props
+// straight to engine/EntityFactory.js's `buildHotelSceneEntities()` (the
+// only place allowed to know `room.status`/`housekeeping_status`/etc.),
+// wraps the result into a normalized engine/SceneState.js `SceneState`,
+// depth-sorts its entities via engine/DepthSort.js's
+// `sortEntitiesByDepth()` (still the single source of truth for "what
+// draws in front of what" -- render order is not JSX mount order), and
+// renders each one through IsoFinalEntityRenderer.jsx, which dispatches to
+// the same concrete visual components (IsoFinalRoom, IsoFinalReception,
+// IsoFinalCharacter, ...) this view always used. Positions are still
+// static this step -- no entity moves on its own yet (see
+// EntityFactory.js/SceneState.js's own docstrings on why `previousPosition`/
+// `targetPosition` exist but stay null for now).
 //
-// Floor labels are rendered separately, outside the sorted list: they're
-// decorative chrome off to the side of the grid (col -1) that never
-// visually overlaps a room/character/incident, so they don't need to
-// compete for depth with anything.
+// Floor labels are rendered separately, outside the sorted entity list:
+// they're decorative chrome off to the side of the grid (col -1) that
+// never visually overlaps a room/character/incident, so they don't need to
+// compete for depth with anything, and they're not scene entities (nothing
+// hovers/selects/moves a floor label).
 export default function IsoFinalView({
   day,
   rooms = [],
@@ -92,79 +59,33 @@ export default function IsoFinalView({
     else walkCycle(stageRef.current);
   }, [decisionFeedback]);
 
-  const phase = dayPhase();
-  const occupiedCount = rooms.filter((room) => room.status === "occupée").length;
-  const hasIncident = diagnostics.some((d) => d.type === "error" || d.severity === "high");
+  // floors: decorative-only (floor number labels), never fed into the
+  // scene -- see computeFloors()'s own docstring in EntityFactory.js.
+  const floors = computeFloors(rooms).map((floor) => ({ level: floor.level, row: floor.floorIndex }));
 
-  const roomsPerFloor = Math.max(1, Math.ceil(rooms.length / FLOOR_COUNT));
-  const floors = Array.from({ length: FLOOR_COUNT }, (_, floorIndex) => ({
-    level: FLOOR_COUNT - floorIndex,
-    row: floorIndex,
-    rooms: rooms
-      .slice(floorIndex * roomsPerFloor, (floorIndex + 1) * roomsPerFloor)
-      .map((room) => ({
-        ...room,
-        state: cleaningRoomIds?.has(room.id) ? "cleaning" : room.status === "occupée" ? "occupied" : room.housekeeping_status === "dirty" ? "dirty" : "clean",
-      })),
-  })).filter((floor) => floor.rooms.length > 0);
+  // Dashboard -> IsoFinalView -> EntityFactory -> SceneState -> render.
+  // EntityFactory.js is the only place reading `room.status`/
+  // `housekeeping_status`/`diagnostics[].severity`/etc.; everything from
+  // here down only ever sees generic scene entities.
+  const sceneState = createSceneState({
+    entities: buildHotelSceneEntities({ day, rooms, staffCount, todaysEvents, diagnostics, decisionFeedback, cleaningRoomIds, isRunning }),
+  });
 
-  const staffActivity = decisionFeedback?.target === "staff" ? "walking" : PHASE_STAFF_ACTIVITY[phase];
-  const guestActivity = PHASE_GUEST_ACTIVITY[phase];
-
-  const guests = Array.from({ length: Math.min(MAX_CHARACTERS, occupiedCount) }, (_, index) => ({
-    id: `guest-${index}`,
-    col: (index % roomsPerFloor) + 0.5,
-    row: GROUND_ROW - 0.5,
-  }));
-  const staff = Array.from({ length: Math.min(MAX_CHARACTERS, staffCount) }, (_, index) => ({
-    id: `staff-${index}`,
-    col: (index % roomsPerFloor) + 1,
-    row: GROUND_ROW - 1,
-  }));
-
-  const incidents = diagnostics.filter((d) => d.type === "error" || d.severity === "high").slice(0, 3);
-
-  // The flat list of scene entities DepthSort.js sorts. `x`/`y` are the
-  // entity's own world-space tile position (col/row); `render()` is a
-  // closure producing that entity's already-keyed JSX, called only after
-  // sorting, in the order the sort decided.
-  const roomEntities = floors.flatMap((floor) =>
-    floor.rooms.map((room, index) => ({
-      x: index,
-      y: floor.row,
-      render: () => <IsoFinalRoom key={`room-${room.id}`} col={index} row={floor.row} state={room.state} number={room.number} />,
+  // DepthSort.js reads flat `{x, y, z, width, depth, height}` -- entities
+  // carry those nested under `position`/`footprint` (see SceneState.js),
+  // so they're flattened for the sort and the original entity is recovered
+  // afterwards via `__entity`.
+  const sceneEntities = sortEntitiesByDepth(
+    sceneState.entities.map((entity) => ({
+      x: entity.position.x,
+      y: entity.position.y,
+      z: entity.position.z,
+      width: entity.footprint.width,
+      depth: entity.footprint.depth,
+      height: entity.footprint.height,
+      __entity: entity,
     }))
-  );
-
-  const groundEntities = [
-    { x: 0, y: GROUND_ROW, render: () => <IsoFinalReception key="reception" col={0} row={GROUND_ROW} /> },
-    { x: 2, y: GROUND_ROW, render: () => <IsoFinalRestaurant key="restaurant" col={2} row={GROUND_ROW} /> },
-    { x: 4, y: GROUND_ROW, render: () => <IsoFinalKitchen key="kitchen" col={4} row={GROUND_ROW} /> },
-    { x: 6, y: GROUND_ROW, render: () => <IsoFinalBar key="bar" col={6} row={GROUND_ROW} /> },
-    { x: 8, y: GROUND_ROW, render: () => <IsoFinalLaundry key="laundry" col={8} row={GROUND_ROW} hasIncident={hasIncident} /> },
-    { x: 10, y: GROUND_ROW, render: () => <IsoFinalHall key="hall" col={10} row={GROUND_ROW} /> },
-  ];
-
-  const characterEntities = [
-    ...guests.map((character) => ({
-      x: character.col,
-      y: character.row,
-      render: () => <IsoFinalCharacter key={character.id} kind="guest" col={character.col} row={character.row} activity={guestActivity} />,
-    })),
-    ...staff.map((character) => ({
-      x: character.col,
-      y: character.row,
-      render: () => <IsoFinalCharacter key={character.id} kind="staff" col={character.col} row={character.row} activity={staffActivity} />,
-    })),
-  ];
-
-  const incidentEntities = incidents.map((incident, index) => ({
-    x: 11 + index,
-    y: GROUND_ROW,
-    render: () => <IsoFinalIncident key={`incident-${index}`} col={11 + index} row={GROUND_ROW} type="breakdown" message={incident.message} />,
-  }));
-
-  const sceneEntities = sortEntitiesByDepth([...roomEntities, ...groundEntities, ...characterEntities, ...incidentEntities]);
+  ).map((wrapped) => wrapped.__entity);
 
   return (
     <div className={`flex flex-col gap-4 ${fadeIn}`}>
@@ -181,7 +102,9 @@ export default function IsoFinalView({
               <IsoFinalFloor key={`floor-label-${floor.level}`} level={floor.level} row={floor.row} rooms={[]} />
             ))}
 
-            {sceneEntities.map((entity) => entity.render())}
+            {sceneEntities.map((entity) => (
+              <IsoFinalEntityRenderer key={entity.id} entity={entity} />
+            ))}
           </IsoFinalGrid>
         )}
       </div>
