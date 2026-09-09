@@ -50,6 +50,12 @@ const PRIMARY_MENUS = [
       { label: "Pricing", to: "/rm-dashboard#rm-pricing" },
       { label: "Forecast", to: "/rm-dashboard#rm-forecast" },
       { label: "Segments", to: "/rm-dashboard#rm-segmentation" },
+      { label: "RM avancé", to: "/rm-advanced" },
+      { label: "Compression", to: "/rm-advanced/compression" },
+      { label: "Displacement", to: "/rm-advanced/displacement" },
+      { label: "Pick-up", to: "/rm-advanced/pickup" },
+      { label: "Forecast avancé", to: "/rm-advanced/forecast" },
+      { label: "Rapport RM avancé", to: "/rm-advanced/report" },
     ],
   },
   {

@@ -4,18 +4,19 @@ import { pricingKpiForMode } from "../../lib/dashboard/dashboardViewMode";
 // The headline KPIs: occupation, prix moyen (casual) / ADR (expert),
 // revenu du jour, satisfaction, personnel, EBITDA, moral RH, ROI
 // marketing, score ESG, qualité housekeeping, score TFE, satisfaction
-// clients -- see lib/dashboard/dashboardEngine.js's computeKpis().
-// kpis.tfeScore and kpis.clientsSatisfaction are the two "odd ones out":
-// unlike figures derived from the shared CareerState, TFE is its own
-// self-contained playthrough and Clients reads independently via
-// hooks/useTfeEngine.js and hooks/useClientsEngine.js respectively --
+// clients, mix RM avancé -- see lib/dashboard/dashboardEngine.js's
+// computeKpis(). kpis.tfeScore, kpis.clientsSatisfaction and
+// kpis.rmAdvancedMix are the "odd ones out": unlike figures derived from
+// the shared CareerState, TFE is its own self-contained playthrough and
+// Clients/RM Advanced each read independently via hooks/useTfeEngine.js/
+// useClientsEngine.js/useRmAdvancedEngine.js respectively --
 // pages/Dashboard.jsx merges them into the `kpis` object here, so this
 // component stays agnostic to where each figure came from.
 export default function DashboardKpis({ kpis, viewMode }) {
   if (!kpis) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12">
-        {Array.from({ length: 12 }, (_, i) => (
+        {Array.from({ length: 13 }, (_, i) => (
           <KpiCard key={i} label="—" value="—" loading />
         ))}
       </div>
@@ -38,6 +39,7 @@ export default function DashboardKpis({ kpis, viewMode }) {
       <KpiCard label="Qualité HK" value={kpis.housekeepingQuality === null || kpis.housekeepingQuality === undefined ? "—" : `${kpis.housekeepingQuality}/100`} trend={kpis.housekeepingQuality >= 65 ? undefined : -1} />
       <KpiCard label="Score TFE" value={kpis.tfeScore === null || kpis.tfeScore === undefined ? "—" : `${kpis.tfeScore}/100`} trend={kpis.tfeScore >= 60 ? undefined : -1} />
       <KpiCard label="Satisfaction Clients" value={kpis.clientsSatisfaction === null || kpis.clientsSatisfaction === undefined ? "—" : `${kpis.clientsSatisfaction}/100`} trend={kpis.clientsSatisfaction >= 60 ? undefined : -1} />
+      <KpiCard label="Mix optimal RM" value={kpis.rmAdvancedMix === null || kpis.rmAdvancedMix === undefined ? "—" : `${kpis.rmAdvancedMix}%`} trend={kpis.rmAdvancedMix >= 40 ? undefined : -1} />
     </div>
   );
 }
