@@ -9,6 +9,8 @@ describe("SceneState / createEntity", () => {
       position: { x: 0, y: 0, z: 0 },
       previousPosition: null,
       targetPosition: null,
+      movement: { active: false, speed: 0, progress: 0 },
+      path: null,
       footprint: { width: 0, depth: 0, height: 0 },
       state: null,
       activity: null,
@@ -43,6 +45,38 @@ describe("SceneState / createEntity", () => {
     expect(() => createEntity(null)).not.toThrow();
     expect(() => createEntity(undefined)).not.toThrow();
     expect(() => createEntity({ position: null, footprint: "not-an-object" })).not.toThrow();
+    expect(() => createEntity({ movement: "not-an-object" })).not.toThrow();
+  });
+
+  it("normalizes a movement in progress, and stays plain/serializable", () => {
+    const entity = createEntity({
+      id: "character:guest:0",
+      type: "character",
+      position: { x: 1, y: 1, z: 0 },
+      previousPosition: { x: 0, y: 0, z: 0 },
+      targetPosition: { x: 5, y: 5, z: 0 },
+      movement: { active: true, speed: 2, progress: 0.25 },
+    });
+    expect(entity.movement).toEqual({ active: true, speed: 2, progress: 0.25 });
+    expect(entity.previousPosition).toEqual({ x: 0, y: 0, z: 0 });
+    expect(entity.targetPosition).toEqual({ x: 5, y: 5, z: 0 });
+    expect(() => JSON.stringify(entity)).not.toThrow();
+    for (const value of Object.values(entity)) {
+      expect(typeof value).not.toBe("function");
+    }
+  });
+
+  it("normalizes a multi-waypoint path, and defaults it to null", () => {
+    const withoutPath = createEntity({ id: "a", type: "character" });
+    expect(withoutPath.path).toBeNull();
+
+    const withPath = createEntity({
+      id: "a",
+      type: "character",
+      path: { waypoints: [{ x: 1, y: 1, z: 0 }, { x: 2, y: 2, z: 0 }], speed: 2 },
+    });
+    expect(withPath.path).toEqual({ waypoints: [{ x: 1, y: 1, z: 0 }, { x: 2, y: 2, z: 0 }], speed: 2 });
+    expect(() => JSON.stringify(withPath)).not.toThrow();
   });
 });
 
