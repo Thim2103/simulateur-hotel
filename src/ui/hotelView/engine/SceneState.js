@@ -26,8 +26,20 @@ import { safeArray, safeNumber, safeObject, safeString } from "../../../lib/safe
 //   type      -- a generic visual/spatial category (e.g. "room", "reception",
 //                "character", "incident") -- never a business concept.
 //   position  -- current world-space {x, y, z}, see IsoProjection.js.
-//   previousPosition, targetPosition -- reserved for future movement/
-//                interpolation; always null until that step exists.
+//   previousPosition, targetPosition -- an in-progress movement's start
+//                point and destination (world space); both null when the
+//                entity isn't moving. See MotionSystem.js, the only module
+//                that writes to these.
+//   movement  -- { active, speed, progress }: whether a movement is
+//                currently in progress, its speed (world units/second),
+//                and its progress (0..1) along the straight line from
+//                `previousPosition` to `targetPosition`. Plain data only --
+//                no timers, no function references -- so the whole entity
+//                stays trivially serializable (see this file's own tests).
+//   path      -- { waypoints, speed } | null: the REMAINING world-space
+//                stops after the one currently in `targetPosition`, for an
+//                entity walking a multi-leg path. See PathFollower.js, the
+//                only module that writes to this.
 //   footprint -- world-space {width, depth, height} bounding box, consumed
 //                by DepthSort.js; defaults to a zero-size point.
 //   state     -- a generic entity state (e.g. "clean", "occupied", "idle"),
@@ -45,6 +57,8 @@ export function createEntity(overrides = {}) {
   const source = safeObject(overrides);
   const position = safeObject(source.position);
   const footprint = safeObject(source.footprint);
+  const movement = safeObject(source.movement);
+  const path = source.path ? safeObject(source.path) : null;
 
   return {
     id: safeString(source.id, ""),
@@ -56,6 +70,20 @@ export function createEntity(overrides = {}) {
     },
     previousPosition: source.previousPosition ?? null,
     targetPosition: source.targetPosition ?? null,
+    movement: {
+      active: Boolean(movement.active),
+      speed: safeNumber(movement.speed, 0),
+      progress: safeNumber(movement.progress, 0),
+    },
+    path: path
+      ? {
+          waypoints: safeArray(path.waypoints).map((point) => {
+            const p = safeObject(point);
+            return { x: safeNumber(p.x, 0), y: safeNumber(p.y, 0), z: safeNumber(p.z, 0) };
+          }),
+          speed: safeNumber(path.speed, 0),
+        }
+      : null,
     footprint: {
       width: safeNumber(footprint.width, 0),
       depth: safeNumber(footprint.depth, 0),
