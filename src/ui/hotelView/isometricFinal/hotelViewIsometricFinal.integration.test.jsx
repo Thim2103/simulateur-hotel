@@ -33,11 +33,14 @@ test(
     fireEvent.click(screen.getByRole("button", { name: /démarrer ma carrière/i }));
     await waitFor(() => expect(screen.getByText(/vue globale/i)).toBeInTheDocument());
 
-    // MyHotel: the premium isometric view is the default (IsoFinalView),
-    // with all 6 ground-floor rooms the Bible asks for.
+    // MyHotel: the schematic plan is the default view now, with the
+    // premium isometric view (IsoFinalView) still fully reachable via its
+    // own toggle -- switch to it to exercise the rest of this integration
+    // test exactly as before.
     fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
     await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
     expectNoSupabaseError();
+    fireEvent.click(screen.getByRole("button", { name: /vue isométrique/i }));
     expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /vue 2d/i })).toBeInTheDocument();
 
@@ -47,10 +50,16 @@ test(
     await waitFor(() => expect(screen.getByText(/situation/i)).toBeInTheDocument());
     expectNoSupabaseError();
 
-    // Back to MyHotel, apply a decision -- stays on the premium view.
+    // Back to MyHotel -- Dashboard remounts on navigation, so it's back on
+    // its own default (schematic) view (no "avancer la journée" button --
+    // that's the premium isometric/2D views' own in-scene CTA, not part of
+    // Dashboard's chrome); switch to the premium view again before
+    // applying a decision.
     fireEvent.click(screen.getByRole("link", { name: /aller à l'hôtel/i }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: /vue isométrique/i }));
     expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
 
     fireEvent.click(screen.getAllByRole("button", { name: /appliquer/i })[0]);
     expectNoSupabaseError();

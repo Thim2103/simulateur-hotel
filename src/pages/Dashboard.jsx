@@ -20,6 +20,8 @@ import DashboardReplaySummary from "../components/dashboard/DashboardReplaySumma
 import DashboardInsights from "../components/dashboard/DashboardInsights";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
 import IsoFinalView from "../ui/hotelView/isometricFinal/IsoFinalView";
+import HotelScene from "../ui/hotelView/scene/HotelScene";
+import SchematicHotelView from "../ui/hotelView/schematic/SchematicHotelView";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
@@ -27,6 +29,15 @@ import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
 import { fadeIn } from "../ui/animations";
+
+// The three ordinary (non-experimental) ways to visualize the hotel --
+// see the `displayMode` state below for how "experimental" layers on top
+// of these. Module-scope: static, never depends on props/state.
+const VIEW_DISPLAY_MODES = [
+  { id: "schematic", label: "📐 Plan schématique" },
+  { id: "isometric", label: "🏙️ Vue isométrique" },
+  { id: "2d", label: "🗺️ Vue 2D" },
+];
 
 // The general Dashboard ("Mon Hôtel") -- the living, narrative home page:
 // the hotel as a character (KPIs, notifications, yesterday's story),
@@ -82,15 +93,16 @@ export default function Dashboard() {
   const [decisionFeedback, setDecisionFeedback] = useState(null);
   const [cleaningRoomIds, setCleaningRoomIds] = useState(new Set());
 
-  // IsoFinalView (the "Retro-Moderne Premium" isometric view, per the
-  // Bible Artistique) is now the default hotel view ("isométrique premium
-  // par défaut"), with a toggle back to v2's flat HotelView2DAnimated --
-  // both read the exact same props (see either component's own
-  // docstring), so this is a pure presentation switch, nothing about the
-  // underlying data changes. v3's HotelViewIsometric and RetroView both
-  // stay in the codebase, fully tested, but are no longer wired into this
-  // toggle -- IsoFinalView replaces RetroView here per the spec.
-  const [isIsometric, setIsIsometric] = useState(true);
+  // Which hotel visualization is currently shown. The schematic 2D section
+  // view (SchematicHotelView.jsx -- an architectural elevation-style plan,
+  // one row per floor) is now the default: the isometric renderers stay
+  // fully in the codebase and reachable, but are opt-in rather than shown
+  // first (per the "masquer/mettre de côté la vue isométrique actuelle,
+  // sans la supprimer" request). All four modes read from the exact same
+  // hotel props -- this is a pure presentation switch, nothing about the
+  // underlying data changes. Never persisted -- always starts back on the
+  // schematic view.
+  const [displayMode, setDisplayMode] = useState("schematic");
 
   // GM Desk (see ui/gmDesk/GmDeskProvider.jsx, mounted once in App.js):
   // the "📬 GM Desk" link's own unread-style badge, plus a GameNotification
@@ -232,12 +244,23 @@ export default function Dashboard() {
           >
             🎯 Radial Navigation
           </button>
+          {VIEW_DISPLAY_MODES.map((mode) => (
+            <button
+              key={mode.id}
+              type="button"
+              onClick={() => setDisplayMode(mode.id)}
+              aria-pressed={displayMode === mode.id}
+              className={`inline-flex items-center gap-1.5 text-sm font-medium hover:underline ${displayMode === mode.id ? "text-cyan-900" : "text-cyan-700"}`}
+            >
+              {mode.label}
+            </button>
+          ))}
           <button
             type="button"
-            onClick={() => setIsIsometric((value) => !value)}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline"
+            onClick={() => setDisplayMode((mode) => (mode === "experimental" ? "schematic" : "experimental"))}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline"
           >
-            {isIsometric ? "🗺️ Vue 2D" : "🏙️ Vue isométrique"}
+            {displayMode === "experimental" ? "↩️ Ancienne vue" : "🧪 Nouvelle scène (bêta)"}
           </button>
           <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
         </div>
@@ -262,7 +285,9 @@ export default function Dashboard() {
         viewMode={viewMode}
       />
 
-      {isIsometric ? (
+      {displayMode === "experimental" ? (
+        <HotelScene />
+      ) : displayMode === "isometric" ? (
         <IsoFinalView
           day={careerState.day}
           rooms={careerState?.hotel?.rooms ?? []}
@@ -274,7 +299,7 @@ export default function Dashboard() {
           onNextDay={handleNextDay}
           isRunning={isRunning}
         />
-      ) : (
+      ) : displayMode === "2d" ? (
         <HotelView2DAnimated
           day={careerState.day}
           rooms={careerState?.hotel?.rooms ?? []}
@@ -285,6 +310,14 @@ export default function Dashboard() {
           cleaningRoomIds={cleaningRoomIds}
           onNextDay={handleNextDay}
           isRunning={isRunning}
+        />
+      ) : (
+        <SchematicHotelView
+          rooms={careerState?.hotel?.rooms ?? []}
+          staffCount={dashboardState?.kpis?.staffCount ?? 0}
+          diagnostics={dashboardState?.insights?.diagnostics ?? []}
+          decisionFeedback={decisionFeedback}
+          cleaningRoomIds={cleaningRoomIds}
         />
       )}
 
