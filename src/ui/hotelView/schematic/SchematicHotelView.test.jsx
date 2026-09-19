@@ -128,21 +128,35 @@ describe("SchematicHotelView / direct-action alert indicator", () => {
   });
 
   it("clicking a room's alert indicator falls back to the default route when no direct-action modal is registered for it", () => {
-    renderView({ rooms: [room({ housekeeping_status: "dirty" })] });
+    renderView({ rooms: [room({ housekeeping_status: "dirty" })], directActionModals: {} });
     fireEvent.click(screen.getByTestId("schematic-room-101-alert"));
     expect(mockNavigate).toHaveBeenCalledWith("/rooms");
   });
 
   it("clicking an amenity's alert badge falls back to the default route when no direct-action modal is registered for it", () => {
-    renderView({ diagnostics: [{ id: "d1", type: "error", message: "Panne" }] });
+    renderView({ diagnostics: [{ id: "d1", type: "error", message: "Panne" }], directActionModals: {} });
     fireEvent.click(screen.getByTestId("schematic-amenity-laundry-alert"));
     expect(mockNavigate).toHaveBeenCalledWith("/housekeeping");
   });
 
   it("clicking an alert indicator does NOT also trigger the block's own default-route click", () => {
-    renderView({ rooms: [room({ housekeeping_status: "dirty" })] });
+    renderView({ rooms: [room({ housekeeping_status: "dirty" })], directActionModals: {} });
     fireEvent.click(screen.getByTestId("schematic-room-101-alert"));
     expect(mockNavigate).toHaveBeenCalledTimes(1);
+  });
+
+  it("by default (no override), a dirty room's alert indicator opens the real HousekeepingQuickModal, not a navigation", () => {
+    renderView({ rooms: [room({ housekeeping_status: "dirty" })] });
+    fireEvent.click(screen.getByTestId("schematic-room-101-alert"));
+    expect(screen.getByText(/chambre 101/i)).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("by default (no override), the laundry alert badge opens the real IncidentQuickModal, not a navigation", () => {
+    renderView({ diagnostics: [{ id: "d1", type: "error", severity: "high", message: "Panne machine à laver" }] });
+    fireEvent.click(screen.getByTestId("schematic-amenity-laundry-alert"));
+    expect(screen.getByText(/panne machine à laver/i)).toBeInTheDocument();
+    expect(mockNavigate).not.toHaveBeenCalled();
   });
 
   it("opens a registered direct-action modal instead of navigating, when one exists for the zone's type", () => {

@@ -176,6 +176,18 @@ export default function Dashboard() {
     }
   };
 
+  // The schematic view's own "Lancer un nettoyage prioritaire" direct
+  // action (see schematic/HousekeepingQuickModal.jsx): the exact same
+  // transient `cleaningRoomIds` highlight `handleQuickAction`'s own
+  // housekeeping branch already triggers above, just addressed at one
+  // specific room (`entity.metadata.roomId`, the real business id
+  // EntityFactory.js's own room entity carries) instead of the first dirty
+  // room it can find.
+  const handlePriorityClean = (entity) => {
+    setCleaningRoomIds(new Set([entity.metadata.roomId]));
+    setTimeout(() => setCleaningRoomIds(new Set()), 3000);
+  };
+
   if ((isCareerRunning || isDashboardRunning) && !careerState) {
     return (
       <div className="flex min-h-48 items-center justify-center text-sm text-slate-500">
@@ -318,6 +330,7 @@ export default function Dashboard() {
           diagnostics={dashboardState?.insights?.diagnostics ?? []}
           decisionFeedback={decisionFeedback}
           cleaningRoomIds={cleaningRoomIds}
+          onPriorityClean={handlePriorityClean}
         />
       )}
 

@@ -82,22 +82,42 @@ function buildRoomEntities(rooms, cleaningRoomIds) {
         footprint: zeroFootprint(),
         state: roomState(room, cleaningRoomIds),
         activity: null,
-        metadata: { number: room.number, floorLevel: floor.level },
+        // `roomId` is the exact same raw business id already embedded in
+        // this entity's own `id` string above -- exposed here too, plainly
+        // typed, so a consumer (e.g. the schematic view's own housekeeping
+        // quick-action modal, which needs to call back into
+        // `cleaningRoomIds.has(room.id)`) never has to parse it back out
+        // of `"room:<id>"` and risk a string/number mismatch.
+        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id },
       };
     })
   );
 }
 
-function buildAmenityEntities(hasIncident) {
-  return Object.entries(AMENITY_LAYOUT).map(([kind, tile]) => ({
-    id: `amenity:${kind}`,
-    type: kind,
-    position: toWorldPosition(tile),
-    footprint: zeroFootprint(),
-    state: kind === "laundry" && hasIncident ? "alert" : "idle",
-    activity: null,
-    metadata: {},
-  }));
+// When the laundry amenity is in "alert" state, its own metadata carries
+// the actual diagnostic behind that alert (message + severity) -- so a
+// consumer (e.g. the schematic view's own incident quick-action modal)
+// can show the real reason, not just a bare boolean. Picks the same
+// diagnostic `hasIncident` itself is derived from (an error, or
+// high-severity) -- never a second, independent read of `diagnostics`.
+function relevantDiagnostic(diagnostics) {
+  return diagnostics.find((d) => d.type === "error" || d.severity === "high") || null;
+}
+
+function buildAmenityEntities(hasIncident, diagnostics) {
+  return Object.entries(AMENITY_LAYOUT).map(([kind, tile]) => {
+    const isAlert = kind === "laundry" && hasIncident;
+    const diagnostic = isAlert ? relevantDiagnostic(diagnostics) : null;
+    return {
+      id: `amenity:${kind}`,
+      type: kind,
+      position: toWorldPosition(tile),
+      footprint: zeroFootprint(),
+      state: isAlert ? "alert" : "idle",
+      activity: null,
+      metadata: diagnostic ? { message: diagnostic.message, severity: diagnostic.severity } : {},
+    };
+  });
 }
 
 function buildCharacterEntities({ occupiedCount, staffCount, roomsPerFloor, phase, decisionFeedback }) {
@@ -180,7 +200,7 @@ export function buildHotelSceneEntities(props = {}) {
 
   return [
     ...buildRoomEntities(rooms, cleaningRoomIds),
-    ...buildAmenityEntities(hasIncident),
+    ...buildAmenityEntities(hasIncident, diagnostics),
     ...buildCharacterEntities({ occupiedCount, staffCount, roomsPerFloor, phase, decisionFeedback }),
     ...buildIncidentEntities(diagnostics),
   ];

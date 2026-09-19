@@ -133,6 +133,32 @@ describe("EntityFactory / incidents", () => {
   });
 });
 
+describe("EntityFactory / amenity alert state", () => {
+  it("puts the laundry amenity in an idle state with empty metadata when there is no qualifying diagnostic", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], diagnostics: [] });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("idle");
+    expect(laundry.metadata).toEqual({});
+  });
+
+  it("puts the laundry amenity in an alert state carrying the real diagnostic's message/severity when one qualifies", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      diagnostics: [{ type: "error", severity: "high", message: "Panne machine à laver" }],
+    });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("alert");
+    expect(laundry.metadata).toEqual({ message: "Panne machine à laver", severity: "high" });
+  });
+
+  it("does not put any other amenity into an alert state, even with a qualifying diagnostic", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], diagnostics: [{ type: "error", message: "Panne" }] });
+    ["reception", "restaurant", "kitchen", "bar", "hall"].forEach((kind) => {
+      expect(entities.find((e) => e.type === kind).state).toBe("idle");
+    });
+  });
+});
+
 describe("EntityFactory / separation from raw business data", () => {
   it("never leaks the full business room/diagnostic objects onto an entity", () => {
     const entities = buildHotelSceneEntities({

@@ -44,7 +44,18 @@ function needsAttention(state) {
   return state === "dirty" || state === "cleaning" || state === "alert";
 }
 
-export default function SchematicHotelView({ rooms, staffCount, diagnostics, decisionFeedback, cleaningRoomIds, onSelectZone, directActionModals = DIRECT_ACTION_MODALS }) {
+export default function SchematicHotelView({
+  rooms,
+  staffCount,
+  diagnostics,
+  decisionFeedback,
+  cleaningRoomIds,
+  onSelectZone,
+  directActionModals = DIRECT_ACTION_MODALS,
+  onPriorityClean,
+  onRepairNow,
+  onCallTechnician,
+}) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
   const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, decisionFeedback, cleaningRoomIds });
@@ -183,7 +194,15 @@ export default function SchematicHotelView({ rooms, staffCount, diagnostics, dec
         </div>
       </div>
 
-      {ActiveModal && <ActiveModal entity={activeModal.entity} onClose={() => setActiveModal(null)} />}
+      {ActiveModal && (
+        <ActiveModal
+          entity={activeModal.entity}
+          onClose={() => setActiveModal(null)}
+          onPriorityClean={onPriorityClean}
+          onRepairNow={onRepairNow}
+          onCallTechnician={onCallTechnician}
+        />
+      )}
     </section>
   );
 }
