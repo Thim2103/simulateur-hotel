@@ -1,45 +1,46 @@
 import { useState } from "react";
 import GameModal from "../../components/GameModal";
 import { ZONE_STYLES } from "./schematicTokens";
+import { REPAIR_COST, REPAIR_DELAY_DAYS, EMERGENCY_COST_MULTIPLIER } from "../../../lib/maintenance/incidentEngine";
 
-// Cost/delay are not real data -- see this file's own docstring below --
-// so they're derived from the diagnostic's own `severity` (real data,
-// see EntityFactory.js's own `relevantDiagnostic()`) rather than
-// fabricated per incident. Clearly labelled "estimation" in the UI.
-const SEVERITY_ESTIMATES = {
-  high: { cost: "400 € – 600 €", delay: "2 à 4 heures" },
-  medium: { cost: "150 € – 350 €", delay: "4 à 8 heures" },
-  low: { cost: "50 € – 150 €", delay: "sous 24 heures" },
-};
-
-// The schematic view's own direct-action modal for an amenity carrying an
-// open incident (see directActions.js's own docstring for how this gets
-// registered and opened). `entity` is the generic amenity entity
-// EntityFactory.js produces -- `metadata.message`/`metadata.severity`
-// only (the real diagnostic behind the alert, see EntityFactory.js's own
-// `buildAmenityEntities()`), never a raw `diagnostics[]` object.
+// The schematic view's own direct-action modal for an amenity carrying a
+// real, persistent incident (see lib/maintenance/incidentEngine.js and
+// directActions.js's own docstring for how this gets registered and
+// opened). `entity` is the generic amenity entity EntityFactory.js
+// produces -- `metadata.message`/`severity`/`incidentId`/`repairEtaDay`,
+// the real incident behind the alert (see EntityFactory.js's own
+// `buildAmenityEntitiesFromIncidents()`), never a raw incident/diagnostic
+// object.
 //
-// There is no incident-resolution engine anywhere in this codebase yet
-// (diagnostics are recomputed fresh each cycle, not persisted, addressable
-// records -- see lib/analytics/analyticsDiagnostics.js) -- so
-// "Réparer immédiatement"/"Appeler un technicien" call the optional
-// `onRepairNow`/`onCallTechnician` props if the caller supplies real
-// wiring, and always show a local confirmation either way so the modal
-// isn't a dead end while that real wiring doesn't exist yet.
+// Both actions take REAL effect: `onCallTechnician` (standard repair --
+// the exact cost, no premium) and `onRepairNow` (emergency repair, at
+// EMERGENCY_COST_MULTIPLIER the cost, resolved on the spot) both go
+// through Dashboard.jsx's own `handleRepairIncident()`, which calls
+// incidentEngine.payForRepair() via the same applyHotelAdjustment()
+// primitive every other real Quick Action persists through. Cost/delay
+// shown here are the exact REPAIR_COST/REPAIR_DELAY_DAYS values that
+// engine will actually apply -- not an estimate -- falling back to
+// `entity.metadata.severity`'s own tier only if the entity doesn't
+// already carry its own `repairCost` (e.g. in an isolated test).
 export default function IncidentQuickModal({ entity, onClose, onRepairNow, onCallTechnician }) {
-  const [action, setAction] = useState(null);
+  const [submitted, setSubmitted] = useState(null);
   const zoneLabel = ZONE_STYLES[entity.type]?.label || ZONE_STYLES.default.label;
-  const severity = entity.metadata?.severity || "medium";
-  const estimate = SEVERITY_ESTIMATES[severity] || SEVERITY_ESTIMATES.medium;
+  const severity = entity.metadata?.severity || "moderate";
+  const standardCost = entity.metadata?.repairCost ?? REPAIR_COST[severity] ?? REPAIR_COST.moderate;
+  const emergencyCost = Math.round(standardCost * EMERGENCY_COST_MULTIPLIER);
+  const delayDays = REPAIR_DELAY_DAYS[severity] ?? REPAIR_DELAY_DAYS.moderate;
+  const isRepairing = entity.state === "repairing";
 
   const handleRepairNow = () => {
     onRepairNow?.(entity);
-    setAction("repaired");
+    setSubmitted("repaired");
   };
   const handleCallTechnician = () => {
     onCallTechnician?.(entity);
-    setAction("technician-called");
+    setSubmitted("technician-called");
   };
+
+  const actionsDisabled = isRepairing || !!submitted;
 
   return (
     <GameModal open onClose={onClose} title={`Panne — ${zoneLabel}`} className="flex flex-col gap-4">
@@ -47,42 +48,50 @@ export default function IncidentQuickModal({ entity, onClose, onRepairNow, onCal
         {entity.metadata?.message || "Un problème technique a été signalé sur cette zone."}
       </p>
 
-      <dl className="grid grid-cols-2 gap-2 text-xs text-slate-600">
-        <div>
-          <dt className="font-semibold text-slate-500">Coût estimé</dt>
-          <dd data-testid="incident-modal-cost">{estimate.cost}</dd>
-        </div>
-        <div>
-          <dt className="font-semibold text-slate-500">Délai estimé</dt>
-          <dd data-testid="incident-modal-delay">{estimate.delay}</dd>
-        </div>
-      </dl>
+      {isRepairing ? (
+        <p data-testid="incident-modal-repairing" className="text-sm text-amber-700">
+          Réparation en cours{entity.metadata?.repairEtaDay != null ? ` — prête au jour ${entity.metadata.repairEtaDay}` : ""}.
+        </p>
+      ) : (
+        <dl className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+          <div>
+            <dt className="font-semibold text-slate-500">Réparation standard</dt>
+            <dd data-testid="incident-modal-standard-cost">
+              {standardCost} € — {delayDays} j
+            </dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-slate-500">Réparation d'urgence</dt>
+            <dd data-testid="incident-modal-emergency-cost">{emergencyCost} € — immédiat</dd>
+          </div>
+        </dl>
+      )}
 
       <div className="flex flex-col gap-2">
         <button
           type="button"
-          onClick={handleRepairNow}
-          disabled={!!action}
-          className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={handleCallTechnician}
+          disabled={actionsDisabled}
+          className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Réparer immédiatement
+          Appeler un technicien ({standardCost} €, {delayDays} j)
         </button>
         <button
           type="button"
-          onClick={handleCallTechnician}
-          disabled={!!action}
-          className="rounded-lg bg-slate-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+          onClick={handleRepairNow}
+          disabled={actionsDisabled}
+          className="rounded-lg bg-rose-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-rose-800 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Appeler un technicien
+          Réparation d'urgence ({emergencyCost} €, immédiat)
         </button>
-        {action === "repaired" && (
+        {submitted === "repaired" && (
           <p data-testid="incident-modal-confirmation" className="text-sm text-emerald-700">
-            Réparation lancée immédiatement.
+            Réparation d'urgence lancée — résolue immédiatement.
           </p>
         )}
-        {action === "technician-called" && (
+        {submitted === "technician-called" && (
           <p data-testid="incident-modal-confirmation" className="text-sm text-emerald-700">
-            Un technicien a été appelé.
+            Technicien appelé — réparation en cours.
           </p>
         )}
       </div>

@@ -11,6 +11,7 @@ import {
 import careerRepository from "../lib/career/careerRepository";
 import { buildReplayRunFromCareerRun } from "../lib/replay/replayEngine";
 import { analyzeRun } from "../lib/analytics/analyticsEngine";
+import { reconcileIncidents, advanceIncidentRepairs } from "../lib/maintenance/incidentEngine";
 import { getHotelState } from "../lib/hotelRepository";
 import { getRestaurantState } from "../lib/restaurantRepository";
 import { listRooms, listReservations } from "../lib/pmsRepository";
@@ -208,7 +209,22 @@ export function useCareer() {
         });
         const lastAnalysis = analyzeRun(replayRun);
 
-        const stateWithAnalysis = { ...nextState, lastAnalysis };
+        // Reconciles this day's freshly-computed diagnostics into the
+        // hotel's own persistent incident list (see lib/maintenance/
+        // incidentEngine.js), and resolves any standard repair whose ETA
+        // day has now arrived -- the one place per day-advance both need
+        // to run, right alongside `lastAnalysis` itself (the diagnostics
+        // reconcileIncidents() reads come from that same analysis).
+        const hotelStateWithIncidents = advanceIncidentRepairs(
+          reconcileIncidents(nextState.hotel.hotelState, lastAnalysis?.diagnostics, nextState.day),
+          nextState.day
+        );
+
+        const stateWithAnalysis = {
+          ...nextState,
+          hotel: { ...nextState.hotel, hotelState: hotelStateWithIncidents },
+          lastAnalysis,
+        };
         setCareerState(stateWithAnalysis);
         await persistCareerState(stateWithAnalysis, guestNow);
         return { state: stateWithAnalysis, report, analysis: lastAnalysis };

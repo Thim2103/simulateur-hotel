@@ -37,11 +37,14 @@ export const ROOM_STATE_STYLES = {
   cleaning: { label: "Nettoyage en cours", color: "#a855f7", icon: "🧽" },
 };
 
-// An amenity's own generic state -- "alert" is EntityFactory's translation
-// of "an open, high-severity/error diagnostic exists" (see its own
-// `buildAmenityEntities()`), never a raw diagnostics field read here.
+// An amenity's own generic state -- "alert"/"repairing" are
+// EntityFactory's translation of a real, persistent incident's own status
+// (see lib/maintenance/incidentEngine.js and EntityFactory.js's own
+// `buildAmenityEntitiesFromIncidents()`), never a raw diagnostics/incident
+// field read here.
 export const AMENITY_STATE_STYLES = {
   alert: { label: "Panne / incident", badgeColor: "#dc2626" },
+  repairing: { label: "Réparation en cours", badgeColor: "#f59e0b" },
 };
 
 const SchematicTokens = { ZONE_STYLES, ROOM_STATE_STYLES, AMENITY_STATE_STYLES };

@@ -48,6 +48,7 @@ export default function SchematicHotelView({
   rooms,
   staffCount,
   diagnostics,
+  activeIncidents,
   decisionFeedback,
   cleaningRoomIds,
   onSelectZone,
@@ -58,7 +59,7 @@ export default function SchematicHotelView({
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
-  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, decisionFeedback, cleaningRoomIds });
+  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
   const floors = groupRoomsByFloor(roomEntities);
@@ -160,7 +161,7 @@ export default function SchematicHotelView({
           <div className="flex flex-wrap gap-1.5">
             {amenityEntities.map((amenity) => {
               const style = zoneStyle(amenity.type);
-              const alert = amenity.state === "alert" ? AMENITY_STATE_STYLES.alert : null;
+              const alert = AMENITY_STATE_STYLES[amenity.state] || null;
               return (
                 <div key={amenity.id} className="relative">
                   <button

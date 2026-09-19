@@ -5,6 +5,7 @@ import { getHotelState } from "../lib/hotelRepository";
 import { getRestaurantState } from "../lib/restaurantRepository";
 import { listRooms, listReservations } from "../lib/pmsRepository";
 import { useSupabaseSession } from "./useSupabaseSession";
+import * as analyticsEngine from "../lib/analytics/analyticsEngine";
 
 jest.mock("../lib/career/careerRepository", () => ({
   saveCareerState: jest.fn(),
@@ -98,6 +99,57 @@ test("nextDay plays a sandboxed day and attaches an analysis for the dashboard",
   expect(result.current.careerState.day).toBe(1);
   expect(outcome.analysis.kpis).toBeDefined();
   expect(result.current.careerState.lastAnalysis).toBe(outcome.analysis);
+});
+
+test("nextDay reconciles a qualifying diagnostic into a real, persistent incident", async () => {
+  const analyzeRunSpy = jest.spyOn(analyticsEngine, "analyzeRun").mockReturnValue({
+    kpis: {},
+    diagnostics: [{ type: "error", severity: "high", message: "Panne machine à laver" }],
+  });
+
+  const { result } = renderHook(() => useCareer());
+  await act(async () => {
+    await result.current.startCareer("player-1");
+  });
+  await act(async () => {
+    await result.current.nextDay();
+  });
+
+  const incidents = result.current.careerState.hotel.hotelState.activeIncidents;
+  expect(incidents).toHaveLength(1);
+  expect(incidents[0]).toMatchObject({ zone: "laundry", severity: "critical", status: "active", message: "Panne machine à laver" });
+
+  analyzeRunSpy.mockRestore();
+});
+
+test("nextDay resolves a repairing incident once its scheduled ETA day arrives", async () => {
+  const analyzeRunSpy = jest.spyOn(analyticsEngine, "analyzeRun").mockReturnValue({ kpis: {}, diagnostics: [] });
+
+  const { result } = renderHook(() => useCareer());
+  await act(async () => {
+    await result.current.startCareer("player-1");
+  });
+
+  // Simulate a repair already scheduled for "day 2" (2 days from now, via
+  // the same applyHotelAdjustment() a real repair action would use).
+  await act(async () => {
+    await result.current.applyHotelAdjustment((hotel) => ({
+      ...hotel,
+      hotelState: { ...hotel.hotelState, activeIncidents: [{ id: "i1", zone: "laundry", status: "repairing", repairEtaDay: 2 }] },
+    }));
+  });
+
+  await act(async () => {
+    await result.current.nextDay(); // day 1 -- not yet due
+  });
+  expect(result.current.careerState.hotel.hotelState.activeIncidents[0].status).toBe("repairing");
+
+  await act(async () => {
+    await result.current.nextDay(); // day 2 -- now due
+  });
+  expect(result.current.careerState.hotel.hotelState.activeIncidents[0].status).toBe("resolved");
+
+  analyzeRunSpy.mockRestore();
 });
 
 test("triggerStoryEvent applies the choice and returns its consequence", async () => {

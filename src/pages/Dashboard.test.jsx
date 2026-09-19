@@ -56,6 +56,7 @@ function careerHook(overrides = {}) {
     error: null,
     startCareer: jest.fn().mockResolvedValue(careerState()),
     nextDay: jest.fn().mockResolvedValue({ state: careerState({ day: 4 }) }),
+    applyHotelAdjustment: jest.fn().mockResolvedValue(careerState()),
     ...overrides,
   };
 }
@@ -173,4 +174,30 @@ test("shows the schematic hotel view by default, with toggles to the isometric a
 
   fireEvent.click(screen.getByRole("button", { name: /plan schématique/i }));
   expect(screen.getByTestId("schematic-hotel-view")).toBeInTheDocument();
+});
+
+test("clicking the laundry alert badge opens the real IncidentQuickModal, and 'Appeler un technicien' calls applyHotelAdjustment with a real repair transform", () => {
+  const applyHotelAdjustment = jest.fn().mockResolvedValue(careerState());
+  useCareerContext.mockReturnValue(
+    careerHook({
+      careerState: careerState({
+        hotel: {
+          rooms: [],
+          hotelState: {
+            finance: { costs: [0] },
+            activeIncidents: [{ id: "incident:laundry:Panne", zone: "laundry", message: "Panne", severity: "critical", status: "active", repairCost: 1200, repairEtaDay: null }],
+          },
+        },
+      }),
+      applyHotelAdjustment,
+    })
+  );
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(<Dashboard />, { wrapper: MemoryRouter });
+
+  fireEvent.click(screen.getByTestId("schematic-amenity-laundry-alert"));
+  expect(screen.getByRole("dialog", { name: /panne.*buanderie/i })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /appeler un technicien/i }));
+  expect(applyHotelAdjustment).toHaveBeenCalledWith(expect.any(Function));
 });

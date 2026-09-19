@@ -104,10 +104,18 @@ function relevantDiagnostic(diagnostics) {
   return diagnostics.find((d) => d.type === "error" || d.severity === "high") || null;
 }
 
-function buildAmenityEntities(hasIncident, diagnostics) {
+// The OLD, ephemeral path: a bare "is there currently a qualifying
+// diagnostic" boolean, recomputed fresh every render from `diagnostics`
+// (lib/analytics/analyticsDiagnostics.js) -- no persistence, no way to
+// ever "resolve" it. Kept only as a fallback for a caller that hasn't
+// been updated to pass real `activeIncidents` yet (see
+// buildHotelSceneEntities() below) -- HotelScene.jsx/other experimental
+// callers, for instance.
+function buildAmenityEntitiesFromDiagnostics(diagnostics) {
+  const hasIncident = diagnostics.some((d) => d.type === "error" || d.severity === "high");
+  const diagnostic = hasIncident ? relevantDiagnostic(diagnostics) : null;
   return Object.entries(AMENITY_LAYOUT).map(([kind, tile]) => {
     const isAlert = kind === "laundry" && hasIncident;
-    const diagnostic = isAlert ? relevantDiagnostic(diagnostics) : null;
     return {
       id: `amenity:${kind}`,
       type: kind,
@@ -115,7 +123,32 @@ function buildAmenityEntities(hasIncident, diagnostics) {
       footprint: zeroFootprint(),
       state: isAlert ? "alert" : "idle",
       activity: null,
-      metadata: diagnostic ? { message: diagnostic.message, severity: diagnostic.severity } : {},
+      metadata: isAlert && diagnostic ? { message: diagnostic.message, severity: diagnostic.severity } : {},
+    };
+  });
+}
+
+// The REAL, persistent path: a zone's alert state comes from
+// `hotelState.activeIncidents` (see lib/maintenance/incidentEngine.js) --
+// a genuinely resolvable record, not a value recomputed from scratch
+// every render. "alert" for a still-open incident, a distinct "repairing"
+// state once the player has paid for a standard (non-emergency) repair
+// and it's awaiting its ETA day, and back to "idle" the moment
+// incidentEngine.advanceIncidentRepairs() marks it "resolved" -- which is
+// what actually makes the schematic view's own alert badge disappear.
+function buildAmenityEntitiesFromIncidents(activeIncidents) {
+  return Object.entries(AMENITY_LAYOUT).map(([kind, tile]) => {
+    const incident = activeIncidents.find((item) => item.zone === kind && item.status !== "resolved");
+    return {
+      id: `amenity:${kind}`,
+      type: kind,
+      position: toWorldPosition(tile),
+      footprint: zeroFootprint(),
+      state: incident ? (incident.status === "repairing" ? "repairing" : "alert") : "idle",
+      activity: null,
+      metadata: incident
+        ? { message: incident.message, severity: incident.severity, incidentId: incident.id, repairCost: incident.repairCost, repairEtaDay: incident.repairEtaDay ?? null }
+        : {},
     };
   });
 }
@@ -185,6 +218,7 @@ export function buildHotelSceneEntities(props = {}) {
     rooms: rawRooms,
     staffCount: rawStaffCount,
     diagnostics: rawDiagnostics,
+    activeIncidents: rawActiveIncidents,
     decisionFeedback = null,
     cleaningRoomIds,
   } = safeObject(props);
@@ -194,13 +228,20 @@ export function buildHotelSceneEntities(props = {}) {
   const diagnostics = safeArray(rawDiagnostics);
 
   const occupiedCount = rooms.filter((room) => room.status === "occupée").length;
-  const hasIncident = diagnostics.some((d) => d.type === "error" || d.severity === "high");
   const { roomsPerFloor } = groupRoomsByFloor(rooms);
   const phase = dayPhase();
 
+  // See buildAmenityEntitiesFromIncidents()'s own docstring: a caller
+  // that supplies `activeIncidents` (even an empty array) gets the real,
+  // persistent, resolvable alert state; a caller that never passes it at
+  // all (`undefined`) keeps the old ephemeral diagnostics-derived one, so
+  // this rolls out per-caller without a flag day regressing anything else
+  // still on the old path.
+  const amenityEntities = rawActiveIncidents !== undefined ? buildAmenityEntitiesFromIncidents(safeArray(rawActiveIncidents)) : buildAmenityEntitiesFromDiagnostics(diagnostics);
+
   return [
     ...buildRoomEntities(rooms, cleaningRoomIds),
-    ...buildAmenityEntities(hasIncident, diagnostics),
+    ...amenityEntities,
     ...buildCharacterEntities({ occupiedCount, staffCount, roomsPerFloor, phase, decisionFeedback }),
     ...buildIncidentEntities(diagnostics),
   ];

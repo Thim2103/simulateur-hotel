@@ -12,6 +12,7 @@ import { skillLabel } from "../lib/career/careerSkills";
 import { buildAttentionItems } from "../lib/dashboard/attentionItems";
 import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
 import { findQuickAction } from "../lib/dashboard/dashboardActions";
+import { payForRepair } from "../lib/maintenance/incidentEngine";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -49,7 +50,7 @@ const VIEW_DISPLAY_MODES = [
 // already bypass Supabase transparently in guest mode.
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, nextDay } = useCareerContext();
+  const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, nextDay, applyHotelAdjustment } = useCareerContext();
   const {
     dashboardState,
     isRunning: isDashboardRunning,
@@ -186,6 +187,22 @@ export default function Dashboard() {
   const handlePriorityClean = (entity) => {
     setCleaningRoomIds(new Set([entity.metadata.roomId]));
     setTimeout(() => setCleaningRoomIds(new Set()), 3000);
+  };
+
+  // The schematic view's own IncidentQuickModal actions (see
+  // schematic/IncidentQuickModal.jsx): both really debit the repair cost
+  // and change the incident's own persistent status (see
+  // lib/maintenance/incidentEngine.js's own payForRepair()) through the
+  // exact same applyHotelAdjustment() primitive the Quick Actions catalog
+  // already uses to take real, persisted effect -- "Réparer immédiatement"
+  // resolves it on the spot (at a cost premium); "Appeler un technicien"
+  // schedules a standard repair that resolves automatically once its ETA
+  // day arrives (see useCareer.js's own nextDay(), which now advances
+  // repairs every day).
+  const handleRepairIncident = (entity, { emergency }) => {
+    const incidentId = entity.metadata?.incidentId;
+    if (!incidentId) return;
+    applyHotelAdjustment((hotel) => payForRepair(hotel, incidentId, { emergency, day: careerState.day })).catch(() => undefined);
   };
 
   if ((isCareerRunning || isDashboardRunning) && !careerState) {
@@ -328,9 +345,12 @@ export default function Dashboard() {
           rooms={careerState?.hotel?.rooms ?? []}
           staffCount={dashboardState?.kpis?.staffCount ?? 0}
           diagnostics={dashboardState?.insights?.diagnostics ?? []}
+          activeIncidents={careerState?.hotel?.hotelState?.activeIncidents ?? []}
           decisionFeedback={decisionFeedback}
           cleaningRoomIds={cleaningRoomIds}
           onPriorityClean={handlePriorityClean}
+          onRepairNow={(entity) => handleRepairIncident(entity, { emergency: true })}
+          onCallTechnician={(entity) => handleRepairIncident(entity, { emergency: false })}
         />
       )}
 
