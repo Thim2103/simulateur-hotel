@@ -9,6 +9,7 @@ import ExpansionModal from "./ExpansionModal";
 import VipActionModal from "./VipActionModal";
 import MiceBookingModal from "./MiceBookingModal";
 import { pendingRequests, meetingRooms } from "../../../lib/mice/miceEngine";
+import { SoftButton, StatusBadge } from "../../bento";
 import { expansionFloors, floorUnderConstruction, freeSlots } from "../../../lib/expansion/hotelExpansionEngine";
 
 // A synthetic, architectural "coupe longitudinale" (elevation/section) of
@@ -165,22 +166,29 @@ export default function SchematicHotelView({
     <section
       data-testid="schematic-hotel-view"
       aria-label="Plan schématique de l'hôtel, coupe longitudinale par étage"
-      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-4"
+      className="bento-card flex flex-col gap-4"
     >
       <header data-testid="schematic-legend" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600" aria-label="Légende">
         {Object.entries(ZONE_STYLES)
           .filter(([type]) => type !== "default")
           .map(([type, style]) => (
-            <span key={type} className="inline-flex items-center gap-1">
-              <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: style.color }} aria-hidden="true" />
+            <span key={type} className="inline-flex items-center gap-1.5 rounded-xl bg-slate-50 px-2 py-1">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: style.color }} aria-hidden="true" />
               <span aria-hidden="true">{style.icon}</span>
               <span>{style.label}</span>
             </span>
           ))}
       </header>
 
+      <div data-testid="schematic-badge-legend" role="group" aria-label="Signification des pastilles" className="flex flex-wrap items-center gap-2">
+        <StatusBadge tone="vip" icon="⭐">V.I.P.</StatusBadge>
+        <StatusBadge tone="danger" icon="🔧">Panne</StatusBadge>
+        <StatusBadge tone="vip" icon="🧹">Ménage</StatusBadge>
+        <StatusBadge tone="mice" icon="💼">Salle MICE</StatusBadge>
+      </div>
+
       {vipGuests.length > 0 && (
-        <div data-testid="schematic-vip-alert" role="status" className="flex flex-col gap-0.5 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+        <div data-testid="schematic-vip-alert" data-tone="vip" role="status" className="flex flex-col gap-1 rounded-2xl border border-l-4 border-[var(--ds-border)] border-l-[var(--tone)] bg-[var(--tone-soft)] p-3 text-xs text-slate-800">
           {vipGuests.map((guest) => (
             <p key={guest.reservationId} data-testid="schematic-vip-guest">
               <span aria-hidden="true">⭐</span> <strong>V.I.P. en séjour</strong> : {guest.guestName}, chambre {guest.roomNumber} ({guest.followers.toLocaleString("fr-FR")} abonnés), départ le {guest.departure}. Son avis pèsera ×3 sur votre réputation.
@@ -188,14 +196,9 @@ export default function SchematicHotelView({
                 <span data-testid={`schematic-vip-satisfaction-${guest.reservationId}`}> Satisfaction : {guest.satisfaction}/100.</span>
               )}{" "}
               {hotelState && (
-                <button
-                  type="button"
-                  data-testid={`schematic-vip-welcome-${guest.reservationId}`}
-                  onClick={() => setVipModalId(guest.reservationId)}
-                  className="rounded border border-amber-600 px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                >
+                <SoftButton tone="vip" data-testid={`schematic-vip-welcome-${guest.reservationId}`} onClick={() => setVipModalId(guest.reservationId)} className="!px-2.5 !py-0.5 !text-xs">
                   Accueillir
-                </button>
+                </SoftButton>
               )}
             </p>
           ))}
@@ -205,58 +208,58 @@ export default function SchematicHotelView({
       {zones.length > 0 && (
         <div data-testid="schematic-zones" className="flex flex-wrap gap-2" aria-label="Zones et améliorations">
           {zones.map((zone) => (
-            <button
+            <SoftButton
               key={zone.zoneId}
-              type="button"
+              tone={zone.works ? "vip" : "action"}
+              className="!gap-1.5 !px-3 !py-1 !text-xs"
               data-testid={`schematic-zone-${zone.zoneId}`}
               data-level={zone.level}
               data-works={zone.works ? "true" : "false"}
               aria-label={`Améliorer ${zone.label}, niveau ${zone.level} sur ${zone.maxLevel}${zone.works ? ", en travaux" : ""}${zone.exists ? "" : ", non construit"}`}
               title={zone.exists ? `${zone.label} — niveau ${zone.level}/${zone.maxLevel}` : `${zone.label} — non construit`}
               onClick={() => setUpgradeZone(zone.zoneId)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             >
               <span aria-hidden="true">{zone.icon}</span>
               <span>{zone.label}</span>
               <span aria-hidden="true" className="tracking-tight">{levelStars(zone.level, zone.maxLevel)}</span>
               {zone.works && <span aria-hidden="true">🚧</span>}
-              {!zone.exists && <span className="text-slate-400">non construit</span>}
-            </button>
+              {!zone.exists && <span className="opacity-60">non construit</span>}
+            </SoftButton>
           ))}
           {hasMeetingRoom && (
-            <button
-              type="button"
+            <SoftButton
+              tone="mice"
+              className="!gap-1.5 !px-3 !py-1 !text-xs"
               data-testid="schematic-mice"
               data-pending={pendingQuotes}
               aria-label={`Séminaires et événements pro, ${pendingQuotes} devis en attente`}
               title="Devis de séminaires et événements pro"
               onClick={() => setMiceOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             >
               <span aria-hidden="true">🤝</span>
               <span>Séminaires</span>
-              {pendingQuotes > 0 && <span className="rounded-full bg-cyan-700 px-1.5 text-[10px] font-semibold text-white">{pendingQuotes}</span>}
-            </button>
+              {pendingQuotes > 0 && <span className="rounded-full bg-[var(--ds-mice)] px-1.5 text-[10px] font-semibold text-white">{pendingQuotes}</span>}
+            </SoftButton>
           )}
-          <button
-            type="button"
+          <SoftButton
+            tone="success"
+            className="!gap-1.5 !border-dashed !border-[var(--ds-success)] !px-3 !py-1 !text-xs"
             data-testid="schematic-expansion"
             data-works={construction ? "true" : "false"}
             aria-label={`Agrandir l'hôtel${construction ? `, chantier de l'étage ${construction.level} en cours` : ""}`}
             title="Ajouter un étage et de nouvelles chambres"
             onClick={() => setExpansionOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-cyan-600 px-3 py-1 text-xs font-medium text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
           >
             <span aria-hidden="true">🏗️</span>
             <span>Extension</span>
             {construction && <span aria-hidden="true">🚧</span>}
-          </button>
+          </SoftButton>
         </div>
       )}
 
       <div className="flex flex-col gap-2">
         {rooftop && (
-          <div data-testid="schematic-rooftop" className="flex items-center gap-2 border-b border-slate-100 pb-2">
+          <div data-testid="schematic-rooftop" className="flex items-center gap-3 rounded-2xl bg-slate-50/70 p-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Rooftop</span>
             <div className="relative">
               <button
@@ -266,11 +269,11 @@ export default function SchematicHotelView({
                 title={`Rooftop / Piscine — niveau ${rooftop.level}/${rooftop.maxLevel}`}
                 aria-label={`Rooftop / Piscine, niveau ${rooftop.level} sur ${rooftop.maxLevel}${rooftop.works ? ", en travaux" : ""}`}
                 onClick={() => setUpgradeZone("pool")}
-                className={`flex h-9 w-24 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${rooftop.works ? "opacity-60" : ""}`}
-                style={{ backgroundColor: ZONE_STYLES.pool.color }}
+                className="plan-tile plan-tile--wide focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                style={{ "--tone": ZONE_STYLES.pool.color }}
               >
-                <span aria-hidden="true">{ZONE_STYLES.pool.icon}</span>
-                <span>{rooftop.works ? "En travaux" : "Piscine"}</span>
+                <span aria-hidden="true" className="plan-tile__icon">{ZONE_STYLES.pool.icon}</span>
+                <span className="plan-tile__label">{rooftop.works ? "En travaux" : "Piscine"}</span>
               </button>
             </div>
           </div>
@@ -282,7 +285,7 @@ export default function SchematicHotelView({
               type="button"
               onClick={() => setExpansionOpen(true)}
               aria-label={`Chantier / Extension en cours, étage ${construction.level}, terminé au jour ${construction.completesOnDay}`}
-              className="flex h-9 flex-1 items-center gap-2 rounded-md border-2 border-dashed border-amber-500 bg-amber-50 px-3 text-xs font-semibold text-amber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+              className="flex h-12 flex-1 items-center gap-2 rounded-2xl border-2 border-dashed border-amber-400 bg-amber-50 px-3 text-xs font-semibold text-amber-900 transition hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             >
               <span aria-hidden="true">🚧</span>
               <span>Chantier / Extension en cours — terminé au jour {construction.completesOnDay}</span>
@@ -290,28 +293,48 @@ export default function SchematicHotelView({
           </div>
         )}
         {floors.map(({ level, rooms: floorRooms }) => (
-          <div key={level} data-testid={`schematic-floor-${level}`} data-expansion={newFloorByLevel[level] ? "true" : undefined} className="flex items-center gap-2">
+          <div key={level} data-testid={`schematic-floor-${level}`} data-expansion={newFloorByLevel[level] ? "true" : undefined} className="flex items-center gap-3 rounded-2xl bg-slate-50/70 p-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Étage {level}</span>
             <div className="flex flex-wrap gap-1.5">
               {floorRooms.map((room) => {
                 const statusStyle = ROOM_STATE_STYLES[room.state] || ROOM_STATE_STYLES.clean;
                 const roomNeedsAttention = needsAttention(room.state);
+                // A meeting room is a MICE tile whatever its state; a room out of
+                // service is a red one; otherwise the tile takes its state's tone.
+                const tileTone = room.metadata.outOfService ? "danger" : room.metadata.meeting ? "mice" : statusStyle.tone;
                 return (
                   <div key={room.id} className="relative">
                     <button
                       type="button"
                       data-testid={`schematic-room-${room.metadata.number}`}
                       data-status={room.state}
+                      data-tone={tileTone}
                       title={`Chambre ${room.metadata.number} — ${statusStyle.label}`}
                       aria-label={`Chambre ${room.metadata.number}, ${statusStyle.label}`}
                       onClick={() => handleSelect(room)}
-                      className={`flex h-9 w-14 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${roomsUnderWorks ? "opacity-70" : ""}`}
+                      className="plan-tile focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                       data-works={roomsUnderWorks ? "true" : undefined}
-                      style={{ backgroundColor: statusStyle.color }}
                     >
-                      <span aria-hidden="true">{statusStyle.icon}</span>
-                      <span>{room.metadata.number}</span>
+                      <span aria-hidden="true" className="plan-tile__icon">{statusStyle.icon}</span>
+                      <span className="plan-tile__label">{room.metadata.number}</span>
                     </button>
+                    {room.metadata.meeting && (
+                      <span
+                        data-testid={`schematic-room-${room.metadata.number}-mice`}
+                        data-busy={room.state === "occupied" ? "true" : "false"}
+                        data-tone="mice"
+                        title={room.state === "occupied" ? "Salle MICE occupée" : "Salle MICE libre"}
+                        aria-hidden="true"
+                        className={`plan-badge -bottom-1.5 -right-1.5 ${room.state === "occupied" ? "" : "opacity-60"}`}
+                      >
+                        💼
+                      </span>
+                    )}
+                    {room.metadata.outOfService && (
+                      <span data-testid={`schematic-room-${room.metadata.number}-out`} data-tone="danger" title="Hors service" aria-hidden="true" className="plan-badge -bottom-1.5 -left-1.5">
+                        🔧
+                      </span>
+                    )}
                     {room.metadata.vip && (
                       <button
                         type="button"
@@ -323,7 +346,8 @@ export default function SchematicHotelView({
                           const guest = vipGuests.find((item) => item.roomId === room.metadata.roomId);
                           if (guest && hotelState) setVipModalId(guest.reservationId);
                         }}
-                        className="absolute -left-1 -top-1 text-xs leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                        data-tone="vip"
+                        className="plan-badge -left-1.5 -top-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                       >
                         ⭐
                       </button>
@@ -335,9 +359,11 @@ export default function SchematicHotelView({
                         title={`Action directe — ${statusStyle.label}`}
                         aria-label={`Action directe sur la chambre ${room.metadata.number}, ${statusStyle.label}`}
                         onClick={(event) => handleAlertClick(event, room)}
-                        className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                        style={{ backgroundColor: statusStyle.color }}
-                      />
+                        data-tone={statusStyle.tone}
+                        className="plan-badge -right-1.5 -top-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      >
+                        {statusStyle.icon}
+                      </button>
                     )}
                   </div>
                 );
@@ -348,7 +374,7 @@ export default function SchematicHotelView({
                   data-testid={`schematic-floor-${level}-fitout`}
                   onClick={() => setExpansionOpen(true)}
                   aria-label={`Aménager l'étage ${level}, ${freeSlots(rooms, level)} emplacements libres`}
-                  className="flex h-9 items-center rounded-md border-2 border-dashed border-cyan-600 px-2 text-[10px] font-semibold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                  className="flex h-14 items-center rounded-2xl border-2 border-dashed border-emerald-400 px-3 text-[10px] font-semibold text-emerald-800 transition hover:-translate-y-0.5 hover:bg-emerald-50 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                 >
                   {floorRooms.length === 0 ? "À aménager" : "＋ chambre"} · {freeSlots(rooms, level)} libre{freeSlots(rooms, level) > 1 ? "s" : ""}
                 </button>
@@ -357,7 +383,7 @@ export default function SchematicHotelView({
           </div>
         ))}
 
-        <div data-testid="schematic-ground-floor" className="flex items-center gap-2 border-t border-slate-100 pt-2">
+        <div data-testid="schematic-ground-floor" className="flex items-center gap-3 rounded-2xl bg-slate-50/70 p-2">
           <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">RDC</span>
           <div className="flex flex-wrap gap-1.5">
             {amenityEntities.map((amenity) => {
@@ -372,11 +398,11 @@ export default function SchematicHotelView({
                     title={alert ? `${style.label} — ${alert.label}` : style.label}
                     aria-label={alert ? `${style.label}, ${alert.label}` : style.label}
                     onClick={() => handleSelect(amenity)}
-                    className="flex h-9 w-16 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                    style={{ backgroundColor: style.color }}
+                    className="plan-tile plan-tile--wide focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    style={{ "--tone": alert ? alert.badgeColor : style.color }}
                   >
-                    <span aria-hidden="true">{style.icon}</span>
-                    <span>{style.label}</span>
+                    <span aria-hidden="true" className="plan-tile__icon">{style.icon}</span>
+                    <span className="plan-tile__label">{style.label}</span>
                   </button>
                   {alert && (
                     <button
@@ -385,9 +411,12 @@ export default function SchematicHotelView({
                       title={`Action directe — ${alert.label}`}
                       aria-label={`Action directe — ${style.label}, ${alert.label}`}
                       onClick={(event) => handleAlertClick(event, amenity)}
-                      className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                      style={{ backgroundColor: alert.badgeColor }}
-                    />
+                      data-tone={alert.tone}
+                      data-severity={amenity.metadata?.severity || undefined}
+                      className={`plan-badge -right-1.5 -top-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${amenity.metadata?.severity === "critical" ? "ring-2 ring-rose-400" : ""}`}
+                    >
+                      {alert.icon}
+                    </button>
                   )}
                   {amenity.type === "reception" && vipGuests.length > 0 && (
                     <button
@@ -399,7 +428,8 @@ export default function SchematicHotelView({
                         event.stopPropagation();
                         if (hotelState) setVipModalId(vipGuests[0].reservationId);
                       }}
-                      className="absolute -left-1 -top-1 text-xs leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      data-tone="vip"
+                      className="plan-badge -left-1.5 -top-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                     >
                       ⭐
                     </button>

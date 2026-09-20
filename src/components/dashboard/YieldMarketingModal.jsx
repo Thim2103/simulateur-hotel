@@ -1,5 +1,6 @@
 import { useState } from "react";
 import GameModal from "../../ui/components/GameModal";
+import { SoftButton } from "../../ui/bento";
 import { treasuryOf } from "../../lib/finance/investmentFunding";
 import { getYieldConfig, RULE_IDS, RULE_LABELS, MIN_YIELD_MULTIPLIER, MAX_YIELD_MULTIPLIER } from "../../lib/rm/yieldManagementEngine";
 import { CAMPAIGN_TYPES, activeCampaigns, campaignHistory, campaignStatus, describeCampaign } from "../../lib/marketing/targetedCampaigns";
@@ -40,7 +41,7 @@ function NumberField({ label, testId, value, min, max, step = 1, suffix, onCommi
           onChange={(event) => setDraft(event.target.value)}
           onBlur={commit}
           onKeyDown={(event) => event.key === "Enter" && commit()}
-          className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+          className="w-20 rounded-xl border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
         />
         {suffix}
       </span>
@@ -59,12 +60,12 @@ export default function YieldMarketingModal({ hotelState, date, onSetYieldEnable
   const history = campaignHistory(hotelState).slice(-5).reverse();
 
   return (
-    <GameModal open onClose={onClose} title="📈 Yield management & marketing" className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto">
-      <p className="text-sm text-slate-600">
+    <GameModal open onClose={onClose} title="📈 Yield management & marketing" tone="success" className="flex max-h-[85vh] max-w-xl flex-col gap-4 overflow-y-auto">
+      <p data-tone="success" className="self-start rounded-xl bg-[var(--tone-soft)] px-3 py-1.5 text-sm text-slate-700">
         Trésorerie : <strong data-testid="growth-treasury">{euro(treasuryOf(hotelState))}</strong>
       </p>
 
-      <section data-testid="yield-section" className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3">
+      <section data-testid="yield-section" data-tone="action" className="flex flex-col gap-3 rounded-2xl border border-l-4 border-[var(--ds-border)] border-l-[var(--tone)] p-4 shadow-[var(--ds-shadow-card)]">
         <div className="flex items-center justify-between gap-2">
           <div>
             <p className="text-sm font-semibold text-slate-900">Yield management</p>
@@ -72,23 +73,23 @@ export default function YieldMarketingModal({ hotelState, date, onSetYieldEnable
               Tarification automatique des nouvelles réservations, entre ×{MIN_YIELD_MULTIPLIER} et ×{MAX_YIELD_MULTIPLIER} du prix habituel.
             </p>
           </div>
-          <button
-            type="button"
+          <SoftButton
             role="switch"
             aria-checked={config.enabled}
             aria-label="Activer le yield management"
             data-testid="yield-toggle"
+            tone={config.enabled ? "success" : "neutral"}
             onClick={() => onSetYieldEnabled?.(!config.enabled)}
-            className={`rounded-full px-3 py-1 text-xs font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${config.enabled ? "bg-emerald-600 text-white" : "bg-slate-200 text-slate-700"}`}
+            className="!px-3 !py-1 !text-xs"
           >
             {config.enabled ? "Activé" : "Désactivé"}
-          </button>
+          </SoftButton>
         </div>
 
         {RULE_IDS.map((ruleId) => {
           const rule = config[ruleId];
           return (
-            <div key={ruleId} data-testid={`yield-rule-${ruleId}`} data-enabled={rule.enabled ? "true" : "false"} className={`flex flex-col gap-2 rounded-md border p-2 ${config.enabled ? "border-slate-200" : "border-slate-100 opacity-60"}`}>
+            <div key={ruleId} data-testid={`yield-rule-${ruleId}`} data-enabled={rule.enabled ? "true" : "false"} className={`flex flex-col gap-2 rounded-2xl border p-3 ${config.enabled ? "border-[var(--ds-border)] bg-slate-50/60" : "border-slate-100 opacity-60"}`}>
               <label className="flex items-center gap-2 text-sm font-medium text-slate-800">
                 <input
                   type="checkbox"
@@ -141,25 +142,19 @@ export default function YieldMarketingModal({ hotelState, date, onSetYieldEnable
         })}
       </section>
 
-      <section data-testid="campaigns-section" className="flex flex-col gap-3 rounded-lg border border-slate-200 p-3">
+      <section data-testid="campaigns-section" data-tone="mice" className="flex flex-col gap-3 rounded-2xl border border-l-4 border-[var(--ds-border)] border-l-[var(--tone)] p-4 shadow-[var(--ds-shadow-card)]">
         <p className="text-sm font-semibold text-slate-900">Campagnes marketing ciblées</p>
         {Object.values(CAMPAIGN_TYPES).map((type) => {
           const status = campaignStatus(hotelState, type.id);
           return (
-            <div key={type.id} data-testid={`campaign-${type.id}`} data-status={status} className="flex flex-col gap-1 rounded-md border border-slate-200 p-2">
+            <div key={type.id} data-testid={`campaign-${type.id}`} data-status={status} className="flex flex-col gap-1 rounded-2xl border border-[var(--ds-border)] bg-white p-3 transition hover:-translate-y-0.5 hover:shadow-[var(--ds-shadow-lift)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm font-semibold text-slate-900">
                   <span aria-hidden="true">{type.icon}</span> {type.name}
                 </p>
-                <button
-                  type="button"
-                  data-testid={`campaign-${type.id}-launch`}
-                  disabled={status !== "available"}
-                  onClick={() => onLaunchCampaign?.(type.id)}
-                  className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <SoftButton tone="mice" data-testid={`campaign-${type.id}-launch`} disabled={status !== "available"} onClick={() => onLaunchCampaign?.(type.id)} className="!px-3 !py-1.5 !text-xs">
                   Lancer
-                </button>
+                </SoftButton>
               </div>
               <p className="text-xs text-slate-600">{type.description}</p>
               <p className="text-xs text-slate-500">
@@ -178,7 +173,7 @@ export default function YieldMarketingModal({ hotelState, date, onSetYieldEnable
           <div data-testid="campaigns-running" className="flex flex-col gap-1">
             <p className="text-xs font-semibold text-slate-700">En cours</p>
             {running.map((campaign) => (
-              <p key={campaign.id} data-testid={`campaign-running-${campaign.typeId}`} className="rounded-md bg-emerald-50 p-2 text-xs text-emerald-900">
+              <p key={campaign.id} data-testid={`campaign-running-${campaign.typeId}`} data-tone="success" className="rounded-xl bg-[var(--tone-soft)] p-2.5 text-xs text-emerald-900">
                 {campaign.icon} {campaign.name} — {campaign.daysLeft} jour(s) restant(s) · {campaign.extraBookings.toLocaleString("fr-FR")} réservation(s) supplémentaire(s) · {euro(campaign.extraRevenue)} générés pour {euro(campaign.cost)} investis
               </p>
             ))}
@@ -191,7 +186,7 @@ export default function YieldMarketingModal({ hotelState, date, onSetYieldEnable
             {history.map((campaign) => {
               const described = describeCampaign(campaign, campaign.endedOn);
               return (
-                <p key={campaign.id} data-testid={`campaign-history-${campaign.typeId}`} className="rounded-md bg-slate-50 p-2 text-xs text-slate-700">
+                <p key={campaign.id} data-testid={`campaign-history-${campaign.typeId}`} className="rounded-xl bg-slate-50 p-2.5 text-xs text-slate-700">
                   {described.icon} {described.name} — {described.extraBookings.toLocaleString("fr-FR")} réservation(s) · {euro(described.extraRevenue)} · ROI {described.roi >= 0 ? "+" : "−"}
                   {Math.abs(Math.round(described.roi * 100))} %
                 </p>

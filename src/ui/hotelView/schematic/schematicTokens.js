@@ -31,10 +31,10 @@ export const ZONE_STYLES = {
 // the ONE place allowed to read `room.status`/`housekeeping_status`; this
 // view only ever sees the already-translated generic state string).
 export const ROOM_STATE_STYLES = {
-  occupied: { label: "Occupée", color: "#1d4ed8", icon: "🧍" },
-  clean: { label: "Libre", color: "#7dd3fc", icon: "✅" },
-  dirty: { label: "À nettoyer", color: "#f59e0b", icon: "🧹" },
-  cleaning: { label: "Nettoyage en cours", color: "#a855f7", icon: "🧽" },
+  occupied: { label: "Occupée", color: "#1d4ed8", icon: "🧍", tone: "action" },
+  clean: { label: "Libre", color: "#7dd3fc", icon: "✅", tone: "success" },
+  dirty: { label: "À nettoyer", color: "#f59e0b", icon: "🧹", tone: "vip" },
+  cleaning: { label: "Nettoyage en cours", color: "#a855f7", icon: "🧽", tone: "mice" },
 };
 
 // An amenity's own generic state -- "alert"/"repairing" are
@@ -43,8 +43,8 @@ export const ROOM_STATE_STYLES = {
 // `buildAmenityEntitiesFromIncidents()`), never a raw diagnostics/incident
 // field read here.
 export const AMENITY_STATE_STYLES = {
-  alert: { label: "Panne / incident", badgeColor: "#dc2626" },
-  repairing: { label: "Réparation en cours", badgeColor: "#f59e0b" },
+  alert: { label: "Panne / incident", badgeColor: "#dc2626", icon: "🔧", tone: "danger" },
+  repairing: { label: "Réparation en cours", badgeColor: "#f59e0b", icon: "🛠️", tone: "vip" },
 };
 
 const SchematicTokens = { ZONE_STYLES, ROOM_STATE_STYLES, AMENITY_STATE_STYLES };

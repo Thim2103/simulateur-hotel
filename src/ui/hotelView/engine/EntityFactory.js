@@ -41,6 +41,12 @@ const PHASE_STAFF_ACTIVITY = { morning: "reception", noon: "cooking", afternoon:
 // room.status/housekeeping_status/cleaningRoomIds -> a generic room state.
 // This is the one line the whole "EntityFactory is the only place allowed
 // to read business fields" rule exists to protect.
+// A room the hotel cannot sell or use (works, breakdown): a flag on the room's
+// metadata, added only when true like `vip` and `meeting`.
+function isOutOfService(room) {
+  return room.status === "maintenance" || room.status === "hors_service";
+}
+
 function roomState(room, cleaningRoomIds) {
   if (cleaningRoomIds?.has(room.id)) return "cleaning";
   if (room.status === "occupée") return "occupied";
@@ -90,7 +96,7 @@ function buildRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
         // quick-action modal, which needs to call back into
         // `cleaningRoomIds.has(room.id)`) never has to parse it back out
         // of `"room:<id>"` and risk a string/number mismatch.
-        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}) },
+        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}), ...(isOutOfService(room) ? { outOfService: true } : {}) },
       };
     })
   );
@@ -111,7 +117,7 @@ function buildExpansionRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
     footprint: zeroFootprint(),
     state: roomState(room, cleaningRoomIds),
     activity: null,
-    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}) },
+    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}), ...(isOutOfService(room) ? { outOfService: true } : {}) },
   }));
 }
 

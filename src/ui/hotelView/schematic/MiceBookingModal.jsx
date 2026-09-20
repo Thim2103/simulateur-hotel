@@ -8,7 +8,7 @@ import MicePanel from "../../../components/mice/MicePanel";
 // « Séminaires » chip; `onRespond(requestId, action)` answers a quote.
 export default function MiceBookingModal({ hotelState, rooms, reservations, date, onRespond, onClose }) {
   return (
-    <GameModal open onClose={onClose} title="🤝 Séminaires & événements pro" className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto">
+    <GameModal open onClose={onClose} title="🤝 Séminaires & événements pro" tone="mice" className="flex max-h-[85vh] max-w-xl flex-col gap-4 overflow-y-auto">
       <MicePanel hotelState={hotelState} rooms={rooms} reservations={reservations} date={date} onRespond={onRespond} />
       <Link to="/corporate/events" onClick={onClose} className="text-xs font-medium text-cyan-700 underline">
         Ouvrir la page des événements pro →
