@@ -29,6 +29,7 @@ import { openIncidents } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { calendarEffects, seasonDemand } from "../hotelEvents/hotelEventsEngine";
 import { computeCampaignEffects } from "../marketing/targetedCampaigns";
+import { pendingDemandShift } from "../clients/guestReviewEngine";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
@@ -138,7 +139,8 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const campaigns = computeCampaignEffects(state, referenceDate);
 
   const factors = {
-    reputation: reputationFactor(reputation),
+    // Yesterday's guest reviews (x3 for a V.I.P.) nudge it (lib/clients/guestReviewEngine.js).
+    reputation: reputationFactor(reputation) * (1 + pendingDemandShift(state)),
     price: priceFactor(index, reputation, computeZoneEffects(state).standing + calendar.priceTolerance),
     season: seasonFactor(referenceDate, state),
     events: eventFactor(state.progression?.activeEvents) * calendar.eventsDemandFactor,

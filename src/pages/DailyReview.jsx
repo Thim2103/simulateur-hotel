@@ -121,6 +121,45 @@ export default function DailyReview() {
         <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
       </GameSection>
 
+      {review.guestReviews && (
+        <GameSection id="review-guest-reviews" title="Avis clients" icon="💬">
+          <GameCard>
+            {review.guestReviews.posted.length > 0 ? (
+              <ul className="flex flex-col gap-2 text-sm">
+                {review.guestReviews.posted.map((guestReview) => (
+                  <li
+                    key={guestReview.id}
+                    data-testid="review-posted"
+                    data-vip={guestReview.profile === "vip" ? "true" : "false"}
+                    className={`rounded-lg border p-2 ${guestReview.profile === "vip" ? "border-amber-300 bg-amber-50" : "border-slate-200"}`}
+                  >
+                    <span className="font-semibold text-amber-600" aria-label={`Note ${guestReview.rating} sur 5`}>
+                      {"★".repeat(guestReview.rating)}
+                      {"☆".repeat(5 - guestReview.rating)}
+                    </span>{" "}
+                    <span className="text-xs text-slate-600">
+                      {guestReview.guestName}
+                      {guestReview.profile === "vip" ? " · ⭐ V.I.P. (poids ×3)" : ""}
+                    </span>
+                    <p className="text-slate-700">« {guestReview.text} »</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-slate-500">Aucun nouvel avis aujourd'hui.</p>
+            )}
+            {review.guestReviews.toAnswer > 0 && (
+              <p data-testid="reviews-to-answer" className="mt-2 text-sm text-rose-800">
+                {review.guestReviews.toAnswer} avis négatif(s) en attente de réponse.{" "}
+                <Link to="/clients/reviews" className="font-semibold underline">
+                  Répondre →
+                </Link>
+              </p>
+            )}
+          </GameCard>
+        </GameSection>
+      )}
+
       {review.growth && (
         <GameSection id="review-growth" title="Yield & marketing" icon="🎯">
           <GameCard>

@@ -15,6 +15,7 @@ import { floorsCompletedOn, SLOTS_PER_FLOOR } from "../expansion/hotelExpansionE
 import { maintenanceOn, WEAR_THRESHOLD } from "../maintenance/maintenanceCostEngine";
 import { describeCalendar, todaySnapshot, auditOn } from "../hotelEvents/hotelEventsEngine";
 import { activeCampaigns, campaignsEndedOn, describeCampaign } from "../marketing/targetedCampaigns";
+import { reviewsPostedOn, unansweredNegativeReviews, currentImpact } from "../clients/guestReviewEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -124,6 +125,16 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   endedCampaigns.forEach((campaign) => {
     causalChain.push(`Campagne « ${campaign.name} » terminée : ${campaign.extraBookings.toLocaleString("fr-FR")} réservation(s) supplémentaire(s), ROI ${campaign.roi >= 0 ? "+" : "−"}${Math.abs(Math.round(campaign.roi * 100))} %.`);
   });
+  // The reviews the guests leaving today posted (lib/clients/guestReviewEngine.js),
+  // and how many bad ones still wait for an answer.
+  const postedReviews = reviewsPostedOn(hotelState, careerState?.day).map((review) => ({ ...review, currentImpact: currentImpact({ ...review, response: null }) }));
+  const toAnswer = unansweredNegativeReviews(hotelState).length;
+  const guestReviews = postedReviews.length > 0 || toAnswer > 0 ? { posted: postedReviews, toAnswer } : null;
+  postedReviews
+    .filter((review) => review.profile === "vip")
+    .forEach((review) => {
+      causalChain.push(`${review.guestName} (V.I.P.) a laissé un avis ${review.rating}/5 : il pèse ×${review.weight} sur votre réputation et sur la demande de demain.`);
+    });
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);
@@ -149,6 +160,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     // Season, events in progress, announced events and audit result -- null
     // until a day has been played (lib/hotelEvents/).
     calendar,
+    // The reviews left today by departing guests and how many bad ones are
+    // still unanswered -- null when there is nothing to report.
+    guestReviews,
     // Yield management and marketing campaigns at work today -- null when
     // neither is in play.
     growth,

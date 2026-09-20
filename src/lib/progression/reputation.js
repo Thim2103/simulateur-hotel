@@ -4,6 +4,7 @@
 import { incidentReputationPenalty } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { auditReputationBonus } from "../hotelEvents/hotelEventsEngine";
+import { pendingReputationDelta } from "../clients/guestReviewEngine";
 
 const DRIFT_RATE = 0.15; // how much of the gap to the target closes each day
 
@@ -46,6 +47,8 @@ export function calculateReputation({ hotelState = {}, restaurantState = {}, eve
   const incidentPenalty = incidentReputationPenalty(hotelState);
 
   // A quality label (or a warning) from a hotel audit (lib/hotelEvents/)
-  // lifts (or dents) the reputation while it is in force.
-  return Math.round(clamp(drifted + eventImpact - incidentPenalty + auditReputationBonus(hotelState), 0, 100));
+  // lifts (or dents) the reputation while it is in force; guest reviews
+  // posted the day before (x3 for a V.I.P., softened or worsened by the
+  // player's answer -- lib/clients/guestReviewEngine.js) land here once.
+  return Math.round(clamp(drifted + eventImpact - incidentPenalty + auditReputationBonus(hotelState) + pendingReputationDelta(hotelState), 0, 100));
 }
