@@ -14,6 +14,10 @@ export function createCareerState(overrides = {}) {
     playerId: source.playerId || null,
     status: source.status || "not_started",
     day: source.day || 0,
+    // Calendar date (YYYY-MM-DD) of career day 0: what lets each simulated
+    // day map to its own date (see careerEngine.js's careerReferenceDate()).
+    // null on careers saved before this existed.
+    startDate: source.startDate || null,
     hotel: {
       hotelState: source.hotel?.hotelState || defaultHotelState,
       restaurantState: source.hotel?.restaurantState || createInitialRestaurantState(),

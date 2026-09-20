@@ -66,3 +66,14 @@ test("restaurantRatingToScore returns null for 0 or null input", () => {
   expect(restaurantRatingToScore(0)).toBeNull();
   expect(restaurantRatingToScore(null)).toBeNull();
 });
+
+test("incidentPenalty lowers the score and defaults to no change", () => {
+  const inputs = { housekeepingQuality: 80, staffMorale: 80 };
+  expect(computeSatisfaction({ ...inputs, incidentPenalty: 0 })).toBe(computeSatisfaction(inputs));
+  expect(computeSatisfaction({ ...inputs, incidentPenalty: 12 })).toBe(computeSatisfaction(inputs) - 12);
+});
+
+test("incidentPenalty also applies to the no-input baseline and never goes below 0", () => {
+  expect(computeSatisfaction({ incidentPenalty: 10 })).toBe(55);
+  expect(computeSatisfaction({ housekeepingQuality: 10, incidentPenalty: 50 })).toBe(0);
+});

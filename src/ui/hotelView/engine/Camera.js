@@ -182,6 +182,40 @@ export function resetCamera(camera) {
   return { ...camera, x: camera.homeX, y: camera.homeY, zoom: camera.homeZoom };
 }
 
+// Frames a world-space rectangle (`{minX, maxX, minY, maxY}`, e.g. a
+// terrain's own bounds) so it fits entirely inside the camera's current
+// viewport, centered, with an optional pixel `paddingPx` margin on every
+// side. This is how a scene picks its OWN initial zoom/framing from
+// nothing but its world bounds and the actual viewport size -- never a
+// hardcoded zoom -- see scene/HotelScene.jsx, the one place this gets
+// called (once, on mount). Reuses the same iso-screen bounding-box
+// technique `clampToWorldBounds()` above already uses, rather than
+// re-deriving it.
+export function fitWorldToViewport(camera, worldBounds, projectionParams, paddingPx = 0) {
+  const { minX, maxX, minY, maxY } = safeObject(worldBounds);
+
+  const corners = [
+    projectWorldToScreen({ x: minX, y: minY, z: 0 }, projectionParams),
+    projectWorldToScreen({ x: maxX, y: minY, z: 0 }, projectionParams),
+    projectWorldToScreen({ x: minX, y: maxY, z: 0 }, projectionParams),
+    projectWorldToScreen({ x: maxX, y: maxY, z: 0 }, projectionParams),
+  ];
+  const isoWidth = Math.max(1, Math.max(...corners.map((c) => c.x)) - Math.min(...corners.map((c) => c.x)));
+  const isoHeight = Math.max(1, Math.max(...corners.map((c) => c.y)) - Math.min(...corners.map((c) => c.y)));
+
+  const availableWidth = Math.max(1, camera.viewportWidth - 2 * safeNumber(paddingPx, 0));
+  const availableHeight = Math.max(1, camera.viewportHeight - 2 * safeNumber(paddingPx, 0));
+
+  const fitZoom = Math.min(availableWidth / isoWidth, availableHeight / isoHeight);
+
+  return {
+    ...camera,
+    zoom: clamp(fitZoom, camera.minZoom, camera.maxZoom),
+    x: (safeNumber(minX, 0) + safeNumber(maxX, 0)) / 2,
+    y: (safeNumber(minY, 0) + safeNumber(maxY, 0)) / 2,
+  };
+}
+
 // NOT implemented yet on purpose: `focusOnEntity(camera, entityId, ...)`
 // would need a SceneState to look the entity's position up in (see
 // SceneState.js's own `getEntityById()`) -- an extra dependency this step
@@ -216,6 +250,7 @@ const Camera = {
   zoomAtViewportPoint,
   focusOnWorldPoint,
   resetCamera,
+  fitWorldToViewport,
   getViewportTransform,
 };
 export default Camera;

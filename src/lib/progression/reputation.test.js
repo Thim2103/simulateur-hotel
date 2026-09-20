@@ -43,3 +43,38 @@ test("defaults to a neutral staff morale (70) when there is no staff on record",
 test("never throws with no arguments at all", () => {
   expect(() => calculateReputation()).not.toThrow();
 });
+
+describe("reputation / unrepaired equipment incidents", () => {
+  const base = { restaurantState: {}, previousReputation: 50 };
+  const incident = (overrides) => ({ id: "i1", zone: "laundry", severity: "critical", status: "active", daysOpen: 2, ...overrides });
+
+  test("leaves reputation untouched when there are no incidents", () => {
+    const without = calculateReputation({ ...base, hotelState: {} });
+    const withEmpty = calculateReputation({ ...base, hotelState: { activeIncidents: [] } });
+    expect(withEmpty).toBe(without);
+  });
+
+  test("an incident open past its grace period lowers reputation", () => {
+    const clean = calculateReputation({ ...base, hotelState: {} });
+    const hit = calculateReputation({ ...base, hotelState: { activeIncidents: [incident()] } });
+    expect(hit).toBeLessThan(clean);
+  });
+
+  test("a fresh incident (inside the grace period) costs nothing yet", () => {
+    const clean = calculateReputation({ ...base, hotelState: {} });
+    const fresh = calculateReputation({ ...base, hotelState: { activeIncidents: [incident({ daysOpen: 0 })] } });
+    expect(fresh).toBe(clean);
+  });
+
+  test("a repair in progress hurts less than an untouched incident, and a resolved one not at all", () => {
+    const rep = (overrides) => calculateReputation({ ...base, hotelState: { activeIncidents: [incident(overrides)] } });
+    const clean = calculateReputation({ ...base, hotelState: {} });
+    expect(rep({ status: "repairing" })).toBeGreaterThan(rep({ status: "active" }));
+    expect(rep({ status: "resolved" })).toBe(clean);
+  });
+
+  test("never drops below 0", () => {
+    const many = Array.from({ length: 30 }, (_, i) => incident({ id: `i${i}` }));
+    expect(calculateReputation({ ...base, previousReputation: 5, hotelState: { activeIncidents: many } })).toBe(0);
+  });
+});

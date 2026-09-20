@@ -56,6 +56,7 @@ function careerHook(overrides = {}) {
     error: null,
     startCareer: jest.fn().mockResolvedValue(careerState()),
     nextDay: jest.fn().mockResolvedValue({ state: careerState({ day: 4 }) }),
+    applyHotelAdjustment: jest.fn().mockResolvedValue(careerState()),
     ...overrides,
   };
 }
@@ -158,15 +159,45 @@ test("shows a banner linking to the story page when a narrative event is pending
   expect(screen.getByRole("link", { name: /le consulter/i })).toHaveAttribute("href", "/career/story");
 });
 
-test("shows the isometric hotel view by default, with a toggle back to the 2D view", () => {
+test("shows the schematic hotel view by default, with toggles to the isometric and 2D views", () => {
   useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
   useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
   render(<Dashboard />, { wrapper: MemoryRouter });
 
-  expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
-  const toggle = screen.getByRole("button", { name: /vue 2d/i });
+  expect(screen.getByTestId("schematic-hotel-view")).toBeInTheDocument();
 
-  fireEvent.click(toggle);
+  fireEvent.click(screen.getByRole("button", { name: /vue isométrique/i }));
+  expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
   expect(screen.getByText(/vue de l'hôtel/i)).toBeInTheDocument();
-  expect(screen.getByRole("button", { name: /vue isométrique/i })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /plan schématique/i }));
+  expect(screen.getByTestId("schematic-hotel-view")).toBeInTheDocument();
+});
+
+test("clicking the laundry alert badge opens the real IncidentQuickModal, and 'Appeler un technicien' calls applyHotelAdjustment with a real repair transform", () => {
+  const applyHotelAdjustment = jest.fn().mockResolvedValue(careerState());
+  useCareerContext.mockReturnValue(
+    careerHook({
+      careerState: careerState({
+        hotel: {
+          rooms: [],
+          hotelState: {
+            finance: { costs: [0] },
+            activeIncidents: [{ id: "incident:laundry:Panne", zone: "laundry", message: "Panne", severity: "critical", status: "active", repairCost: 1200, repairEtaDay: null }],
+          },
+        },
+      }),
+      applyHotelAdjustment,
+    })
+  );
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(<Dashboard />, { wrapper: MemoryRouter });
+
+  fireEvent.click(screen.getByTestId("schematic-amenity-laundry-alert"));
+  expect(screen.getByRole("dialog", { name: /panne.*buanderie/i })).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /appeler un technicien/i }));
+  expect(applyHotelAdjustment).toHaveBeenCalledWith(expect.any(Function));
 });

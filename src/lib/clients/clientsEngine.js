@@ -27,6 +27,7 @@ import { applyClientsDecision, findClientsAction, CLIENTS_ACTION_CATALOG } from 
 import { staffFromCareerState } from "../staff/staffEngine";
 import { marketingFromCareerState } from "../marketing/marketingEngine";
 import { housekeepingFromCareerState } from "../housekeeping/housekeepingEngine";
+import { incidentSatisfactionPenalty } from "../maintenance/incidentImpact";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -112,6 +113,9 @@ export function runClientsCycle({
     restaurantSatisfaction: effectiveRestaurant,
     esgScore,
     marketingReputation: effectiveMarketing,
+    // Unrepaired equipment incidents lower guest satisfaction directly
+    // (see lib/maintenance/incidentImpact.js).
+    incidentPenalty: incidentSatisfactionPenalty(hotelState),
   });
 
   // 3. Reviews

@@ -46,7 +46,12 @@ export function computeSatisfaction({
   restaurantSatisfaction = null,
   esgScore = null,
   marketingReputation = null,
+  // Points (0-100 scale) taken off the final score for unrepaired
+  // equipment incidents -- see lib/maintenance/incidentImpact.js. 0 (the
+  // default) leaves every existing caller's result untouched.
+  incidentPenalty = 0,
 } = {}) {
+  const penalty = Math.max(0, safeNumber(incidentPenalty, 0));
   const inputs = [
     { weight: SATISFACTION_WEIGHTS.housekeeping, value: housekeepingQuality },
     { weight: SATISFACTION_WEIGHTS.staff, value: staffMorale },
@@ -56,12 +61,12 @@ export function computeSatisfaction({
     { weight: SATISFACTION_WEIGHTS.marketing, value: marketingReputation },
   ].filter((entry) => entry.value !== null && entry.value !== undefined);
 
-  if (inputs.length === 0) return 65; // baseline when no module has run yet
+  if (inputs.length === 0) return Math.round(Math.max(0, 65 - penalty)); // baseline when no module has run yet
 
   const totalWeight = inputs.reduce((sum, entry) => sum + entry.weight, 0);
   const weightedSum = inputs.reduce((sum, entry) => sum + entry.weight * safeNumber(entry.value, 0), 0);
 
-  return Math.round(Math.min(100, Math.max(0, weightedSum / totalWeight)));
+  return Math.round(Math.min(100, Math.max(0, weightedSum / totalWeight - penalty)));
 }
 
 // Converts a 0-100 satisfaction score to a 1-5 star rating (for

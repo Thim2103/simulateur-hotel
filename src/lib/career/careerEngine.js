@@ -16,6 +16,7 @@ import { applyConsequenceToHotel, resolveStoryChoice, setCurrentEvent } from "./
 import { computeSkillBonuses, updateSkill } from "./careerSkills";
 import { applyCashRewardToHotel, claimReward as claimRewardPure, grantReward } from "./careerRewards";
 import { progressionSnapshot } from "./careerProgression";
+import { applyDemand } from "../demand/demandEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -23,9 +24,9 @@ function clamp(value, min, max) {
 
 // 1. Starts a new career: seeds the default missions/objectives against
 // whichever hotel bundle the caller provides (or bare defaults).
-export function startCareer({ playerId, hotelState, restaurantState, rooms, reservations } = {}) {
+export function startCareer({ playerId, hotelState, restaurantState, rooms, reservations, startDate = new Date() } = {}) {
   return {
-    ...createCareerState({ playerId, hotel: { hotelState, restaurantState, rooms, reservations } }),
+    ...createCareerState({ playerId, startDate: new Date(startDate).toISOString().slice(0, 10), hotel: { hotelState, restaurantState, rooms, reservations } }),
     status: "active",
     missions: seedMissions(),
     objectives: seedObjectives(),
@@ -89,19 +90,38 @@ export async function runMiniScenarioChallenge({ state, scenario, decisions = {}
   return { state: nextState, report };
 }
 
+// The simulated calendar date of the day about to be played: career day N
+// is startDate + N days, so stays actually progress from one day to the
+// next (arrivals, departures, seasons, the demand model's lead times).
+// A career with no startDate (saved before it existed, or hand-built in a
+// test) keeps the old behaviour: the real current date.
+export function careerReferenceDate(state) {
+  if (!state?.startDate) return new Date();
+  return new Date(new Date(`${state.startDate}T12:00:00Z`).getTime() + safeNumber(state.day, 0) * 86400000);
+}
+
 // 5. The full daily loop: sandboxed runDailyCycle(), then missions,
 // objectives, storyline eligibility, skill-adjusted summary, and the
 // day's replay entry.
-export async function runCareerDay({ state, decisions = {}, referenceDate = new Date(), rng = Math.random } = {}) {
-  const dailyReport = await runDailyCycle({
-    hotelState: state.hotel.hotelState,
+export async function runCareerDay({ state, decisions = {}, referenceDate: referenceDateOverride, rng = Math.random } = {}) {
+  const referenceDate = referenceDateOverride ?? careerReferenceDate(state);
+
+  // Demand first: today's new bookings (driven by reputation, price,
+  // season, events and open incidents -- see lib/demand/demandEngine.js)
+  // join the reservation list BEFORE the cycle runs, so same-day arrivals
+  // check in and today's occupancy/revenue reflect them.
+  const demand = applyDemand({ hotelState: state.hotel.hotelState, rooms: state.hotel.rooms, reservations: state.hotel.reservations, referenceDate });
+
+  const cycleReport = await runDailyCycle({
+    hotelState: { ...state.hotel.hotelState, demand: demand.demandState },
     restaurantState: state.hotel.restaurantState,
     rooms: state.hotel.rooms,
-    reservations: state.hotel.reservations,
+    reservations: demand.reservations,
     referenceDate,
     rng,
     persist: false,
   });
+  const dailyReport = { ...cycleReport, demandReport: demand.demandReport };
 
   const day = state.day + 1;
 
@@ -138,6 +158,10 @@ export async function runCareerDay({ state, decisions = {}, referenceDate = new 
   const nextState = {
     ...state,
     day,
+    // A career saved before start dates existed gets one now, chosen so
+    // that the day just played keeps the date it was played on: from here
+    // on, each day is one calendar day after the last.
+    startDate: state.startDate || new Date(new Date(referenceDate).getTime() - state.day * 86400000).toISOString().slice(0, 10),
     hotel: {
       ...state.hotel,
       hotelState: dailyReport.nextState.hotelState,

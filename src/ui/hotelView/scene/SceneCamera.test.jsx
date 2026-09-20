@@ -135,3 +135,96 @@ describe("SceneCamera / click vs drag", () => {
     expect(onRoomClick).not.toHaveBeenCalled();
   });
 });
+
+describe("SceneCamera / viewport resize", () => {
+  let observers;
+
+  beforeEach(() => {
+    observers = [];
+    global.ResizeObserver = class FakeResizeObserver {
+      constructor(callback) {
+        this.callback = callback;
+        observers.push(this);
+      }
+      observe(target) {
+        this.target = target;
+      }
+      disconnect() {
+        observers = observers.filter((o) => o !== this);
+      }
+      unobserve() {}
+    };
+  });
+
+  afterEach(() => {
+    delete global.ResizeObserver;
+  });
+
+  function trigger(width, height) {
+    const observer = observers[observers.length - 1];
+    observer.callback([{ target: observer.target, contentRect: { width, height } }]);
+  }
+
+  it("reports the container's measured size via onViewportResize", () => {
+    const onViewportResize = jest.fn();
+    const initialCamera = createCamera({ viewportWidth: 800, viewportHeight: 600 });
+    render(
+      <SceneCamera camera={initialCamera} onCameraChange={() => {}} onViewportResize={onViewportResize} projectionParams={PARAMS}>
+        <div />
+      </SceneCamera>
+    );
+    trigger(1234, 567);
+    expect(onViewportResize).toHaveBeenCalledWith({ width: 1234, height: 567 }, { isInitial: true });
+  });
+
+  it("marks only the very first report as isInitial -- later ones are plain resizes", () => {
+    const onViewportResize = jest.fn();
+    const initialCamera = createCamera({ viewportWidth: 800, viewportHeight: 600 });
+    render(
+      <SceneCamera camera={initialCamera} onCameraChange={() => {}} onViewportResize={onViewportResize} projectionParams={PARAMS}>
+        <div />
+      </SceneCamera>
+    );
+    trigger(800, 600);
+    trigger(900, 650);
+    expect(onViewportResize).toHaveBeenNthCalledWith(1, { width: 800, height: 600 }, { isInitial: true });
+    expect(onViewportResize).toHaveBeenNthCalledWith(2, { width: 900, height: 650 }, { isInitial: false });
+  });
+
+  it("ignores a zero-size report (not really laid out yet)", () => {
+    const onViewportResize = jest.fn();
+    const initialCamera = createCamera({ viewportWidth: 800, viewportHeight: 600 });
+    render(
+      <SceneCamera camera={initialCamera} onCameraChange={() => {}} onViewportResize={onViewportResize} projectionParams={PARAMS}>
+        <div />
+      </SceneCamera>
+    );
+    trigger(0, 0);
+    expect(onViewportResize).not.toHaveBeenCalled();
+  });
+
+  it("disconnects its observer on unmount", () => {
+    const onViewportResize = jest.fn();
+    const initialCamera = createCamera({ viewportWidth: 800, viewportHeight: 600 });
+    const { unmount } = render(
+      <SceneCamera camera={initialCamera} onCameraChange={() => {}} onViewportResize={onViewportResize} projectionParams={PARAMS}>
+        <div />
+      </SceneCamera>
+    );
+    expect(observers).toHaveLength(1);
+    unmount();
+    expect(observers).toHaveLength(0);
+  });
+
+  it("never throws when ResizeObserver is unavailable (e.g. an older environment)", () => {
+    delete global.ResizeObserver;
+    const initialCamera = createCamera({ viewportWidth: 800, viewportHeight: 600 });
+    expect(() =>
+      render(
+        <SceneCamera camera={initialCamera} onCameraChange={() => {}} onViewportResize={() => {}} projectionParams={PARAMS}>
+          <div />
+        </SceneCamera>
+      )
+    ).not.toThrow();
+  });
+});

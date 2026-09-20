@@ -10,6 +10,8 @@ import { fadeIn, slideUp, delay } from "../ui/animations";
 
 const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
 
+const DEMAND_FACTOR_LABELS = { reputation: "Réputation", price: "Prix", season: "Saison", events: "Événements", incidents: "Pannes" };
+
 function StatTile({ label, icon, value, tone = "default", index = 0 }) {
   return (
     <GameCard className={slideUp}>
@@ -105,6 +107,31 @@ export default function DailyReview() {
         <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
       </GameSection>
 
+      {review.demand && (
+        <GameSection id="review-demand" title="Demande" icon="📈">
+          <GameCard>
+            <p
+              data-testid="demand-headline"
+              data-tone={review.demand.tone}
+              className={`text-sm font-semibold ${review.demand.tone === "strong" ? "text-emerald-700" : review.demand.tone === "weak" ? "text-rose-700" : "text-slate-700"}`}
+            >
+              {review.demand.headline}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {review.demand.newBookings} nouvelle(s) réservation(s)
+              {review.demand.turnedAway > 0 ? ` · ${review.demand.turnedAway} demande(s) refusée(s) faute de chambre libre` : ""}
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2 text-xs">
+              {review.demand.drivers.map((driver) => (
+                <li key={driver.key} data-testid="demand-driver" className={`rounded-full border px-2 py-0.5 ${driver.factor >= 1 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}>
+                  {DEMAND_FACTOR_LABELS[driver.key] || driver.key} ×{driver.factor.toFixed(2)}
+                </li>
+              ))}
+            </ul>
+          </GameCard>
+        </GameSection>
+      )}
+
       <GameSection id="review-why" title="Pourquoi ?" icon="🧭">
         <GameCard>
           {review.causalChain.length === 0 ? (
@@ -121,6 +148,27 @@ export default function DailyReview() {
           )}
         </GameCard>
       </GameSection>
+
+      {review.incidentReviews?.length > 0 && (
+        <GameSection id="review-incident-reviews" title="Avis clients liés aux pannes" icon="💬">
+          <GameCard>
+            <ul className="flex flex-col gap-2">
+              {review.incidentReviews.map((incidentReview) => (
+                <li key={incidentReview.id} data-testid="incident-review" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm text-rose-900">
+                  <span className="shrink-0 font-semibold" aria-label={`Note ${incidentReview.rating} sur 5`}>
+                    {"★".repeat(incidentReview.rating)}
+                    {"☆".repeat(5 - incidentReview.rating)}
+                  </span>
+                  <span>« {incidentReview.text} »</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/dashboard" className="mt-3 inline-block text-xs font-semibold text-cyan-700 hover:underline">
+              Réparer depuis le plan de l'hôtel →
+            </Link>
+          </GameCard>
+        </GameSection>
+      )}
 
       <GameSection id="review-messages" title="Messages reçus aujourd'hui" icon="📬">
         <GameCard>

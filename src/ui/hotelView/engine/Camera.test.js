@@ -9,6 +9,7 @@ import {
   zoomAtViewportPoint,
   focusOnWorldPoint,
   resetCamera,
+  fitWorldToViewport,
   getViewportTransform,
 } from "./Camera";
 
@@ -187,6 +188,77 @@ describe("Camera / different viewport sizes", () => {
     expect(transform.translateX).toBe(500);
     expect(transform.translateY).toBe(250);
     expect(transform.zoom).toBe(1);
+  });
+});
+
+describe("Camera / fitWorldToViewport", () => {
+  it("centers the camera on the world bounds' own center", () => {
+    const camera = createCamera({ x: 999, y: 999, zoom: 1, viewportWidth: 800, viewportHeight: 600 });
+    const fitted = fitWorldToViewport(camera, { minX: 0, maxX: 10, minY: 0, maxY: 10 }, PARAMS);
+    expect(fitted.x).toBe(5);
+    expect(fitted.y).toBe(5);
+  });
+
+  it("picks a zoom that makes the world bounds fit entirely inside the viewport", () => {
+    const camera = createCamera({ zoom: 1, viewportWidth: 800, viewportHeight: 600, minZoom: 0.1, maxZoom: 10 });
+    const bounds = { minX: 0, maxX: 10, minY: 0, maxY: 10 };
+    const fitted = fitWorldToViewport(camera, bounds, PARAMS);
+
+    // At the computed zoom, every corner of the bounds must project
+    // within the viewport.
+    for (const [x, y] of [[0, 0], [10, 0], [0, 10], [10, 10]]) {
+      const screen = worldToScreen({ x, y, z: 0 }, fitted, PARAMS);
+      expect(screen.x).toBeGreaterThanOrEqual(-0.01);
+      expect(screen.x).toBeLessThanOrEqual(800.01);
+      expect(screen.y).toBeGreaterThanOrEqual(-0.01);
+      expect(screen.y).toBeLessThanOrEqual(600.01);
+    }
+  });
+
+  it("a smaller viewport yields a smaller fit zoom than a larger one, for the same bounds", () => {
+    const bounds = { minX: 0, maxX: 10, minY: 0, maxY: 10 };
+    const small = fitWorldToViewport(createCamera({ viewportWidth: 200, viewportHeight: 150, minZoom: 0.05, maxZoom: 10 }), bounds, PARAMS);
+    const large = fitWorldToViewport(createCamera({ viewportWidth: 2000, viewportHeight: 1500, minZoom: 0.05, maxZoom: 10 }), bounds, PARAMS);
+    expect(large.zoom).toBeGreaterThan(small.zoom);
+  });
+
+  it("respects padding: a padded fit zooms out slightly compared to an unpadded one", () => {
+    const camera = createCamera({ viewportWidth: 800, viewportHeight: 600, minZoom: 0.05, maxZoom: 1000 });
+    const bounds = { minX: 0, maxX: 10, minY: 0, maxY: 10 };
+    const unpadded = fitWorldToViewport(camera, bounds, PARAMS, 0);
+    const padded = fitWorldToViewport(camera, bounds, PARAMS, 50);
+    expect(padded.zoom).toBeLessThan(unpadded.zoom);
+  });
+
+  it("still clamps the fitted zoom to the camera's own min/max", () => {
+    // A tiny world in a huge viewport would otherwise want an absurd zoom.
+    const camera = createCamera({ viewportWidth: 4000, viewportHeight: 3000, minZoom: 0.5, maxZoom: 2 });
+    const fitted = fitWorldToViewport(camera, { minX: 0, maxX: 1, minY: 0, maxY: 1 }, PARAMS);
+    expect(fitted.zoom).toBe(2);
+  });
+});
+
+describe("Camera / centering math is exact across real screen ratios", () => {
+  // Realistic tile dimensions (mirrors scene/SceneTokens.js's own
+  // SCENE_PROJECTION numbers) -- kept as a local literal, not an import,
+  // so this engine-level test stays fully decoupled from scene/.
+  const REALISTIC_PROJECTION = { tileWidth: 128, tileHeight: 64, elevationHeight: 64, originX: 0, originY: 0, scale: 1 };
+  const WORLD_BOUNDS = { minX: 0, maxX: 12, minY: 0, maxY: 12 };
+
+  it.each([
+    [1280, 720],
+    [1920, 1080],
+    [1024, 768],
+    [800, 600],
+  ])("world center -> projection -> camera transform -> viewport center, at %ix%i", (viewportWidth, viewportHeight) => {
+    const camera = createCamera({ viewportWidth, viewportHeight, minZoom: 0.02, maxZoom: 100 });
+    const fitted = fitWorldToViewport(camera, WORLD_BOUNDS, REALISTIC_PROJECTION, 24);
+
+    const worldCenter = { x: (WORLD_BOUNDS.minX + WORLD_BOUNDS.maxX) / 2, y: (WORLD_BOUNDS.minY + WORLD_BOUNDS.maxY) / 2, z: 0 };
+    const screen = worldToScreen(worldCenter, fitted, REALISTIC_PROJECTION);
+
+    expect(screen.x).toBeCloseTo(viewportWidth / 2, 1);
+    expect(screen.y).toBeCloseTo(viewportHeight / 2, 1);
   });
 });
 

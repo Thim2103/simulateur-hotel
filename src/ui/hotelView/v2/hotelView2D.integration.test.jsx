@@ -34,19 +34,19 @@ test(
     fireEvent.click(screen.getByRole("button", { name: /démarrer ma carrière/i }));
     await waitFor(() => expect(screen.getByText(/vue globale/i)).toBeInTheDocument());
 
-    // MyHotel (/dashboard) -- isometric (HotelViewIsometric, v3) is now
-    // the default view (see pages/Dashboard.jsx's own toggle), so switch
-    // to v2's flat view via its own "Vue 2D" button before asserting on
+    // MyHotel (/dashboard) -- the schematic plan is the default view now
+    // (see pages/Dashboard.jsx's own view-mode buttons), so switch to v2's
+    // flat view via its own "Vue 2D" button before asserting on
     // HotelView2DAnimated's own content: timeline, "Vue de l'hôtel",
     // ground floor blocks.
     fireEvent.click(screen.getByRole("link", { name: "Dashboard" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
     expectNoSupabaseError();
-    expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
     expect(screen.getByText(/vue de l'hôtel/i)).toBeInTheDocument();
     expect(screen.getByText("Réception")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
 
     // Morning Briefing, through the top-bar's "Hôtel" dropdown.
     fireEvent.click(screen.getByRole("button", { name: "Hôtel" }));
@@ -59,8 +59,9 @@ test(
     // then apply a decision: its visual feedback (a transient event
     // badge on the hotel) should appear.
     fireEvent.click(screen.getByRole("link", { name: /aller à l'hôtel/i }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { name: /mon hôtel/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
+    await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeInTheDocument());
 
     fireEvent.click(screen.getAllByRole("button", { name: /appliquer/i })[0]);
     await waitFor(() => expect(screen.getByText(/décision :/i)).toBeInTheDocument());

@@ -1,5 +1,6 @@
 import {
   acceptMission,
+  careerReferenceDate,
   claimReward,
   completeMission,
   runCareerDay,
@@ -118,4 +119,91 @@ test("a full week of career days accumulates score history and progresses the st
   }
   expect(state.day).toBe(7);
   expect(state.scoreHistory).toHaveLength(7);
+});
+
+describe("career calendar", () => {
+  test("startCareer records its start date, and career day N maps to startDate + N days", () => {
+    const state = startCareer({ playerId: "p", startDate: new Date("2026-09-10T08:00:00Z") });
+    expect(state.startDate).toBe("2026-09-10");
+    expect(careerReferenceDate(state).toISOString().slice(0, 10)).toBe("2026-09-10");
+    expect(careerReferenceDate({ ...state, day: 3 }).toISOString().slice(0, 10)).toBe("2026-09-13");
+  });
+
+  test("a career without a start date (saved before it existed) keeps using the real current date", () => {
+    const before = Date.now();
+    const date = careerReferenceDate({ day: 5 });
+    expect(date.getTime()).toBeGreaterThanOrEqual(before);
+  });
+
+  test("consecutive days played without an explicit date advance one calendar day at a time", async () => {
+    let state = { ...baseState(), startDate: "2026-09-10" };
+    const dates = [];
+    for (let i = 0; i < 3; i += 1) {
+      const result = await runCareerDay({ state, rng: () => 0.999 });
+      dates.push(result.report.dailyReport.date);
+      state = result.state;
+    }
+    expect(dates).toEqual(["2026-09-10", "2026-09-11", "2026-09-12"]);
+  });
+});
+
+describe("career demand model", () => {
+  function pricedHotelState(overrides = {}) {
+    const state = baseState();
+    return {
+      ...state,
+      startDate: "2026-07-13",
+      hotel: {
+        ...state.hotel,
+        rooms: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, number: `${100 + i}`, type: "standard", price: 120, status: "libre", housekeeping_status: "clean" })),
+        reservations: [],
+        hotelState: { ...state.hotel.hotelState, ...overrides },
+      },
+    };
+  }
+
+  async function playDays(state, days) {
+    let current = state;
+    let bookings = 0;
+    let occupied = 0;
+    for (let i = 0; i < days; i += 1) {
+      const result = await runCareerDay({ state: current, rng: () => 0.999 });
+      current = result.state;
+      bookings += result.report.dailyReport.demandReport.newBookings;
+      occupied += result.report.dailyReport.hotelRevenue.occupiedRooms;
+    }
+    return { state: current, bookings, occupied };
+  }
+
+  test("each day attaches a demand report and persists the demand state, and new bookings enter the reservation list", async () => {
+    const { state, report } = await runCareerDay({ state: pricedHotelState(), rng: () => 0.999 });
+    const demandReport = report.dailyReport.demandReport;
+    expect(demandReport).toMatchObject({ date: "2026-07-13", multiplier: expect.any(Number), newBookings: expect.any(Number) });
+    expect(state.lastDayReport.demandReport).toBe(demandReport);
+    expect(state.hotel.hotelState.demand).toEqual({ carry: expect.any(Number), lastMultiplier: demandReport.multiplier });
+    expect(state.hotel.reservations.length).toBe(demandReport.newBookings);
+    expect(demandReport.newBookings).toBeGreaterThan(0);
+  });
+
+  test("a hotel that ignores its open incidents fills perceptibly less than one that repaired them", async () => {
+    const incident = (id, status) => ({ id, zone: "laundry", severity: "critical", status, createdOnDay: 0, daysOpen: 5 });
+    const neglected = await playDays(pricedHotelState({ activeIncidents: [incident("a", "active"), incident("b", "active")] }), 14);
+    const repaired = await playDays(pricedHotelState({ activeIncidents: [incident("a", "resolved"), incident("b", "resolved")] }), 14);
+
+    expect(neglected.bookings).toBeLessThan(repaired.bookings);
+    expect(neglected.occupied).toBeLessThan(repaired.occupied);
+  });
+
+  test("occupancy actually builds up over the first days as bookings arrive, then holds", async () => {
+    const day1 = await playDays(pricedHotelState(), 1);
+    const twoWeeks = await playDays(pricedHotelState(), 14);
+    expect(twoWeeks.occupied / 14).toBeGreaterThan(day1.occupied);
+  });
+});
+
+test("a legacy career (no start date) is dated from its next played day, keeping that day's date and advancing one day at a time", async () => {
+  const legacy = { ...baseState(), startDate: null, day: 4 };
+  const first = await runCareerDay({ state: legacy, referenceDate: REFERENCE_DATE, rng: () => 0.999 });
+  expect(first.state.startDate).toBe("2026-09-06"); // 2026-09-10 minus 4 days
+  expect(careerReferenceDate(first.state).toISOString().slice(0, 10)).toBe("2026-09-11");
 });

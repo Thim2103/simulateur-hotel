@@ -1,0 +1,283 @@
+// The hotel's booking DEMAND model: how many new stays guests try to book
+// each simulated day, and which of them the hotel can actually take.
+// Before this module nothing in the codebase created reservations after
+// the seed (revenue only ever depended on already-existing ones), so
+// reputation, price and equipment problems had no lasting economic
+// consequence; now they scale the flow of new bookings.
+//
+// Everything here is pure and DETERMINISTIC -- no `rng`: lib/events/ and
+// lib/dailyCycle/'s tests pin exact outputs to a fixed `rng`, so a new
+// random draw would shift that sequence. Variety (arrival lead time, stay
+// length, channel, segment) comes from fixed rotating patterns instead,
+// and fractional daily demand is carried over between days
+// (`hotelState.demand.carry`) rather than rounded away or sampled.
+//
+// A day's demand multiplier is the product of five factors, each shown
+// separately to the player (see describeDemand()):
+//   reputation -- progression's reputation index (lib/progression/)
+//   price      -- how the player's price level compares to what their
+//                 standing justifies
+//   season     -- month + weekday (no calendar existed before this)
+//   events     -- still-active daily events (lib/events/), by the sign of
+//                 their revenue impact
+//   incidents  -- unrepaired equipment incidents (lib/maintenance/) cut
+//                 the conversion rate on top of their reputation malus
+import { safeArray, safeNumber, safeObject } from "../safe";
+import { createReservation, findReservationConflicts } from "../pmsModels";
+import { openIncidents } from "../maintenance/incidentImpact";
+
+export const NEUTRAL_REPUTATION = 60;
+export const MIN_MULTIPLIER = 0.3;
+export const MAX_MULTIPLIER = 1.8;
+
+// New stays requested per room per day at multiplier 1. With the pattern
+// average stay of ~2.25 nights, this settles around 65-70% occupancy.
+export const BASE_ARRIVALS_PER_ROOM = 0.3;
+
+// Price elasticity: a price level 10% above what the hotel's standing
+// justifies costs ~8% of demand.
+export const PRICE_ELASTICITY = 0.8;
+
+const SEASON_BY_MONTH = [0.85, 0.85, 0.95, 1.0, 1.05, 1.15, 1.25, 1.25, 1.05, 1.0, 0.9, 1.0]; // Jan..Dec
+const WEEKDAY_FACTOR = [1.0, 0.95, 0.95, 1.0, 1.0, 1.1, 1.1]; // Sun..Sat
+
+export const INCIDENT_CONVERSION_MALUS = { minor: 0.02, moderate: 0.05, critical: 0.1 };
+export const MAX_INCIDENT_MALUS = 0.3;
+const REPAIRING_ATTENUATION = 0.5;
+
+const EVENT_STEP = 0.05;
+const MAX_EVENT_EFFECT = 0.15;
+
+// Arrival lead time (days between booking and arrival), stay length,
+// channel and segment rotate through fixed patterns.
+const LEAD_PATTERN = [0, 1, 1, 2, 3, 2, 5, 1];
+const STAY_PATTERN = [1, 2, 3, 2, 4, 2, 3, 1];
+const CHANNEL_PATTERN = ["direct", "ota", "direct", "direct", "ota"];
+const SEGMENT_PATTERN = ["leisure", "business", "leisure", "leisure"];
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function toDateOnly(value) {
+  return String(value?.toISOString ? value.toISOString() : value || "").slice(0, 10);
+}
+
+function addDays(date, days) {
+  return new Date(new Date(date).getTime() + days * 86400000);
+}
+
+export function seasonFactor(referenceDate) {
+  const date = new Date(referenceDate);
+  return SEASON_BY_MONTH[date.getUTCMonth()] * WEEKDAY_FACTOR[date.getUTCDay()];
+}
+
+export function reputationFactor(reputation) {
+  return clamp(1 + (safeNumber(reputation, NEUTRAL_REPUTATION) - NEUTRAL_REPUTATION) * 0.008, 0.5, 1.4);
+}
+
+// How the player's price level compares to the rooms' own base rates:
+// the mean of price/base-rate over stays still to come (1 = at base rate,
+// 1.1 = the player raised prices 10%). Quick actions like "increase-prices"
+// (lib/dashboard/dashboardActions.js) move exactly this.
+export function priceIndex(rooms, reservations, referenceDate) {
+  const today = toDateOnly(referenceDate);
+  const baseByRoom = new Map(safeArray(rooms).map((room) => [Number(room.id), safeNumber(room.price, 0)]));
+  const ratios = safeArray(reservations)
+    .filter((reservation) => !String(reservation.status || "").toLowerCase().includes("annul") && toDateOnly(reservation.departure) >= today)
+    .map((reservation) => {
+      const base = baseByRoom.get(Number(reservation.room_id)) || 0;
+      return base > 0 ? safeNumber(reservation.price, 0) / base : null;
+    })
+    .filter((ratio) => ratio !== null && ratio > 0);
+  if (ratios.length === 0) return 1;
+  return ratios.reduce((sum, ratio) => sum + ratio, 0) / ratios.length;
+}
+
+// A better-reputed hotel can justify (and gets away with) higher prices:
+// the "fair" price level runs from 0.8x base at reputation 0 to 1.2x at 100.
+export function priceFactor(index, reputation) {
+  const fair = 0.8 + (clamp(safeNumber(reputation, NEUTRAL_REPUTATION), 0, 100) / 100) * 0.4;
+  return clamp(1 - (index / fair - 1) * PRICE_ELASTICITY, 0.5, 1.3);
+}
+
+export function eventFactor(activeEvents) {
+  const effect = safeArray(activeEvents).reduce((sum, event) => {
+    const revenue = safeNumber(event?.impact?.revenue, 0);
+    return sum + (revenue > 0 ? EVENT_STEP : revenue < 0 ? -EVENT_STEP : 0);
+  }, 0);
+  return 1 + clamp(effect, -MAX_EVENT_EFFECT, MAX_EVENT_EFFECT);
+}
+
+export function incidentFactor(hotelState) {
+  const malus = openIncidents(hotelState).reduce(
+    (sum, incident) => sum + (INCIDENT_CONVERSION_MALUS[incident.severity] || 0) * (incident.status === "repairing" ? REPAIRING_ATTENUATION : 1),
+    0
+  );
+  return 1 - Math.min(MAX_INCIDENT_MALUS, malus);
+}
+
+export function computeDemand({ hotelState, rooms, reservations, referenceDate = new Date() } = {}) {
+  const state = safeObject(hotelState);
+  const reputation = safeNumber(state.progression?.player?.reputation, NEUTRAL_REPUTATION);
+  const index = priceIndex(rooms, reservations, referenceDate);
+
+  const factors = {
+    reputation: reputationFactor(reputation),
+    price: priceFactor(index, reputation),
+    season: seasonFactor(referenceDate),
+    events: eventFactor(state.progression?.activeEvents),
+    incidents: incidentFactor(state),
+  };
+  const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
+  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index };
+}
+
+// Turns today's demand into concrete new reservations: each is assigned
+// the first bookable room (rotating the starting point) that is free for
+// its whole stay. A request no room can take is "turned away" -- lost
+// demand the report surfaces. Priced at the room's base rate times the
+// player's own price level, so raising prices also raises what new
+// guests pay (and lowers how many come, see priceFactor()).
+export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0 } = {}) {
+  const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service");
+  const existing = safeArray(reservations);
+  const expected = bookableRooms.length * BASE_ARRIVALS_PER_ROOM * multiplier + safeNumber(carry, 0);
+  const count = bookableRooms.length === 0 ? 0 : Math.floor(expected);
+  const nextCarry = bookableRooms.length === 0 ? 0 : expected - count;
+
+  let all = existing;
+  let nextId = existing.reduce((max, reservation) => Math.max(max, safeNumber(reservation.id, 0)), 0) + 1;
+  let created = 0;
+  let turnedAway = 0;
+
+  for (let i = 0; i < count; i += 1) {
+    const seq = existing.length + nextId + i;
+    const arrival = addDays(referenceDate, LEAD_PATTERN[seq % LEAD_PATTERN.length]);
+    const departure = addDays(arrival, STAY_PATTERN[(seq * 3 + 1) % STAY_PATTERN.length]);
+
+    let booking = null;
+    for (let offset = 0; offset < bookableRooms.length && !booking; offset += 1) {
+      const room = bookableRooms[(seq + offset) % bookableRooms.length];
+      const candidate = createReservation({
+        id: nextId,
+        client_name: `Client ${nextId}`,
+        room_id: room.id,
+        room: room.number,
+        room_type: room.type,
+        arrival: toDateOnly(arrival),
+        departure: toDateOnly(departure),
+        status: "confirmée",
+        price: Math.round(safeNumber(room.price, 0) * priceIdx),
+        source: CHANNEL_PATTERN[seq % CHANNEL_PATTERN.length],
+        segment: SEGMENT_PATTERN[seq % SEGMENT_PATTERN.length],
+        created_at: new Date(referenceDate).toISOString(),
+      });
+      if (findReservationConflicts(all, candidate).length === 0) booking = candidate;
+    }
+
+    if (booking) {
+      all = [...all, booking];
+      nextId += 1;
+      created += 1;
+    } else {
+      turnedAway += 1;
+    }
+  }
+
+  return { reservations: all, created, turnedAway, carry: nextCarry };
+}
+
+// The one call the career loop makes each day (see careerEngine.js's
+// runCareerDay()): compute demand, generate the day's bookings, and return
+// the extended reservation list, the demand state to persist
+// (`hotelState.demand`), and a report for the player.
+export function applyDemand({ hotelState, rooms, reservations, referenceDate = new Date() } = {}) {
+  const state = safeObject(hotelState);
+  const demand = computeDemand({ hotelState: state, rooms, reservations, referenceDate });
+  const generated = generateBookings({
+    rooms,
+    reservations,
+    referenceDate,
+    multiplier: demand.multiplier,
+    priceIdx: demand.priceIndex,
+    carry: safeObject(state.demand).carry,
+  });
+
+  return {
+    reservations: generated.reservations,
+    demandState: { carry: generated.carry, lastMultiplier: demand.multiplier },
+    demandReport: {
+      date: toDateOnly(referenceDate),
+      multiplier: demand.multiplier,
+      factors: demand.factors,
+      reputation: demand.reputation,
+      priceIndex: demand.priceIndex,
+      newBookings: generated.created,
+      turnedAway: generated.turnedAway,
+    },
+  };
+}
+
+const POSITIVE_DRIVER = {
+  reputation: "une excellente réputation",
+  price: "des prix attractifs pour votre standing",
+  season: "la haute saison",
+  events: "des événements porteurs",
+};
+const NEGATIVE_DRIVER = {
+  reputation: "une réputation en retrait",
+  price: "des prix trop élevés pour votre standing",
+  season: "la basse saison",
+  events: "des événements défavorables",
+  incidents: "des pannes non réparées et les avis négatifs qui en découlent",
+};
+
+const STRONG = 1.1;
+const WEAK = 0.9;
+
+// A plain-language reading of a demand report for the player (DailyReview):
+// the headline names the factor that moved demand the most in the
+// direction the overall demand went.
+export function describeDemand(report) {
+  if (!report || !Number.isFinite(report.multiplier)) return null;
+  const percent = Math.round(report.multiplier * 100);
+  const tone = report.multiplier >= STRONG ? "strong" : report.multiplier <= WEAK ? "weak" : "stable";
+
+  const drivers = Object.entries(safeObject(report.factors))
+    .map(([key, factor]) => ({ key, factor: safeNumber(factor, 1) }))
+    .filter((entry) => Math.abs(entry.factor - 1) >= 0.01)
+    .sort((a, b) => Math.abs(b.factor - 1) - Math.abs(a.factor - 1));
+
+  let headline = `Demande stable (${percent} %).`;
+  if (tone === "strong") {
+    const top = drivers.find((entry) => entry.factor > 1);
+    headline = `Demande forte (${percent} %) grâce à ${(top && POSITIVE_DRIVER[top.key]) || "l'ensemble des facteurs"}.`;
+  } else if (tone === "weak") {
+    const top = drivers.find((entry) => entry.factor < 1);
+    headline = `Demande en baisse (${percent - 100} %) suite à ${(top && NEGATIVE_DRIVER[top.key]) || "l'ensemble des facteurs"}.`;
+  }
+
+  return {
+    tone,
+    percent,
+    headline,
+    drivers: drivers.map((entry) => ({ key: entry.key, factor: entry.factor })),
+    newBookings: safeNumber(report.newBookings, 0),
+    turnedAway: safeNumber(report.turnedAway, 0),
+  };
+}
+
+const DemandEngine = {
+  computeDemand,
+  generateBookings,
+  applyDemand,
+  describeDemand,
+  seasonFactor,
+  reputationFactor,
+  priceIndex,
+  priceFactor,
+  eventFactor,
+  incidentFactor,
+};
+export default DemandEngine;

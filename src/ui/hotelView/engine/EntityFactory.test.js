@@ -133,6 +133,81 @@ describe("EntityFactory / incidents", () => {
   });
 });
 
+describe("EntityFactory / amenity alert state", () => {
+  it("puts the laundry amenity in an idle state with empty metadata when there is no qualifying diagnostic", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], diagnostics: [] });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("idle");
+    expect(laundry.metadata).toEqual({});
+  });
+
+  it("puts the laundry amenity in an alert state carrying the real diagnostic's message/severity when one qualifies", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      diagnostics: [{ type: "error", severity: "high", message: "Panne machine à laver" }],
+    });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("alert");
+    expect(laundry.metadata).toEqual({ message: "Panne machine à laver", severity: "high" });
+  });
+
+  it("does not put any other amenity into an alert state, even with a qualifying diagnostic", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], diagnostics: [{ type: "error", message: "Panne" }] });
+    ["reception", "restaurant", "kitchen", "bar", "hall"].forEach((kind) => {
+      expect(entities.find((e) => e.type === kind).state).toBe("idle");
+    });
+  });
+});
+
+describe("EntityFactory / amenity alert state (persistent activeIncidents path)", () => {
+  it("puts the laundry amenity idle when activeIncidents is an empty array (a caller that HAS opted into the real path, with no incidents)", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], activeIncidents: [], diagnostics: [{ type: "error", message: "Should be ignored" }] });
+    expect(entities.find((e) => e.type === "laundry").state).toBe("idle");
+  });
+
+  it("puts the laundry amenity in an alert state and exposes the incident's own id/message/severity/repairEtaDay", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      activeIncidents: [{ id: "incident:laundry:Panne", zone: "laundry", message: "Panne", severity: "critical", status: "active", repairEtaDay: null }],
+    });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("alert");
+    expect(laundry.metadata).toEqual({ message: "Panne", severity: "critical", incidentId: "incident:laundry:Panne", repairEtaDay: null });
+  });
+
+  it("puts the laundry amenity in a distinct 'repairing' state while a standard repair is in progress", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      activeIncidents: [{ id: "i1", zone: "laundry", message: "Panne", severity: "critical", status: "repairing", repairEtaDay: 12 }],
+    });
+    const laundry = entities.find((e) => e.type === "laundry");
+    expect(laundry.state).toBe("repairing");
+    expect(laundry.metadata.repairEtaDay).toBe(12);
+  });
+
+  it("puts the laundry amenity back to idle once the incident is resolved", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      activeIncidents: [{ id: "i1", zone: "laundry", message: "Panne", severity: "critical", status: "resolved", repairEtaDay: 12 }],
+    });
+    expect(entities.find((e) => e.type === "laundry").state).toBe("idle");
+  });
+
+  it("ignores stale diagnostics entirely once a caller supplies activeIncidents -- the persistent path always wins", () => {
+    const entities = buildHotelSceneEntities({
+      rooms: [room(1)],
+      activeIncidents: [],
+      diagnostics: [{ type: "error", severity: "high", message: "Old ephemeral diagnostic" }],
+    });
+    expect(entities.find((e) => e.type === "laundry").state).toBe("idle");
+  });
+
+  it("falls back to the old ephemeral diagnostics-derived state when activeIncidents is never provided (undefined)", () => {
+    const entities = buildHotelSceneEntities({ rooms: [room(1)], diagnostics: [{ type: "error", severity: "high", message: "Panne" }] });
+    expect(entities.find((e) => e.type === "laundry").state).toBe("alert");
+  });
+});
+
 describe("EntityFactory / separation from raw business data", () => {
   it("never leaks the full business room/diagnostic objects onto an entity", () => {
     const entities = buildHotelSceneEntities({
