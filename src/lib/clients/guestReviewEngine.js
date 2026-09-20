@@ -38,12 +38,13 @@ import { treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { hotelCondition } from "../maintenance/maintenanceCostEngine";
 import { openIncidents } from "../maintenance/incidentImpact";
-import { PROFILES, mixedRandom, profileIdFor, stayNights, weightOf } from "./guestProfiles";
+import { PROFILES, UNLUCKY_STAY_CHANCE, mixedRandom, profileIdFor, stayNights, weightOf } from "./guestProfiles";
+import { pressHighlightFor, vipStayOutcome } from "./vipServiceEngine";
 
 export const MAX_STORED_REVIEWS = 40;
 export const MAX_NEW_REVIEWS_PER_DAY = 5;
 export const REVIEWER_SHARE = 0.5; // share of guests who leave a review (a V.I.P. always does)
-export const UNLUCKY_STAY_CHANCE = 0.08;
+export { UNLUCKY_STAY_CHANCE };
 export const MAX_DEMAND_SHIFT = 0.15;
 export const DEMAND_PER_POINT = 0.01;
 export const INCIDENT_GESTURE_COST = 150;
@@ -76,6 +77,8 @@ const TEXTS = {
   },
   vip: {
     good: ["Expérience incroyable, je la partage avec toute ma communauté ! ✨", "Un accueil à la hauteur de mes attentes, bravo à l'équipe."],
+    // After attentions that took the stay to the top: a glowing review.
+    praise: ["Des attentions délicates du début à la fin : une adresse que je recommande à toute ma communauté ! ✨", "Accueil aux petits soins, on a pensé à tout. Mes abonnés doivent découvrir cet hôtel !"],
     ok: ["Sympa, mais je m'attendais à mieux pour ce niveau de prix."],
     bad: ["Très déçu(e) : j'en parle à toute ma communauté.", "Pas à la hauteur du standing annoncé, mes abonnés vont le savoir."],
   },
@@ -250,8 +253,8 @@ function ratingOf({ reservation, profileId, hotelState }) {
   return clamp(Math.round(score), 1, 5);
 }
 
-function textOf({ profileId, rating, id }) {
-  const pool = TEXTS[profileId][rating >= 4 ? "good" : rating === 3 ? "ok" : "bad"];
+function textOf({ profileId, rating, id, praise = false }) {
+  const pool = praise ? TEXTS[profileId].praise : TEXTS[profileId][rating >= 4 ? "good" : rating === 3 ? "ok" : "bad"];
   return pool[Math.floor(mixedRandom(`text:${id}`) * pool.length) % pool.length];
 }
 
@@ -267,7 +270,11 @@ export function reviewsForDepartures({ hotelState, reservations, rooms, date, da
     .filter(({ reservation, profileId }) => profileId === "vip" || mixedRandom(`posts:${reservation.id}`) < REVIEWER_SHARE)
     .slice(0, MAX_NEW_REVIEWS_PER_DAY)
     .map(({ reservation, room, profileId }) => {
-      const rating = ratingOf({ reservation, profileId, hotelState });
+      // A V.I.P.'s review follows their satisfaction, which the attentions
+      // the player gave (vipServiceEngine.js) may have raised; a glowing one
+      // earns a reputation boost on top of the usual weight.
+      const outcome = profileId === "vip" ? vipStayOutcome({ reservation, hotelState }) : null;
+      const rating = outcome ? outcome.rating : ratingOf({ reservation, profileId, hotelState });
       const weight = weightOf(profileId);
       const nights = stayNights(reservation);
       const nightPrice = Math.round(safeNumber(reservation.price, 0));
@@ -282,11 +289,12 @@ export function reviewsForDepartures({ hotelState, reservations, rooms, date, da
         nights,
         nightPrice,
         rating,
-        text: textOf({ profileId, rating, id: reservation.id }),
+        text: textOf({ profileId, rating, id: reservation.id, praise: !!outcome?.praise }),
         day,
         date: today,
-        impact: baseImpact(rating, weight),
+        impact: round1(baseImpact(rating, weight) + (outcome?.praiseBonus || 0)),
         applied: 0,
+        ...(outcome ? { satisfaction: outcome.satisfaction, praise: outcome.praise } : {}),
       };
     });
 }
@@ -318,7 +326,22 @@ export function advanceGuestReviews(hotelState, { date, day, reservations, rooms
   const answersChanged = Object.keys(answers).some((id) => settledAnswers[id] !== answers[id]);
   if (!reviewsChanged && !answersChanged) return hotelState;
 
-  return { ...state, guestReviews: [...settled, ...fresh].slice(-MAX_STORED_REVIEWS), ...(Object.keys(answers).length > 0 ? { reviewResponses: settledAnswers } : {}) };
+  // A glowing V.I.P. review makes the front page (see pressHighlights()).
+  const highlights = fresh
+    .filter((review) => review.praise)
+    .map((review) => pressHighlightFor({ reservation: safeArray(reservations).find((item) => item.id === review.reservationId), review }));
+
+  return {
+    ...state,
+    guestReviews: [...settled, ...fresh].slice(-MAX_STORED_REVIEWS),
+    ...(Object.keys(answers).length > 0 ? { reviewResponses: settledAnswers } : {}),
+    ...(highlights.length > 0 ? { pressHighlights: [...safeArray(state.pressHighlights), ...highlights].slice(-10) } : {}),
+  };
+}
+
+// The feature articles glowing V.I.P. reviews earned, newest first.
+export function pressHighlights(hotelState) {
+  return safeArray(safeObject(hotelState).pressHighlights).slice().reverse();
 }
 
 // A review as the player reads it: its profile and what it is worth now.

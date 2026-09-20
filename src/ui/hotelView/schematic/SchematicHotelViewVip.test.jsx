@@ -60,3 +60,103 @@ describe("SchematicHotelView / V.I.P. alert", () => {
     expect(cell).toBeEnabled();
   });
 });
+
+describe("SchematicHotelView / V.I.P. welcome modal", () => {
+  const { isVip, mixedRandom, UNLUCKY_STAY_CHANCE } = jest.requireActual("../../../lib/clients/guestProfiles");
+  const { describeVipGuests } = jest.requireActual("../../../lib/clients/vipServiceEngine");
+  const { fireEvent } = jest.requireActual("@testing-library/react");
+
+  const roomList = [
+    { id: 1, number: "101", type: "standard", status: "occupée", housekeeping_status: "clean" },
+    { id: 2, number: "301", type: "suite", status: "libre", housekeeping_status: "clean" },
+  ];
+  const stay = (id) => ({ id, room_id: 1, room: "101", room_type: "standard", client_name: `Client ${id}`, arrival: "2026-09-10", departure: "2026-09-13", status: "confirmée", segment: "leisure", price: 120 });
+  const VIP = Array.from({ length: 6000 }, (_, i) => i + 1).find((id) => isVip(stay(id), roomList[0]) && mixedRandom(`unlucky:${id}`) >= UNLUCKY_STAY_CHANCE);
+  const date = new Date("2026-09-11T12:00:00Z");
+  const hotelState = { finance: { revenue: [10000], costs: [0] } };
+  const vipGuests = describeVipGuests({ hotelState, reservations: [stay(VIP)], rooms: roomList, date });
+
+  const view = (props = {}) =>
+    render(
+      <MemoryRouter>
+        <SchematicHotelView
+          rooms={roomList}
+          staffCount={1}
+          diagnostics={[]}
+          decisionFeedback={null}
+          cleaningRoomIds={new Set()}
+          hotelState={hotelState}
+          reservations={[stay(VIP)]}
+          date={date}
+          vipGuests={vipGuests}
+          onVipAction={jest.fn()}
+          {...props}
+        />
+      </MemoryRouter>
+    );
+
+  it("the alert shows the guest's satisfaction and a way to welcome them", () => {
+    view();
+    expect(screen.getByTestId(`schematic-vip-satisfaction-${VIP}`)).toHaveTextContent(/satisfaction : \d+\/100/i);
+    expect(screen.getByTestId(`schematic-vip-welcome-${VIP}`)).toHaveTextContent(/accueillir/i);
+  });
+
+  it("the star badge on the V.I.P.'s room opens the welcome modal", () => {
+    view();
+    fireEvent.click(screen.getByTestId("schematic-room-101-vip"));
+    expect(screen.getByRole("dialog", { name: /accueil v\.i\.p\./i })).toBeInTheDocument();
+    expect(screen.getByTestId("vip-profile")).toHaveTextContent(`Client ${VIP}`);
+  });
+
+  it("so does the occupied room itself", () => {
+    view();
+    fireEvent.click(screen.getByTestId("schematic-room-101"));
+    expect(screen.getByRole("dialog", { name: /accueil v\.i\.p\./i })).toBeInTheDocument();
+  });
+
+  it("so does the reception badge and the alert's own button", () => {
+    const { unmount } = view();
+    fireEvent.click(screen.getByTestId("schematic-amenity-reception-vip"));
+    expect(screen.getByRole("dialog", { name: /accueil v\.i\.p\./i })).toBeInTheDocument();
+    unmount();
+    view();
+    fireEvent.click(screen.getByTestId(`schematic-vip-welcome-${VIP}`));
+    expect(screen.getByRole("dialog", { name: /accueil v\.i\.p\./i })).toBeInTheDocument();
+  });
+
+  it("another room still navigates to its page", () => {
+    view();
+    fireEvent.click(screen.getByTestId("schematic-room-301"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("giving an attention calls onVipAction with the reservation and the attention", () => {
+    const onVipAction = jest.fn();
+    view({ onVipAction });
+    fireEvent.click(screen.getByTestId("schematic-room-101-vip"));
+    fireEvent.click(screen.getByTestId("vip-give-gift:champagne"));
+    expect(onVipAction).toHaveBeenCalledWith(VIP, { type: "gift", giftId: "champagne" });
+  });
+
+  it("closing the modal removes it", () => {
+    view();
+    fireEvent.click(screen.getByTestId("schematic-room-101-vip"));
+    fireEvent.click(screen.getByRole("button", { name: /fermer/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("without the hotel's state there is nothing to act on: the room keeps navigating", () => {
+    view({ hotelState: undefined });
+    expect(screen.queryByTestId(`schematic-vip-welcome-${VIP}`)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("schematic-room-101"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("a caller's own onSelectZone still takes precedence over the V.I.P. modal", () => {
+    const onSelectZone = jest.fn();
+    view({ onSelectZone });
+    fireEvent.click(screen.getByTestId("schematic-room-101"));
+    expect(onSelectZone).toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

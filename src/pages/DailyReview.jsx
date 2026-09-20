@@ -142,6 +142,11 @@ export default function DailyReview() {
                       {guestReview.profile === "vip" ? " · ⭐ V.I.P. (poids ×3)" : ""}
                     </span>
                     <p className="text-slate-700">« {guestReview.text} »</p>
+                    {guestReview.praise && (
+                      <p data-testid="review-praise" className="mt-1 text-xs font-semibold text-emerald-800">
+                        🌟 Avis élogieux : boost de réputation et article à la une.
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>

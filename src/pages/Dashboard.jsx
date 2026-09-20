@@ -20,7 +20,7 @@ import { careerReferenceDate } from "../lib/career/careerEngine";
 import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
 import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
-import { vipGuestsInHouse } from "../lib/clients/guestProfiles";
+import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
 import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
 import { launchTargetedCampaign } from "../lib/marketing/targetedCampaigns";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -239,6 +239,12 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => launchTargetedCampaign(hotel, typeId, { date: careerReferenceDate(careerState), day: careerState.day })).catch(() => undefined);
   };
 
+  // The V.I.P. welcome (schematic/VipActionModal.jsx): an attention given to a
+  // V.I.P. in the hotel -- an upgrade, a gift, a personal service.
+  const handleVipAction = (reservationId, action) => {
+    applyHotelAdjustment((hotel) => applyVipAction(hotel, reservationId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -425,7 +431,10 @@ export default function Dashboard() {
           onStartFloor={handleStartFloor}
           onFitOut={handleFitOut}
           onSetMaintenanceLevel={handleSetMaintenanceLevel}
-          vipGuests={vipGuestsInHouse({ reservations: careerState?.hotel?.reservations, rooms: careerState?.hotel?.rooms, date: careerReferenceDate(careerState) })}
+          vipGuests={describeVipGuests({ hotelState: careerState?.hotel?.hotelState, reservations: careerState?.hotel?.reservations, rooms: careerState?.hotel?.rooms, date: careerReferenceDate(careerState) })}
+          reservations={careerState?.hotel?.reservations ?? []}
+          date={careerReferenceDate(careerState)}
+          onVipAction={handleVipAction}
         />
       )}
 
