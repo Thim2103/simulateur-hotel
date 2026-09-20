@@ -11,7 +11,7 @@ import { useClientsEngine } from "../hooks/useClientsEngine";
 import { buildIncidentReviewHistory } from "../lib/maintenance/incidentImpact";
 import { ZONE_STYLES } from "../ui/hotelView/schematic/schematicTokens";
 import ReviewResponseModal, { points } from "../components/clients/ReviewResponseModal";
-import { listReviews, respondToReview, currentImpact, RESPONSE_TYPES } from "../lib/clients/guestReviewEngine";
+import { listReviews, respondToReview, currentImpact, pressHighlights, RESPONSE_TYPES } from "../lib/clients/guestReviewEngine";
 import { PROFILES } from "../lib/clients/guestProfiles";
 
 const TREND_BADGE = { improving: "success", stable: "info", declining: "danger" };
@@ -90,6 +90,7 @@ export default function ClientsReviews() {
   const activeStayFilter = STAY_FILTERS.find((filter) => filter.id === stayFilter) || STAY_FILTERS[0];
   const visibleStayReviews = activeStayFilter.matches ? stayReviews.filter(activeStayFilter.matches) : stayReviews;
   const respondingReview = respondingId ? answerableById[respondingId] || null : null;
+  const frontPage = pressHighlights(careerState.hotel?.hotelState);
 
   const handleRespond = (type) => {
     if (!respondingId) return;
@@ -166,6 +167,25 @@ export default function ClientsReviews() {
               data={replayEntries.map((e) => e.satisfaction ?? 0)}
             />
           </div>
+
+          {frontPage.length > 0 && (
+            <section aria-labelledby="reviews-press" className="flex flex-col gap-3">
+              <h2 id="reviews-press" className="text-base font-semibold text-slate-900">
+                À la une <span className="text-sm font-normal text-slate-500">({frontPage.length})</span>
+              </h2>
+              <Card>
+                <ul className="flex flex-col gap-2">
+                  {frontPage.map((article) => (
+                    <li key={article.id} data-testid="press-highlight" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+                      <p className="font-semibold text-amber-950">🌟 {article.headline}</p>
+                      <p className="text-slate-700">« {article.text} »</p>
+                      <p className="text-xs text-slate-500">Jour {article.day}</p>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </section>
+          )}
 
           <section aria-labelledby="reviews-stays" className="flex flex-col gap-3">
             <h2 id="reviews-stays" className="text-base font-semibold text-slate-900">

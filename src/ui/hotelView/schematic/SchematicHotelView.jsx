@@ -6,6 +6,7 @@ import { DIRECT_ACTION_MODALS, getDirectActionModal } from "./directActions";
 import ZoneUpgradeModal from "./ZoneUpgradeModal";
 import { ZONES, zoneSummary, zoneForCell, levelStars } from "../../../lib/zones/zoneUpgradesEngine";
 import ExpansionModal from "./ExpansionModal";
+import VipActionModal from "./VipActionModal";
 import { expansionFloors, floorUnderConstruction, freeSlots } from "../../../lib/expansion/hotelExpansionEngine";
 
 // A synthetic, architectural "coupe longitudinale" (elevation/section) of
@@ -75,6 +76,9 @@ export default function SchematicHotelView({
   onFitOut,
   onSetMaintenanceLevel,
   vipGuests = [],
+  reservations = [],
+  date,
+  onVipAction,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -84,6 +88,8 @@ export default function SchematicHotelView({
   const [upgradeZone, setUpgradeZone] = useState(null);
   // Whether the building-expansion modal is open (ExpansionModal.jsx).
   const [expansionOpen, setExpansionOpen] = useState(false);
+  // The V.I.P. whose welcome modal is open (VipActionModal.jsx), by reservation.
+  const [vipModalId, setVipModalId] = useState(null);
   const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds, includeExpansion: !!hotelState, vipRoomIds: new Set(vipGuests.map((guest) => guest.roomId)) });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
@@ -109,6 +115,13 @@ export default function SchematicHotelView({
   const handleSelect = (entity) => {
     if (onSelectZone) {
       onSelectZone(entity);
+      return;
+    }
+    // The room of a V.I.P. opens their welcome modal (attentions before they
+    // leave) rather than the rooms page.
+    const vipGuest = entity.type === "room" && entity.metadata?.vip ? vipGuests.find((guest) => guest.roomId === entity.metadata.roomId) : null;
+    if (vipGuest && hotelState) {
+      setVipModalId(vipGuest.reservationId);
       return;
     }
     const route = zoneStyle(entity.type).route;
@@ -159,6 +172,19 @@ export default function SchematicHotelView({
           {vipGuests.map((guest) => (
             <p key={guest.reservationId} data-testid="schematic-vip-guest">
               <span aria-hidden="true">⭐</span> <strong>V.I.P. en séjour</strong> : {guest.guestName}, chambre {guest.roomNumber} ({guest.followers.toLocaleString("fr-FR")} abonnés), départ le {guest.departure}. Son avis pèsera ×3 sur votre réputation.
+              {guest.satisfaction !== undefined && (
+                <span data-testid={`schematic-vip-satisfaction-${guest.reservationId}`}> Satisfaction : {guest.satisfaction}/100.</span>
+              )}{" "}
+              {hotelState && (
+                <button
+                  type="button"
+                  data-testid={`schematic-vip-welcome-${guest.reservationId}`}
+                  onClick={() => setVipModalId(guest.reservationId)}
+                  className="rounded border border-amber-600 px-1.5 py-0.5 font-semibold text-amber-900 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                >
+                  Accueillir
+                </button>
+              )}
             </p>
           ))}
         </div>
@@ -260,9 +286,20 @@ export default function SchematicHotelView({
                       <span>{room.metadata.number}</span>
                     </button>
                     {room.metadata.vip && (
-                      <span data-testid={`schematic-room-${room.metadata.number}-vip`} role="img" aria-label={`V.I.P. dans la chambre ${room.metadata.number}`} title="V.I.P. en séjour" className="absolute -left-1 -top-1 text-xs leading-none">
+                      <button
+                        type="button"
+                        data-testid={`schematic-room-${room.metadata.number}-vip`}
+                        aria-label={`V.I.P. dans la chambre ${room.metadata.number}`}
+                        title="V.I.P. en séjour : accueil et attentions"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          const guest = vipGuests.find((item) => item.roomId === room.metadata.roomId);
+                          if (guest && hotelState) setVipModalId(guest.reservationId);
+                        }}
+                        className="absolute -left-1 -top-1 text-xs leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      >
                         ⭐
-                      </span>
+                      </button>
                     )}
                     {roomNeedsAttention && (
                       <button
@@ -326,9 +363,19 @@ export default function SchematicHotelView({
                     />
                   )}
                   {amenity.type === "reception" && vipGuests.length > 0 && (
-                    <span data-testid="schematic-amenity-reception-vip" role="img" aria-label="V.I.P. en séjour" title="V.I.P. en séjour" className="absolute -left-1 -top-1 text-xs leading-none">
+                    <button
+                      type="button"
+                      data-testid="schematic-amenity-reception-vip"
+                      aria-label="V.I.P. en séjour"
+                      title="V.I.P. en séjour : accueil et attentions"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (hotelState) setVipModalId(vipGuests[0].reservationId);
+                      }}
+                      className="absolute -left-1 -top-1 text-xs leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    >
                       ⭐
-                    </span>
+                    </button>
                   )}
                   {upgradeZoneOf(amenity.type, zoneById) && (
                     <button
@@ -354,6 +401,18 @@ export default function SchematicHotelView({
 
       {upgradeZone && hotelState && (
         <ZoneUpgradeModal zoneId={upgradeZone} hotelState={hotelState} day={day} onStart={onStartUpgrade} onClose={() => setUpgradeZone(null)} />
+      )}
+
+      {vipModalId !== null && hotelState && (
+        <VipActionModal
+          reservationId={vipModalId}
+          hotelState={hotelState}
+          reservations={reservations}
+          rooms={rooms}
+          date={date}
+          onAct={(action) => onVipAction?.(vipModalId, action)}
+          onClose={() => setVipModalId(null)}
+        />
       )}
 
       {expansionOpen && hotelState && (

@@ -58,3 +58,15 @@ test("has no guest-review section when there is nothing to report", () => {
   render(<DailyReview />, { wrapper: MemoryRouter });
   expect(screen.queryByRole("heading", { name: /avis clients/i })).not.toBeInTheDocument();
 });
+
+test("a glowing V.I.P. review is flagged with its reputation boost and front-page article", () => {
+  reviewWith({ posted: [posted(1, 5, { profile: "vip", weight: 3, praise: true })], toAnswer: 0 });
+  render(<DailyReview />, { wrapper: MemoryRouter });
+  expect(screen.getByTestId("review-praise")).toHaveTextContent(/avis élogieux.*boost de réputation.*à la une/i);
+});
+
+test("an ordinary review carries no praise flag", () => {
+  reviewWith({ posted: [posted(1, 5)], toAnswer: 0 });
+  render(<DailyReview />, { wrapper: MemoryRouter });
+  expect(screen.queryByTestId("review-praise")).not.toBeInTheDocument();
+});

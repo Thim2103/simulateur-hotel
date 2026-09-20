@@ -204,3 +204,79 @@ describe("guest reviews / through the career day", () => {
     expect(typeof isVip(reservation, { id: 1, type: "suite" })).toBe("boolean");
   });
 });
+
+describe("guest reviews / V.I.P. attentions at departure", () => {
+  const { applyVipAction, vipSatisfaction, PRAISE_BONUS_MIN, PRAISE_BONUS_SPAN } = jest.requireActual("./vipServiceEngine");
+  const { advanceGuestReviews, reviewsForDepartures, pressHighlights } = jest.requireActual("./guestReviewEngine");
+  const { mixedRandom, UNLUCKY_STAY_CHANCE } = jest.requireActual("./guestProfiles");
+
+  const rooms = [{ id: 1, number: "101", type: "standard", status: "occupée" }, { id: 2, number: "301", type: "suite", status: "libre" }];
+  const stayOf = (id) => ({ id, room_id: 1, room: "101", room_type: "standard", client_name: `Client ${id}`, arrival: "2026-09-10", departure: "2026-09-12", status: "confirmée", segment: "leisure", price: 120 });
+  const VIP = Array.from({ length: 6000 }, (_, i) => i + 1).find((id) => isVip(stayOf(id), rooms[0]) && mixedRandom(`unlucky:${id}`) >= UNLUCKY_STAY_CHANCE);
+  const start = { hotelState: { finance: { revenue: [10000], costs: [0] } }, reservations: [stayOf(VIP)], rooms };
+  const date = new Date("2026-09-11T12:00:00Z");
+  const leaves = new Date("2026-09-12T12:00:00Z");
+
+  const departure = (bundle, hotelState = bundle.hotelState) =>
+    reviewsForDepartures({ hotelState, reservations: bundle.reservations, rooms: bundle.rooms, date: leaves, day: 5 })[0];
+
+  it("with no attention, a V.I.P. leaves an ordinary review that follows their satisfaction", () => {
+    const written = departure(start);
+    expect(written.profile).toBe("vip");
+    expect(written.praise).toBe(false);
+    expect(written.impact).toBe(baseImpact(written.rating, 3));
+  });
+
+  it("attentions that reach 85 earn a glowing review: five stars and a bonus on top of the x3", () => {
+    let bundle = applyVipAction(start, VIP, { type: "upgrade" }, { day: 4, date });
+    bundle = applyVipAction(bundle, VIP, { type: "gift", giftId: "champagne" }, { day: 4, date });
+    expect(vipSatisfaction({ reservation: bundle.reservations[0], hotelState: bundle.hotelState }).reached).toBe(true);
+    const written = departure(bundle);
+    expect(written).toMatchObject({ rating: 5, praise: true });
+    expect(written.satisfaction).toBeGreaterThanOrEqual(85);
+    expect(written.impact).toBeGreaterThanOrEqual(baseImpact(5, 3) + PRAISE_BONUS_MIN);
+    expect(written.impact).toBeLessThanOrEqual(baseImpact(5, 3) + PRAISE_BONUS_MIN + PRAISE_BONUS_SPAN - 1);
+    expect(written.text).toMatch(/attentions|pensé à tout/i);
+  });
+
+  it("that is a major boost: several points of reputation and a real lift in tomorrow's demand", () => {
+    let bundle = applyVipAction(start, VIP, { type: "upgrade" }, { day: 4, date });
+    bundle = applyVipAction(bundle, VIP, { type: "gift", giftId: "champagne" }, { day: 4, date });
+    const glowing = advanceGuestReviews(bundle.hotelState, { date: leaves, day: 5, reservations: bundle.reservations, rooms: bundle.rooms });
+    expect(pendingReputationDelta(glowing)).toBeGreaterThanOrEqual(4.8);
+    expect(reputation(glowing)).toBeGreaterThan(reputation({}) + 3);
+    expect(demand(glowing).factors.reputation).toBeGreaterThan(demand({}).factors.reputation * 1.04);
+  });
+
+  it("the glowing review makes the front page", () => {
+    let bundle = applyVipAction(start, VIP, { type: "upgrade" }, { day: 4, date });
+    bundle = applyVipAction(bundle, VIP, { type: "gift", giftId: "champagne" }, { day: 4, date });
+    const glowing = advanceGuestReviews(bundle.hotelState, { date: leaves, day: 5, reservations: bundle.reservations, rooms: bundle.rooms });
+    const [article] = pressHighlights(glowing);
+    expect(article).toMatchObject({ day: 5, guestName: `Client ${VIP}` });
+    expect(article.headline).toMatch(/abonnés/);
+  });
+
+  it("an ordinary departure makes no front page and keeps no press state", () => {
+    const state = advanceGuestReviews(start.hotelState, { date: leaves, day: 5, reservations: start.reservations, rooms });
+    expect(pressHighlights(state)).toEqual([]);
+    expect(state.pressHighlights).toBeUndefined();
+  });
+
+  it("keeps the ten latest articles, newest first", () => {
+    const many = { pressHighlights: Array.from({ length: 12 }, (_, i) => ({ id: `p${i}`, day: i })) };
+    expect(pressHighlights(many).map((item) => item.id)[0]).toBe("p11");
+    let state = { ...start.hotelState, pressHighlights: many.pressHighlights };
+    let bundle = applyVipAction({ ...start, hotelState: state }, VIP, { type: "upgrade" }, { day: 4, date });
+    bundle = applyVipAction(bundle, VIP, { type: "gift", giftId: "champagne" }, { day: 4, date });
+    const after = advanceGuestReviews(bundle.hotelState, { date: leaves, day: 5, reservations: bundle.reservations, rooms: bundle.rooms });
+    expect(after.pressHighlights).toHaveLength(10);
+    expect(pressHighlights(after)[0].day).toBe(5);
+  });
+
+  it("the attentions matter: the same V.I.P. writes a better review with them than without", () => {
+    let bundle = applyVipAction(start, VIP, { type: "upgrade" }, { day: 4, date });
+    bundle = applyVipAction(bundle, VIP, { type: "gift", giftId: "champagne" }, { day: 4, date });
+    expect(departure(bundle).impact).toBeGreaterThan(departure(start).impact);
+  });
+});

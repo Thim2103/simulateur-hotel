@@ -21,6 +21,7 @@ import {
   describeReview,
 } from "./guestReviewEngine";
 import { isVip, PROFILES } from "./guestProfiles";
+import { ratingFromSatisfaction } from "./vipServiceEngine";
 import { treasuryOf } from "../finance/investmentFunding";
 
 const DATE = new Date("2026-09-12T12:00:00Z");
@@ -158,7 +159,7 @@ describe("guestReviewEngine / the reviews of departing guests", () => {
     expect(make()).toEqual(make());
   });
 
-  it("a V.I.P. always writes, and is never lukewarm", () => {
+  it("a V.I.P. always writes, and their rating follows their satisfaction", () => {
     const suites = ids(400).map((id) => room(id, "suite"));
     const vips = ids(400).filter((id) => isVip(leaving(id), suites[id - 1]));
     expect(vips.length).toBeGreaterThan(10);
@@ -166,7 +167,8 @@ describe("guestReviewEngine / the reviews of departing guests", () => {
       const [written] = reviewsForDepartures({ hotelState: {}, reservations: [leaving(id)], rooms: suites, date: DATE, day: 5 });
       expect(written.profile).toBe("vip");
       expect(written.weight).toBe(3);
-      expect(written.rating === 5 || written.rating <= 3).toBe(true);
+      expect(written.rating).toBe(ratingFromSatisfaction(written.satisfaction));
+      expect(written.praise).toBe(false); // no attention was given
     });
   });
 

@@ -117,3 +117,25 @@ describe("Clients / Avis: answering", () => {
     expect(screen.getByTestId("response-review")).toHaveTextContent("Buanderie HS");
   });
 });
+
+describe("Clients / Avis: the front page", () => {
+  it("shows the feature articles glowing V.I.P. reviews earned, newest first", () => {
+    setup({
+      pressHighlights: [
+        { id: "press:stay:1", day: 3, guestName: "Client 1", followers: 90000, headline: "« Un séjour d'exception » — Client 1 encense l'hôtel devant 90 000 abonnés", text: "Bravo à l'équipe." },
+        { id: "press:stay:2", day: 5, guestName: "Client 2", followers: 200000, headline: "« Un séjour d'exception » — Client 2 encense l'hôtel devant 200 000 abonnés", text: "Un accueil de rêve." },
+      ],
+    });
+    expect(screen.getByRole("heading", { name: /à la une/i })).toBeInTheDocument();
+    const articles = screen.getAllByTestId("press-highlight");
+    expect(articles).toHaveLength(2);
+    expect(articles[0]).toHaveTextContent("Client 2");
+    expect(articles[0]).toHaveTextContent("Un accueil de rêve.");
+    expect(articles[1]).toHaveTextContent("Client 1");
+  });
+
+  it("has no front page until a V.I.P. has been won over", () => {
+    setup({});
+    expect(screen.queryByRole("heading", { name: /à la une/i })).not.toBeInTheDocument();
+  });
+});

@@ -33,6 +33,9 @@ export function mixedRandom(seed) {
 
 export const VIP_WEIGHT = 3;
 export const LONG_STAY_NIGHTS = 4;
+// Chance that a stay goes badly wrong whatever the hotel does (shared by the
+// reviews and the V.I.P. satisfaction, which are the same stay).
+export const UNLUCKY_STAY_CHANCE = 0.08;
 // Chance that a stay is a V.I.P.'s, by room type.
 export const VIP_CHANCE = { suite: 0.2, deluxe: 0.08, default: 0.04 };
 
