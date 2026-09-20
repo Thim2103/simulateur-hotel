@@ -8,6 +8,7 @@
 // nextDay() and stored as careerState.lastAnalysis).
 import { safeArray, safeNumber } from "../safe";
 import { buildAttentionItems } from "./attentionItems";
+import { describeDemand } from "../demand/demandEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -64,6 +65,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     },
     causalChain,
     incidentReviews,
+    // How strongly guests wanted to book today (see lib/demand/), null
+    // until a day has been played with the demand model.
+    demand: describeDemand(careerState?.lastDayReport?.demandReport),
     diagnostics: safeArray(dashboardState?.insights?.diagnostics),
     recommendations: safeArray(dashboardState?.insights?.recommendations),
     attentionItems: buildAttentionItems(dashboardState?.notifications, 5),

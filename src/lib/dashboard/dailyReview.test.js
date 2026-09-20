@@ -51,3 +51,21 @@ describe("buildDailyReview / incident reviews", () => {
     expect(review.causalChain.some((line) => /pannes non réparées/i.test(line))).toBe(false);
   });
 });
+
+describe("buildDailyReview / demand", () => {
+  const kpis = { occupancyRate: 50, housekeepingQuality: 80, satisfaction: 4, staffMorale: 70, profit: 100, revenueToday: 1000, date: "2026-01-04" };
+
+  test("describes the last day's demand report", () => {
+    const careerState = {
+      day: 4,
+      lastDayReport: { demandReport: { multiplier: 0.8, factors: { reputation: 1, price: 1, season: 1, events: 1, incidents: 0.7 }, newBookings: 1, turnedAway: 0 } },
+    };
+    const review = buildDailyReview({ careerState, dashboardState: { kpis } });
+    expect(review.demand.tone).toBe("weak");
+    expect(review.demand.headline).toMatch(/Demande en baisse \(-20 %\)/);
+  });
+
+  test("is null before any day has produced a demand report", () => {
+    expect(buildDailyReview({ careerState: { day: 4 }, dashboardState: { kpis } }).demand).toBeNull();
+  });
+});
