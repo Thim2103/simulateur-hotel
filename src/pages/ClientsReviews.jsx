@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -8,14 +8,30 @@ import LineChart from "../components/charts/LineChart";
 import AreaChart from "../components/charts/AreaChart";
 import { useCareerContext } from "../context/CareerContext";
 import { useClientsEngine } from "../hooks/useClientsEngine";
+import { buildIncidentReviewHistory } from "../lib/maintenance/incidentImpact";
+import { ZONE_STYLES } from "../ui/hotelView/schematic/schematicTokens";
 
 const TREND_BADGE = { improving: "success", stable: "info", declining: "danger" };
 const TREND_LABEL = { improving: "En hausse", stable: "Stable", declining: "En baisse" };
+
+// Where the reviewed incident stands NOW (a review outlives its incident).
+const INCIDENT_STATUS_BADGE = {
+  active: { type: "danger", label: "Panne en cours" },
+  repairing: { type: "warning", label: "Réparation en cours" },
+  resolved: { type: "success", label: "Réparée" },
+};
+
+const REVIEW_FILTERS = [
+  { id: "all", label: "Tous" },
+  { id: "open", label: "Pannes en cours", matches: (review) => review.incidentStatus === "active" || review.incidentStatus === "repairing" },
+  { id: "resolved", label: "Pannes réparées", matches: (review) => review.incidentStatus === "resolved" },
+];
 
 // Route: /clients/reviews -- avis clients (notes, tendances, split
 // positif/négatif, plaintes). Built on useClientsEngine.js, same
 // pattern as ClientsDashboard.jsx.
 export default function ClientsReviews() {
+  const [reviewFilter, setReviewFilter] = useState("all");
   const { careerState, isRunning: isCareerRunning } = useCareerContext();
   const { clientsState, isRunning: isClientsRunning, error, loadClientsState, applyClientsAction } = useClientsEngine();
 
@@ -45,6 +61,13 @@ export default function ClientsReviews() {
   const complaints = clientsState?.complaints || [];
   const replayEntries = clientsState?.replayLog?.entries || [];
   const trendLabels = replayEntries.map((e) => `Cycle ${e.cycleIndex + 1}`);
+
+  // Individual reviews caused by equipment incidents (see lib/maintenance/
+  // incidentImpact.js) -- the only per-review records this app keeps; the
+  // KPIs above are aggregates.
+  const incidentReviews = buildIncidentReviewHistory(careerState.hotel?.hotelState);
+  const activeFilter = REVIEW_FILTERS.find((filter) => filter.id === reviewFilter) || REVIEW_FILTERS[0];
+  const visibleIncidentReviews = activeFilter.matches ? incidentReviews.filter(activeFilter.matches) : incidentReviews;
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,6 +114,58 @@ export default function ClientsReviews() {
               data={replayEntries.map((e) => e.satisfaction ?? 0)}
             />
           </div>
+
+          <section aria-labelledby="reviews-incidents" className="flex flex-col gap-3">
+            <h2 id="reviews-incidents" className="text-base font-semibold text-slate-900">
+              Avis liés aux pannes <span className="text-sm font-normal text-slate-500">({incidentReviews.length})</span>
+            </h2>
+            <Card>
+              {incidentReviews.length === 0 ? (
+                <p className="text-sm text-slate-500">Aucun avis lié à une panne pour l'instant.</p>
+              ) : (
+                <>
+                  <div role="group" aria-label="Filtrer les avis" className="mb-3 flex flex-wrap gap-2">
+                    {REVIEW_FILTERS.map((filter) => (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        aria-pressed={reviewFilter === filter.id}
+                        onClick={() => setReviewFilter(filter.id)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium ${reviewFilter === filter.id ? "border-cyan-700 bg-cyan-700 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  {visibleIncidentReviews.length === 0 ? (
+                    <p className="text-sm text-slate-500">Aucun avis dans cette catégorie.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {visibleIncidentReviews.map((review) => {
+                        const status = INCIDENT_STATUS_BADGE[review.incidentStatus];
+                        return (
+                          <li key={review.id} data-testid="incident-review" className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 text-sm">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-amber-600" aria-label={`Note ${review.rating} sur 5`}>
+                                {"★".repeat(review.rating)}
+                                {"☆".repeat(5 - review.rating)}
+                              </span>
+                              <Badge type="warning">Problème technique</Badge>
+                              {status && <Badge type={status.type}>{status.label}</Badge>}
+                              <span className="text-xs text-slate-500">
+                                {(ZONE_STYLES[review.zone] || ZONE_STYLES.default).label} · Jour {review.day}
+                              </span>
+                            </div>
+                            <p className="text-slate-700">« {review.text} »</p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              )}
+            </Card>
+          </section>
 
           <section aria-labelledby="clients-complaints" className="flex flex-col gap-3">
             <h2 id="clients-complaints" className="text-base font-semibold text-slate-900">Plaintes en cours</h2>

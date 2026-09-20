@@ -136,3 +136,16 @@ const IncidentImpact = {
   appendIncidentReviews,
 };
 export default IncidentImpact;
+
+// The Clients -> Avis page's review history: every stored incident review,
+// newest first, each tagged with the CURRENT status of the incident it
+// complains about (a review outlives its incident -- once repaired, it
+// stays in the history as "resolved"). `incidentStatus` is "unknown" if
+// the incident record itself is gone.
+export function buildIncidentReviewHistory(hotelState) {
+  const state = safeObject(hotelState);
+  const statusById = new Map(safeArray(state.activeIncidents).map((incident) => [incident.id, incident.status]));
+  return safeArray(state.incidentReviews)
+    .map((review) => ({ ...review, incidentStatus: statusById.get(review.incidentId) || "unknown" }))
+    .sort((a, b) => b.day - a.day);
+}

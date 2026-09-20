@@ -144,3 +144,42 @@ describe("incidentImpact / appendIncidentReviews", () => {
     expect(appendIncidentReviews({}, 1).incidentReviews).toEqual([]);
   });
 });
+
+describe("incidentImpact / buildIncidentReviewHistory", () => {
+  const { buildIncidentReviewHistory } = require("./incidentImpact");
+
+  it("lists stored reviews newest first, tagged with their incident's current status", () => {
+    const hotelState = {
+      activeIncidents: [
+        { id: "a", status: "resolved" },
+        { id: "b", status: "active" },
+      ],
+      incidentReviews: [
+        { id: "r1", incidentId: "a", day: 1 },
+        { id: "r2", incidentId: "b", day: 3 },
+        { id: "r3", incidentId: "a", day: 2 },
+      ],
+    };
+    const history = buildIncidentReviewHistory(hotelState);
+    expect(history.map((r) => [r.id, r.incidentStatus])).toEqual([
+      ["r2", "active"],
+      ["r3", "resolved"],
+      ["r1", "resolved"],
+    ]);
+  });
+
+  it("marks a review whose incident record is gone as unknown", () => {
+    const history = buildIncidentReviewHistory({ incidentReviews: [{ id: "r1", incidentId: "gone", day: 1 }] });
+    expect(history[0].incidentStatus).toBe("unknown");
+  });
+
+  it("returns an empty list for a missing hotel state", () => {
+    expect(buildIncidentReviewHistory(undefined)).toEqual([]);
+  });
+
+  it("does not mutate the stored reviews' order", () => {
+    const stored = [{ id: "r1", incidentId: "a", day: 1 }, { id: "r2", incidentId: "a", day: 2 }];
+    buildIncidentReviewHistory({ incidentReviews: stored });
+    expect(stored.map((r) => r.id)).toEqual(["r1", "r2"]);
+  });
+});
