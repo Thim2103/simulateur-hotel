@@ -56,6 +56,7 @@ export default function SchematicHotelView({
   onPriorityClean,
   onRepairNow,
   onCallTechnician,
+  repairTerms,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -202,6 +203,7 @@ export default function SchematicHotelView({
           onPriorityClean={onPriorityClean}
           onRepairNow={onRepairNow}
           onCallTechnician={onCallTechnician}
+          repairTerms={repairTerms}
         />
       )}
     </section>

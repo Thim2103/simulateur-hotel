@@ -1,7 +1,7 @@
 import { useState } from "react";
 import GameModal from "../../components/GameModal";
 import { ZONE_STYLES } from "./schematicTokens";
-import { REPAIR_COST, REPAIR_DELAY_DAYS, EMERGENCY_COST_MULTIPLIER } from "../../../lib/maintenance/incidentEngine";
+import { REPAIR_COST, EMERGENCY_COST_MULTIPLIER, standardRepairDelay } from "../../../lib/maintenance/incidentEngine";
 
 // The schematic view's own direct-action modal for an amenity carrying a
 // real, persistent incident (see lib/maintenance/incidentEngine.js and
@@ -22,13 +22,18 @@ import { REPAIR_COST, REPAIR_DELAY_DAYS, EMERGENCY_COST_MULTIPLIER } from "../..
 // engine will actually apply -- not an estimate -- falling back to
 // `entity.metadata.severity`'s own tier only if the entity doesn't
 // already carry its own `repairCost` (e.g. in an isolated test).
-export default function IncidentQuickModal({ entity, onClose, onRepairNow, onCallTechnician }) {
+//
+// `repairTerms` (incidentEngine.repairTerms(), passed down from
+// Dashboard.jsx) carries what an in-house technician changes: a cheaper
+// emergency call and a faster standard repair. Without it the modal shows
+// the external-contractor terms.
+export default function IncidentQuickModal({ entity, onClose, onRepairNow, onCallTechnician, repairTerms }) {
   const [submitted, setSubmitted] = useState(null);
   const zoneLabel = ZONE_STYLES[entity.type]?.label || ZONE_STYLES.default.label;
   const severity = entity.metadata?.severity || "moderate";
   const standardCost = entity.metadata?.repairCost ?? REPAIR_COST[severity] ?? REPAIR_COST.moderate;
-  const emergencyCost = Math.round(standardCost * EMERGENCY_COST_MULTIPLIER);
-  const delayDays = REPAIR_DELAY_DAYS[severity] ?? REPAIR_DELAY_DAYS.moderate;
+  const emergencyCost = Math.round(standardCost * (repairTerms?.emergencyMultiplier ?? EMERGENCY_COST_MULTIPLIER));
+  const delayDays = standardRepairDelay(severity, repairTerms);
   const isRepairing = entity.state === "repairing";
 
   const handleRepairNow = () => {
@@ -47,6 +52,12 @@ export default function IncidentQuickModal({ entity, onClose, onRepairNow, onCal
       <p data-testid="incident-modal-message" className="text-sm text-slate-700">
         {entity.metadata?.message || "Un problème technique a été signalé sur cette zone."}
       </p>
+
+      {repairTerms?.hasTechnician && !isRepairing && (
+        <p data-testid="incident-modal-technician-note" className="text-xs text-emerald-700">
+          Un technicien de l'hôtel est disponible : tarif d'urgence réduit et intervention plus rapide.
+        </p>
+      )}
 
       {isRepairing ? (
         <p data-testid="incident-modal-repairing" className="text-sm text-amber-700">

@@ -91,3 +91,20 @@ describe("IncidentQuickModal / closing", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("IncidentQuickModal / in-house technician terms", () => {
+  const withTechnician = { hasTechnician: true, emergencyMultiplier: 1.2, delayReduction: 1 };
+
+  it("shows the cheaper emergency price and shorter delay, plus a note, when a technician is on staff", () => {
+    render(<IncidentQuickModal entity={laundryAlertEntity({ metadata: { severity: "critical" } })} onClose={() => {}} repairTerms={withTechnician} />);
+    expect(screen.getByTestId("incident-modal-emergency-cost")).toHaveTextContent(`${Math.round(REPAIR_COST.critical * 1.2)} €`);
+    expect(screen.getByTestId("incident-modal-standard-cost")).toHaveTextContent(`${REPAIR_COST.critical} € — ${REPAIR_DELAY_DAYS.critical - 1} j`);
+    expect(screen.getByTestId("incident-modal-technician-note")).toBeInTheDocument();
+  });
+
+  it("shows the external-contractor terms and no note without one", () => {
+    render(<IncidentQuickModal entity={laundryAlertEntity({ metadata: { severity: "critical" } })} onClose={() => {}} />);
+    expect(screen.getByTestId("incident-modal-emergency-cost")).toHaveTextContent(`${Math.round(REPAIR_COST.critical * EMERGENCY_COST_MULTIPLIER)} €`);
+    expect(screen.queryByTestId("incident-modal-technician-note")).not.toBeInTheDocument();
+  });
+});

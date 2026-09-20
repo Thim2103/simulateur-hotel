@@ -10,6 +10,15 @@ import { fadeIn, slideUp, delay } from "../ui/animations";
 
 const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
 
+const STAFF_EVENT_STYLES = {
+  resigned: { icon: "🚪", className: "border-rose-200 bg-rose-50 text-rose-900" },
+  "resignation-notice": { icon: "⚠️", className: "border-rose-200 bg-rose-50 text-rose-900" },
+  sick: { icon: "🤒", className: "border-amber-200 bg-amber-50 text-amber-900" },
+  "raise-request": { icon: "💶", className: "border-amber-200 bg-amber-50 text-amber-900" },
+  "resignation-withdrawn": { icon: "🙂", className: "border-emerald-200 bg-emerald-50 text-emerald-900" },
+  "express-training": { icon: "🎓", className: "border-emerald-200 bg-emerald-50 text-emerald-900" },
+};
+
 const DEMAND_FACTOR_LABELS = { reputation: "Réputation", price: "Prix", season: "Saison", events: "Événements", incidents: "Pannes" };
 
 function StatTile({ label, icon, value, tone = "default", index = 0 }) {
@@ -148,6 +157,29 @@ export default function DailyReview() {
           )}
         </GameCard>
       </GameSection>
+
+      {review.staffEvents?.length > 0 && (
+        <GameSection id="review-staff-events" title="Ressources humaines" icon="👥">
+          <GameCard>
+            <ul className="flex flex-col gap-2 text-sm">
+              {review.staffEvents.map((staffEvent) => (
+                <li
+                  key={staffEvent.id}
+                  data-testid="staff-event"
+                  data-type={staffEvent.type}
+                  className={`flex items-start gap-2 rounded-lg border p-2 ${STAFF_EVENT_STYLES[staffEvent.type]?.className || "border-slate-200 bg-slate-50 text-slate-700"}`}
+                >
+                  <span aria-hidden="true">{STAFF_EVENT_STYLES[staffEvent.type]?.icon || "👤"}</span>
+                  <span>{staffEvent.message}</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/staff" className="mt-3 inline-block text-xs font-semibold text-cyan-700 hover:underline">
+              Gérer l'équipe →
+            </Link>
+          </GameCard>
+        </GameSection>
+      )}
 
       {review.incidentReviews?.length > 0 && (
         <GameSection id="review-incident-reviews" title="Avis clients liés aux pannes" icon="💬">

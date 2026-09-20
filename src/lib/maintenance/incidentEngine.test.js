@@ -189,3 +189,77 @@ describe("incidentEngine / daysOpen aging", () => {
     expect(advanceIncidentRepairs(state, 9).activeIncidents[0].daysOpen).toBe(2);
   });
 });
+
+describe("incidentEngine / in-house technicians", () => {
+  const { assignTechnicians, repairTerms, TECHNICIAN_EMERGENCY_MULTIPLIER, TECHNICIAN_MATERIALS_RATIO } = require("./incidentEngine");
+  const tech = (overrides = {}) => ({ id: "t1", role: "maintenance", level: "experienced", fatigue: 10, morale: 70, training: null, ...overrides });
+  const incident = (overrides = {}) => ({ id: "i1", zone: "laundry", severity: "minor", status: "active", repairCost: 150, ...overrides });
+  const hotel = (roster, incidents) => ({ staffRoster: roster, activeIncidents: incidents, finance: { costs: [0, 1000] } });
+
+  it("repairTerms: external terms without a technician, cheaper/faster with one, external again if they are exhausted", () => {
+    expect(repairTerms({})).toEqual({ hasTechnician: false, emergencyMultiplier: EMERGENCY_COST_MULTIPLIER, delayReduction: 0 });
+    expect(repairTerms(hotel([tech()], []))).toMatchObject({ hasTechnician: true, emergencyMultiplier: TECHNICIAN_EMERGENCY_MULTIPLIER, delayReduction: 1 });
+    expect(repairTerms(hotel([tech({ fatigue: 100, morale: 10 })], [])).hasTechnician).toBe(false);
+  });
+
+  it("a minor incident is taken on automatically: repairing, handled by the technician, materials only", () => {
+    const next = assignTechnicians(hotel([tech()], [incident()]), 5);
+    expect(next.activeIncidents[0]).toMatchObject({ status: "repairing", handledBy: "t1", autoRepaired: true, repairEtaDay: 6 });
+    expect(next.finance.costs).toEqual([0, 1000 + Math.round(150 * TECHNICIAN_MATERIALS_RATIO)]);
+  });
+
+  it("is far cheaper than paying an external contractor", () => {
+    const auto = assignTechnicians(hotel([tech()], [incident()]), 5).finance.costs[1] - 1000;
+    const external = payForRepair({ hotelState: hotel([], [incident()]) }, "i1", { day: 5 }).hotelState.finance.costs[1] - 1000;
+    expect(auto).toBeLessThan(external / 2);
+  });
+
+  it("only takes incidents the technician's level can handle", () => {
+    const moderate = incident({ severity: "moderate", repairCost: 500 });
+    const critical = incident({ id: "i2", severity: "critical", repairCost: 1200 });
+    expect(assignTechnicians(hotel([tech({ level: "beginner" })], [moderate]), 1).activeIncidents[0].status).toBe("active");
+    expect(assignTechnicians(hotel([tech({ level: "experienced" })], [moderate]), 1).activeIncidents[0].status).toBe("repairing");
+    expect(assignTechnicians(hotel([tech({ level: "experienced" })], [critical]), 1).activeIncidents[0].status).toBe("active");
+    expect(assignTechnicians(hotel([tech({ level: "expert" })], [critical]), 1).activeIncidents[0].status).toBe("repairing");
+  });
+
+  it("one technician handles one incident at a time; extra technicians take the rest, and the most severe goes first", () => {
+    const minor = incident();
+    const moderate = incident({ id: "i2", severity: "moderate", repairCost: 500 });
+    const one = assignTechnicians(hotel([tech()], [minor, moderate]), 1);
+    expect(one.activeIncidents.find((i) => i.id === "i2").status).toBe("repairing"); // moderate first
+    expect(one.activeIncidents.find((i) => i.id === "i1").status).toBe("active");
+
+    const two = assignTechnicians(hotel([tech(), tech({ id: "t2" })], [minor, moderate]), 1);
+    expect(two.activeIncidents.every((i) => i.status === "repairing")).toBe(true);
+  });
+
+  it("does not put a busy, exhausted or in-training technician on a new incident", () => {
+    const busy = hotel([tech()], [incident({ id: "old", status: "repairing", handledBy: "t1" }), incident()]);
+    expect(assignTechnicians(busy, 1).activeIncidents[1].status).toBe("active");
+    expect(assignTechnicians(hotel([tech({ fatigue: 100, morale: 10 })], [incident()]), 1).activeIncidents[0].status).toBe("active");
+    expect(assignTechnicians(hotel([tech({ training: { untilDay: 9, toLevel: "expert" } })], [incident()]), 1).activeIncidents[0].status).toBe("active");
+  });
+
+  it("is a no-op without technicians or without open incidents", () => {
+    const noTech = hotel([], [incident()]);
+    expect(assignTechnicians(noTech, 1)).toBe(noTech);
+    const noIncident = hotel([tech()], [incident({ status: "resolved" })]);
+    expect(assignTechnicians(noIncident, 1)).toBe(noIncident);
+  });
+
+  it("player-ordered repairs get the technician terms: emergency 1.2x instead of 1.5x, standard a day faster", () => {
+    const withTech = { hotelState: hotel([tech()], [incident({ severity: "critical", repairCost: 1200 })]) };
+    const without = { hotelState: hotel([], [incident({ severity: "critical", repairCost: 1200 })]) };
+
+    const emergencyWith = payForRepair(withTech, "i1", { emergency: true, day: 4 }).hotelState.finance.costs[1] - 1000;
+    const emergencyWithout = payForRepair(without, "i1", { emergency: true, day: 4 }).hotelState.finance.costs[1] - 1000;
+    expect(emergencyWith).toBe(Math.round(1200 * TECHNICIAN_EMERGENCY_MULTIPLIER));
+    expect(emergencyWithout).toBe(Math.round(1200 * EMERGENCY_COST_MULTIPLIER));
+
+    const etaWith = payForRepair(withTech, "i1", { day: 4 }).hotelState.activeIncidents[0].repairEtaDay;
+    const etaWithout = payForRepair(without, "i1", { day: 4 }).hotelState.activeIncidents[0].repairEtaDay;
+    expect(etaWith).toBe(4 + REPAIR_DELAY_DAYS.critical - 1);
+    expect(etaWithout).toBe(4 + REPAIR_DELAY_DAYS.critical);
+  });
+});

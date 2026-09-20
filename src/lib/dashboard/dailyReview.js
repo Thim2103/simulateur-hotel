@@ -9,6 +9,7 @@
 import { safeArray, safeNumber } from "../safe";
 import { buildAttentionItems } from "./attentionItems";
 import { describeDemand } from "../demand/demandEngine";
+import { todaysStaffEvents } from "../staff/staffEventsEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -40,6 +41,30 @@ function buildCausalChain(kpis) {
   return chain;
 }
 
+// What the hotel's named team did today (see lib/staff/staffRoster.js):
+// understaffing that slowed cleaning / hurt satisfaction, and repairs the
+// in-house technician took on without an external contractor. Empty for a
+// hotel with no roster.
+function buildStaffingChain(hotelState) {
+  const lines = [];
+  const staffing = hotelState?.staffing;
+  if (staffing) {
+    if (safeNumber(staffing.housekeepingCoverage, 1) < 1) {
+      lines.push(
+        `Manque de gouvernantes (couverture ${Math.round(staffing.housekeepingCoverage * 100)} %) : le nettoyage prend ${Number(staffing.cleaningDelayFactor).toFixed(1)}× plus longtemps et la satisfaction des clients en pâtit — recrutez ou formez.`
+      );
+    }
+    if (safeNumber(staffing.receptionCoverage, 1) < 1) {
+      lines.push(`Réception en sous-effectif (couverture ${Math.round(staffing.receptionCoverage * 100)} %) : l'accueil se dégrade.`);
+    }
+  }
+  const handled = safeArray(hotelState?.activeIncidents).filter((incident) => incident.autoRepaired && incident.status === "repairing").length;
+  if (handled > 0) {
+    lines.push(`Votre équipe de maintenance a pris en charge ${handled} panne(s) sans prestataire externe.`);
+  }
+  return lines;
+}
+
 export function buildDailyReview({ careerState, dashboardState } = {}) {
   const kpis = dashboardState?.kpis || null;
   if (!kpis) return null;
@@ -50,6 +75,7 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   // just happened, not the whole backlog.
   const incidentReviews = safeArray(careerState?.hotel?.hotelState?.incidentReviews).filter((review) => review.day === careerState?.day);
   const causalChain = buildCausalChain(kpis);
+  causalChain.push(...buildStaffingChain(careerState?.hotel?.hotelState));
   if (incidentReviews.length > 0) {
     causalChain.push("Des pannes non réparées ont généré des avis négatifs et pèsent sur votre réputation : réparez-les vite (une réparation d'urgence évite toute pénalité).");
   }
@@ -65,6 +91,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     },
     causalChain,
     incidentReviews,
+    // Resignations, notices, sick leave and other HR news of the day (see
+    // lib/staff/staffEventsEngine.js).
+    staffEvents: todaysStaffEvents(careerState?.hotel?.hotelState, careerState?.day),
     // How strongly guests wanted to book today (see lib/demand/), null
     // until a day has been played with the demand model.
     demand: describeDemand(careerState?.lastDayReport?.demandReport),

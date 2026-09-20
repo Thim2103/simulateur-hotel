@@ -77,3 +77,11 @@ test("incidentPenalty also applies to the no-input baseline and never goes below
   expect(computeSatisfaction({ incidentPenalty: 10 })).toBe(55);
   expect(computeSatisfaction({ housekeepingQuality: 10, incidentPenalty: 50 })).toBe(0);
 });
+
+test("staffingPenalty lowers the score like incidentPenalty, and the two add up", () => {
+  const inputs = { housekeepingQuality: 80, staffMorale: 80 };
+  const base = computeSatisfaction(inputs);
+  expect(computeSatisfaction({ ...inputs, staffingPenalty: 10 })).toBe(base - 10);
+  expect(computeSatisfaction({ ...inputs, incidentPenalty: 5, staffingPenalty: 10 })).toBe(base - 15);
+  expect(computeSatisfaction({ ...inputs, staffingPenalty: -5 })).toBe(base);
+});

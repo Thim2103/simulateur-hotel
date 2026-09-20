@@ -25,6 +25,7 @@ import { createHousekeepingState } from "./housekeepingState";
 import { recordCycle } from "../scenario/scenarioReplay";
 import { applyHousekeepingDecision, findHousekeepingAction, HOUSEKEEPING_ACTION_CATALOG } from "./housekeepingActions";
 import { staffFromCareerState } from "../staff/staffEngine";
+import { cleaningDelayFactor } from "../staff/staffRoster";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -54,17 +55,26 @@ export function runHousekeepingCycle({
   const cyclesElapsed = safeNumber(previous.cyclesElapsed, 0) + 1;
 
   const workload = computeWorkload({ rooms: bundle.rooms, reservations: bundle.reservations, referenceDate });
-  const cleaningTime = computeCleaningTime({
+  const baseCleaningTime = computeCleaningTime({
     roomsToClean: workload.roomsToClean,
     stayovers: workload.priorities.stayovers,
     trainingLevel: settings.trainingLevel,
     processEfficiency: settings.processEfficiency,
   });
+  // A shortage of housekeepers on the roster (lib/staff/staffRoster.js)
+  // stretches the day's total cleaning time proportionally (1 = no change,
+  // for a hotel with no roster or enough staff). The time spent PER room --
+  // what quality reads as thoroughness -- is unchanged: fewer people don't
+  // clean any room more carefully, they just clean fewer of them in time;
+  // that shows up as lower quality below.
+  const slowdown = cleaningDelayFactor(hotelState);
+  const cleaningTime = { totalMinutes: Math.round(baseCleaningTime.totalMinutes * slowdown), minutesPerRoom: baseCleaningTime.minutesPerRoom };
   const productivity = computeHousekeepingProductivity({ staffProductivity: staffProductivity ?? 65, staffOverload: staffOverload ?? 0, trainingLevel: settings.trainingLevel });
   const housekeeperCount = computeHousekeeperCount({ hotelHeadcount: hotelHeadcount ?? 0, staffingBonus: settings.staffingBonus });
   const overload = detectOverload({ totalMinutes: cleaningTime.totalMinutes, housekeeperCount });
   const understaffing = detectUnderstaffing({ roomsToClean: workload.roomsToClean, housekeeperCount, staffAbsenteeism: staffAbsenteeism ?? 0 });
-  const quality = computeQualityScore({ minutesPerRoom: cleaningTime.minutesPerRoom, productivity, trainingLevel: settings.trainingLevel, rmSatisfaction });
+  const shortageQualityFactor = Math.min(1, Math.max(0.6, 1 - (slowdown - 1) * 0.25));
+  const quality = Math.round(computeQualityScore({ minutesPerRoom: cleaningTime.minutesPerRoom, productivity, trainingLevel: settings.trainingLevel, rmSatisfaction }) * shortageQualityFactor);
   const cost = costOfHousekeeping({ housekeeperCount });
 
   const diagnostics = generateHousekeepingDiagnostics({ workload, overload, understaffing, quality, productivity, priorities: workload.priorities, esgEnergyScore, esgWaterScore });
