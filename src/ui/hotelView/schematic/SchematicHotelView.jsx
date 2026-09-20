@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { buildHotelSceneEntities } from "../engine/EntityFactory";
 import { ZONE_STYLES, ROOM_STATE_STYLES, AMENITY_STATE_STYLES } from "./schematicTokens";
 import { DIRECT_ACTION_MODALS, getDirectActionModal } from "./directActions";
+import ZoneUpgradeModal from "./ZoneUpgradeModal";
+import { ZONES, zoneSummary, zoneForCell, levelStars } from "../../../lib/zones/zoneUpgradesEngine";
 
 // A synthetic, architectural "coupe longitudinale" (elevation/section) of
 // the hotel: one horizontal row per floor (top floor at the top, ground
@@ -40,6 +42,13 @@ function zoneStyle(type) {
   return ZONE_STYLES[type] || ZONE_STYLES.default;
 }
 
+// The zone summary for an amenity cell, if upgrades are enabled and the cell
+// belongs to an upgradeable zone.
+function upgradeZoneOf(cellType, zoneById) {
+  const id = zoneForCell(cellType);
+  return id ? zoneById[id] || null : null;
+}
+
 function needsAttention(state) {
   return state === "dirty" || state === "cleaning" || state === "alert";
 }
@@ -57,13 +66,24 @@ export default function SchematicHotelView({
   onRepairNow,
   onCallTechnician,
   repairTerms,
+  hotelState,
+  day = 0,
+  onStartUpgrade,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
+  // Which zone's upgrade modal is open (see ZoneUpgradeModal.jsx). The
+  // whole upgrade layer (level stars, works badges, the zone strip, the
+  // rooftop) only exists when the caller hands in the hotel's state.
+  const [upgradeZone, setUpgradeZone] = useState(null);
   const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
   const floors = groupRoomsByFloor(roomEntities);
+  const zones = hotelState ? Object.keys(ZONES).map((zoneId) => zoneSummary(hotelState, zoneId)) : [];
+  const zoneById = Object.fromEntries(zones.map((zone) => [zone.zoneId, zone]));
+  const rooftop = zoneById.pool && zoneById.pool.exists ? zoneById.pool : null;
+  const roomsUnderWorks = !!zoneById.rooms?.works;
 
   // The block's own click: always the default routing (rule #1 -- clicking
   // a room/amenity block takes the player to its management page, or calls
@@ -116,7 +136,51 @@ export default function SchematicHotelView({
           ))}
       </header>
 
+      {zones.length > 0 && (
+        <div data-testid="schematic-zones" className="flex flex-wrap gap-2" aria-label="Zones et améliorations">
+          {zones.map((zone) => (
+            <button
+              key={zone.zoneId}
+              type="button"
+              data-testid={`schematic-zone-${zone.zoneId}`}
+              data-level={zone.level}
+              data-works={zone.works ? "true" : "false"}
+              aria-label={`Améliorer ${zone.label}, niveau ${zone.level} sur ${zone.maxLevel}${zone.works ? ", en travaux" : ""}${zone.exists ? "" : ", non construit"}`}
+              title={zone.exists ? `${zone.label} — niveau ${zone.level}/${zone.maxLevel}` : `${zone.label} — non construit`}
+              onClick={() => setUpgradeZone(zone.zoneId)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            >
+              <span aria-hidden="true">{zone.icon}</span>
+              <span>{zone.label}</span>
+              <span aria-hidden="true" className="tracking-tight">{levelStars(zone.level, zone.maxLevel)}</span>
+              {zone.works && <span aria-hidden="true">🚧</span>}
+              {!zone.exists && <span className="text-slate-400">non construit</span>}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
+        {rooftop && (
+          <div data-testid="schematic-rooftop" className="flex items-center gap-2 border-b border-slate-100 pb-2">
+            <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Rooftop</span>
+            <div className="relative">
+              <button
+                type="button"
+                data-testid="schematic-amenity-pool"
+                data-works={rooftop.works ? "true" : "false"}
+                title={`Rooftop / Piscine — niveau ${rooftop.level}/${rooftop.maxLevel}`}
+                aria-label={`Rooftop / Piscine, niveau ${rooftop.level} sur ${rooftop.maxLevel}${rooftop.works ? ", en travaux" : ""}`}
+                onClick={() => setUpgradeZone("pool")}
+                className={`flex h-9 w-24 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${rooftop.works ? "opacity-60" : ""}`}
+                style={{ backgroundColor: ZONE_STYLES.pool.color }}
+              >
+                <span aria-hidden="true">{ZONE_STYLES.pool.icon}</span>
+                <span>{rooftop.works ? "En travaux" : "Piscine"}</span>
+              </button>
+            </div>
+          </div>
+        )}
         {floors.map(({ level, rooms: floorRooms }) => (
           <div key={level} data-testid={`schematic-floor-${level}`} className="flex items-center gap-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Étage {level}</span>
@@ -133,7 +197,8 @@ export default function SchematicHotelView({
                       title={`Chambre ${room.metadata.number} — ${statusStyle.label}`}
                       aria-label={`Chambre ${room.metadata.number}, ${statusStyle.label}`}
                       onClick={() => handleSelect(room)}
-                      className="flex h-9 w-14 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                      className={`flex h-9 w-14 flex-col items-center justify-center rounded-md text-[10px] font-semibold text-white shadow-sm transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${roomsUnderWorks ? "opacity-70" : ""}`}
+                      data-works={roomsUnderWorks ? "true" : undefined}
                       style={{ backgroundColor: statusStyle.color }}
                     >
                       <span aria-hidden="true">{statusStyle.icon}</span>
@@ -189,12 +254,31 @@ export default function SchematicHotelView({
                       style={{ backgroundColor: alert.badgeColor }}
                     />
                   )}
+                  {upgradeZoneOf(amenity.type, zoneById) && (
+                    <button
+                      type="button"
+                      data-testid={`schematic-amenity-${amenity.type}-level`}
+                      title={`Améliorer ${style.label}`}
+                      aria-label={`Améliorer ${style.label}, niveau ${upgradeZoneOf(amenity.type, zoneById).level} sur ${upgradeZoneOf(amenity.type, zoneById).maxLevel}${upgradeZoneOf(amenity.type, zoneById).works ? ", en travaux" : ""}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setUpgradeZone(zoneForCell(amenity.type));
+                      }}
+                      className="absolute -bottom-1.5 left-0 rounded bg-white/95 px-0.5 text-[9px] leading-none shadow focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                    >
+                      {upgradeZoneOf(amenity.type, zoneById).works ? "🚧" : upgradeZoneOf(amenity.type, zoneById).level > 0 ? "⭐".repeat(upgradeZoneOf(amenity.type, zoneById).level) : "⬆️"}
+                    </button>
+                  )}
                 </div>
               );
             })}
           </div>
         </div>
       </div>
+
+      {upgradeZone && hotelState && (
+        <ZoneUpgradeModal zoneId={upgradeZone} hotelState={hotelState} day={day} onStart={onStartUpgrade} onClose={() => setUpgradeZone(null)} />
+      )}
 
       {ActiveModal && (
         <ActiveModal

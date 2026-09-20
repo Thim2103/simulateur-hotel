@@ -52,8 +52,11 @@ export function computeSatisfaction({
   incidentPenalty = 0,
   // Points lost to understaffing (see lib/staff/staffRoster.js).
   staffingPenalty = 0,
+  // Signed points from zone upgrades installed (+) or under works (-),
+  // see lib/zones/zoneUpgradesEngine.js.
+  upgradeAdjustment = 0,
 } = {}) {
-  const penalty = Math.max(0, safeNumber(incidentPenalty, 0)) + Math.max(0, safeNumber(staffingPenalty, 0));
+  const penalty = Math.max(0, safeNumber(incidentPenalty, 0)) + Math.max(0, safeNumber(staffingPenalty, 0)) - safeNumber(upgradeAdjustment, 0);
   const inputs = [
     { weight: SATISFACTION_WEIGHTS.housekeeping, value: housekeepingQuality },
     { weight: SATISFACTION_WEIGHTS.staff, value: staffMorale },

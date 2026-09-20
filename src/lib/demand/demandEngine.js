@@ -25,6 +25,7 @@
 import { safeArray, safeNumber, safeObject } from "../safe";
 import { createReservation, findReservationConflicts } from "../pmsModels";
 import { openIncidents } from "../maintenance/incidentImpact";
+import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 
 export const NEUTRAL_REPUTATION = 60;
 export const MIN_MULTIPLIER = 0.3;
@@ -96,8 +97,12 @@ export function priceIndex(rooms, reservations, referenceDate) {
 
 // A better-reputed hotel can justify (and gets away with) higher prices:
 // the "fair" price level runs from 0.8x base at reputation 0 to 1.2x at 100.
-export function priceFactor(index, reputation) {
-  const fair = 0.8 + (clamp(safeNumber(reputation, NEUTRAL_REPUTATION), 0, 100) / 100) * 0.4;
+//
+// `standing` (0..0.3, from the zone upgrades the hotel has installed, see
+// lib/zones/zoneUpgradesEngine.js) raises that fair level: a hotel that
+// invested in quality can charge more without losing bookings.
+export function priceFactor(index, reputation, standing = 0) {
+  const fair = (0.8 + (clamp(safeNumber(reputation, NEUTRAL_REPUTATION), 0, 100) / 100) * 0.4) * (1 + Math.max(0, safeNumber(standing, 0)));
   return clamp(1 - (index / fair - 1) * PRICE_ELASTICITY, 0.5, 1.3);
 }
 
@@ -124,7 +129,7 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
 
   const factors = {
     reputation: reputationFactor(reputation),
-    price: priceFactor(index, reputation),
+    price: priceFactor(index, reputation, computeZoneEffects(state).standing),
     season: seasonFactor(referenceDate),
     events: eventFactor(state.progression?.activeEvents),
     incidents: incidentFactor(state),
