@@ -30,6 +30,7 @@ import { housekeepingFromCareerState } from "../housekeeping/housekeepingEngine"
 import { incidentSatisfactionPenalty } from "../maintenance/incidentImpact";
 import { staffingSatisfactionPenalty } from "../staff/staffRoster";
 import { zoneSatisfactionAdjustment } from "../zones/zoneUpgradesEngine";
+import { constructionSatisfactionPenalty } from "../expansion/hotelExpansionEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -121,7 +122,7 @@ export function runClientsCycle({
     // A shortage of housekeepers/receptionists (see lib/staff/staffRoster.js).
     staffingPenalty: staffingSatisfactionPenalty(hotelState),
     // Zone upgrades installed lift satisfaction; works in progress dent it.
-    upgradeAdjustment: zoneSatisfactionAdjustment(hotelState),
+    upgradeAdjustment: zoneSatisfactionAdjustment(hotelState) - constructionSatisfactionPenalty(hotelState),
   });
 
   // 3. Reviews
