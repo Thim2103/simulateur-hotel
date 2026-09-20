@@ -71,6 +71,7 @@ export function createEmployee({ id, name, role, level, day = 0 }) {
 // How much real work one employee gets done, relative to an experienced,
 // rested one: skill level x tiredness x morale, halved while in training.
 export function employeeEfficiency(employee) {
+  if (employee?.sick) return 0; // on sick leave (see staffEventsEngine.js)
   const level = LEVELS[employee?.level]?.efficiency ?? 1;
   const fatigue = safeNumber(employee?.fatigue, 0);
   const morale = safeNumber(employee?.morale, 70);
@@ -179,7 +180,7 @@ export function advanceRoster(hotelState, { occupiedRooms = 0, day = 0 } = {}) {
 
     let next = { ...employee, fatigue, morale: clamp(morale, 0, 100) };
     if (employee.training && day >= employee.training.untilDay) {
-      next = { ...next, level: employee.training.toLevel, dailySalary: dailySalaryFor(employee.role, employee.training.toLevel), morale: clamp(next.morale + 10, 0, 100), training: null };
+      next = { ...next, level: employee.training.toLevel, dailySalary: Math.round(dailySalaryFor(employee.role, employee.training.toLevel) * safeNumber(employee.raiseFactor, 1)), morale: clamp(next.morale + 10, 0, 100), training: null };
     }
     return next;
   });
@@ -224,18 +225,22 @@ export function hireEmployee(hotelBundle, { role, level = "beginner", name, day 
   return { ...bundle, hotelState: debitCurrentMonth(withEmployee, hiringCost(role, level)) };
 }
 
+// Takes someone off the roster (fired or resigned). A repair they were
+// handling goes back to the queue.
+export function removeFromRoster(hotelState, employeeId) {
+  const state = safeObject(hotelState);
+  const activeIncidents = safeArray(state.activeIncidents).map((incident) =>
+    incident.handledBy === employeeId && incident.status === "repairing" ? { ...incident, status: "active", handledBy: null, repairEtaDay: null } : incident
+  );
+  return { ...state, staffRoster: getRoster(state).filter((item) => item.id !== employeeId), activeIncidents };
+}
+
 export function fireEmployee(hotelBundle, employeeId) {
   const bundle = safeObject(hotelBundle);
   const hotelState = safeObject(bundle.hotelState);
   const employee = getRoster(hotelState).find((item) => item.id === employeeId);
   if (!employee) return bundle;
-
-  // A repair this person was handling goes back to the queue.
-  const activeIncidents = safeArray(hotelState.activeIncidents).map((incident) =>
-    incident.handledBy === employeeId && incident.status === "repairing" ? { ...incident, status: "active", handledBy: null, repairEtaDay: null } : incident
-  );
-  const withoutEmployee = { ...hotelState, staffRoster: getRoster(hotelState).filter((item) => item.id !== employeeId), activeIncidents };
-  return { ...bundle, hotelState: debitCurrentMonth(withoutEmployee, severanceCost(employee)) };
+  return { ...bundle, hotelState: debitCurrentMonth(removeFromRoster(hotelState, employeeId), severanceCost(employee)) };
 }
 
 // Starts a training that will raise the employee one level after

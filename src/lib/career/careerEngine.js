@@ -18,6 +18,7 @@ import { applyCashRewardToHotel, claimReward as claimRewardPure, grantReward } f
 import { progressionSnapshot } from "./careerProgression";
 import { applyDemand } from "../demand/demandEngine";
 import { advanceRoster, seedStarterRoster } from "../staff/staffRoster";
+import { runStaffEvents } from "../staff/staffEventsEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -175,7 +176,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // One day of wear and progress for the named roster (staffing
       // snapshot, fatigue/morale, trainings due) against today's real
       // occupancy -- see lib/staff/staffRoster.js. No-op without a roster.
-      hotelState: advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }),
+      // Then that wear turns into morale, notices, departures and small HR
+      // events (lib/staff/staffEventsEngine.js) -- deterministic, no rng.
+      hotelState: runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

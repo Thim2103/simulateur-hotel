@@ -23,6 +23,7 @@ import {
   trainEmployee,
   seedStarterRoster,
 } from "../../lib/staff/staffRoster";
+import { grantBonus, grantRaise, declineRaise, bonusCost, canGrantBonus, canGrantRaise, BONUS_COOLDOWN_DAYS, RAISE_COOLDOWN_DAYS, RAISE_FACTOR } from "../../lib/staff/staffEventsEngine";
 
 const LEVEL_BADGE = { beginner: "info", experienced: "success", expert: "warning" };
 const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
@@ -31,6 +32,24 @@ const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 // "200 %+" rather than a meaningless 867 %.
 function coverageLabel(coverage) {
   return coverage > 2 ? "200 %+" : `${Math.round(coverage * 100)} %`;
+}
+
+// A colour-coded bar: green when healthy, amber in between, red when bad.
+// `higherIsBetter` is true for morale, false for fatigue.
+function Gauge({ label, value, higherIsBetter }) {
+  const percent = Math.max(0, Math.min(100, Math.round(value)));
+  const health = higherIsBetter ? percent : 100 - percent;
+  const color = health >= 60 ? "bg-emerald-500" : health >= 35 ? "bg-amber-500" : "bg-rose-500";
+  return (
+    <div className="flex min-w-32 flex-1 flex-col gap-0.5">
+      <span className="text-xs text-slate-600">
+        {label} {percent}/100
+      </span>
+      <div role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent} data-health={health >= 60 ? "good" : health >= 35 ? "warn" : "bad"} className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${percent}%` }} />
+      </div>
+    </div>
+  );
 }
 
 function tone(value, { good, bad, invert = false }) {
@@ -79,6 +98,12 @@ export default function StaffRosterPanel({ hotelState, day = 0, onAdjust, isRunn
   }
 
   const hireDaily = dailySalaryFor(role, level);
+  // Who needs the player's attention right now, most urgent first.
+  const alerts = [
+    ...roster.filter((employee) => employee.resignation).map((employee) => `${employee.name} a donné son préavis (départ au jour ${employee.resignation.noticeUntilDay}) : une prime ou une augmentation peut le retenir.`),
+    ...roster.filter((employee) => employee.raiseRequested).map((employee) => `${employee.name} demande une augmentation.`),
+    ...roster.filter((employee) => employee.sick).map((employee) => `${employee.name} est en arrêt maladie : son poste n'est pas couvert aujourd'hui.`),
+  ];
 
   return (
     <section aria-labelledby="staff-roster" className="flex flex-col gap-3">
@@ -113,6 +138,17 @@ export default function StaffRosterPanel({ hotelState, day = 0, onAdjust, isRunn
         </dl>
       </Card>
 
+      {alerts.length > 0 && (
+        <Card>
+          <h3 className="mb-2 text-sm font-semibold text-rose-800">Alertes RH</h3>
+          <ul data-testid="roster-alerts" className="flex flex-col gap-1 text-sm text-rose-800">
+            {alerts.map((message) => (
+              <li key={message}>⚠️ {message}</li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Card>
         {roster.length === 0 ? (
           <p className="text-sm text-slate-500">Aucun employé. Recrutez ci-dessous.</p>
@@ -127,6 +163,11 @@ export default function StaffRosterPanel({ hotelState, day = 0, onAdjust, isRunn
                       <span className="font-medium text-slate-900">{employee.name}</span>
                       <span className="text-slate-500">{ROLES[employee.role]?.label}</span>
                       <Badge type={LEVEL_BADGE[employee.level] || "info"}>{LEVELS[employee.level]?.label}</Badge>
+                      {employee.sick && <Badge type="danger">Malade (retour jour {employee.sickUntilDay + 1})</Badge>}
+                      {employee.resignation && (
+                        <Badge type="danger">Préavis de démission (départ jour {employee.resignation.noticeUntilDay})</Badge>
+                      )}
+                      {employee.raiseRequested && <Badge type="warning">Demande une augmentation</Badge>}
                       {employee.training && (
                         <Badge type="warning">
                           En formation → {LEVELS[employee.training.toLevel]?.label} (jour {employee.training.untilDay})
@@ -135,8 +176,10 @@ export default function StaffRosterPanel({ hotelState, day = 0, onAdjust, isRunn
                     </div>
                     <div className="flex flex-wrap gap-x-4 text-xs text-slate-600">
                       <span>{euro(employee.dailySalary)} / jour</span>
-                      <span className={tone(employee.fatigue, { good: 40, bad: 70, invert: true })}>Fatigue {Math.round(employee.fatigue)}/100</span>
-                      <span className={tone(employee.morale, { good: 60, bad: 35 })}>Moral {Math.round(employee.morale)}/100</span>
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1">
+                      <Gauge label="Fatigue" value={employee.fatigue} higherIsBetter={false} />
+                      <Gauge label="Moral" value={employee.morale} higherIsBetter />
                     </div>
                   </div>
 
@@ -144,6 +187,27 @@ export default function StaffRosterPanel({ hotelState, day = 0, onAdjust, isRunn
                     {toLevel && !employee.training && (
                       <Button variant="outline" disabled={isRunning} onClick={() => adjust((bundle) => trainEmployee(bundle, employee.id, { day }))}>
                         Former ({euro(trainingCost(employee))}, {TRAINING_DURATION_DAYS} j)
+                      </Button>
+                    )}
+                    <Button
+                      variant="outline"
+                      disabled={isRunning || !canGrantBonus(employee, day)}
+                      title={canGrantBonus(employee, day) ? undefined : `Une prime par ${BONUS_COOLDOWN_DAYS} jours`}
+                      onClick={() => adjust((bundle) => grantBonus(bundle, employee.id, { day }))}
+                    >
+                      Prime ({euro(bonusCost(employee))})
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={isRunning || !canGrantRaise(employee, day)}
+                      title={canGrantRaise(employee, day) ? undefined : `Une augmentation par ${RAISE_COOLDOWN_DAYS} jours`}
+                      onClick={() => adjust((bundle) => grantRaise(bundle, employee.id, { day }))}
+                    >
+                      Augmenter (+{Math.round((RAISE_FACTOR - 1) * 100)} %)
+                    </Button>
+                    {employee.raiseRequested && (
+                      <Button variant="outline" disabled={isRunning} onClick={() => adjust((bundle) => declineRaise(bundle, employee.id))}>
+                        Refuser la demande
                       </Button>
                     )}
                     {confirmingId === employee.id ? (
