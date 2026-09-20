@@ -31,8 +31,19 @@ const ZOOM_OUT_FACTOR = 1 / ZOOM_IN_FACTOR;
 // hands it to a single wrapper `<div>` -- the browser's own compositor
 // does the actual panning/zooming, no entity ever gets re-projected
 // because the camera moved.
-export default function SceneCamera({ camera, onCameraChange, projectionParams, className = "", style, children }) {
+//
+// Viewport measurement: this component is the ONLY place that measures its
+// own real DOM size (via `ResizeObserver`) -- it never assumes a fixed
+// width/height. Every measurement is reported to the caller via
+// `onViewportResize({width, height}, {isInitial})`; `isInitial` is true
+// only for the very first measurement since mount, so the caller (which
+// alone knows the world's own bounds -- this component never does) can
+// tell "just opened, auto-frame everything" apart from "the window/panel
+// was resized, keep the current view and just stay within bounds" -- see
+// HotelScene.jsx's own docstring for exactly how it uses that distinction.
+export default function SceneCamera({ camera, onCameraChange, onViewportResize, projectionParams, className = "", style, children }) {
   const containerRef = useRef(null);
+  const hasReportedInitialSize = useRef(false);
   const dragRef = useRef(null); // { startX, startY, lastX, lastY, moved } while a drag is live
   const activeListenersRef = useRef(null); // { move, up } while attached to window
   // A real browser fires a `click` right after `mouseup`, even one ending
@@ -62,6 +73,30 @@ export default function SceneCamera({ camera, onCameraChange, projectionParams, 
     el.addEventListener("wheel", handleWheel, { passive: false });
     return () => el.removeEventListener("wheel", handleWheel);
   }, [onCameraChange, projectionParams]);
+
+  // The container's own real size, live -- `ResizeObserver` fires once
+  // immediately upon `observe()` with the current size (covering "just
+  // mounted") and again on every subsequent layout change (window resize,
+  // a panel toggling, the page's own responsive breakpoints...). Guarded
+  // for jsdom, which doesn't implement `ResizeObserver` at all -- tests
+  // drive `onViewportResize` directly instead (see this component's own
+  // tests).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      if (width <= 0 || height <= 0) return; // not really laid out yet
+      const isInitial = !hasReportedInitialSize.current;
+      hasReportedInitialSize.current = true;
+      onViewportResize?.({ width, height }, { isInitial });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [onViewportResize]);
 
   // Safety net: if this component unmounts mid-drag, drop whatever
   // window-level listeners a pointer-down attached rather than leaking
@@ -142,6 +177,7 @@ export default function SceneCamera({ camera, onCameraChange, projectionParams, 
       onClickCapture={handleClickCapture}
     >
       <div
+        data-testid="scene-camera-transform"
         style={{
           transform: `translate3d(${transform.translateX}px, ${transform.translateY}px, 0) scale(${transform.zoom})`,
           transformOrigin: "0 0",
