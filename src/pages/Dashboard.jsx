@@ -19,6 +19,9 @@ import { setMaintenanceLevel } from "../lib/maintenance/maintenanceCostEngine";
 import { careerReferenceDate } from "../lib/career/careerEngine";
 import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
 import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
+import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
+import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
+import { launchTargetedCampaign } from "../lib/marketing/targetedCampaigns";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -118,6 +121,8 @@ export default function Dashboard() {
   // inbox actually grows -- e.g. after "Jouer la journée").
   const { messages: gmMessages } = useGmDesk();
   const [gmNotification, setGmNotification] = useState(null);
+  // Whether the yield-management / marketing modal is open.
+  const [growthOpen, setGrowthOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -221,6 +226,18 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => fitOutRooms(hotel, level, kind, 1)).catch(() => undefined);
   };
 
+  // The commercial levers (components/dashboard/YieldMarketingModal.jsx):
+  // automatic pricing rules and targeted campaigns, same primitive again.
+  const handleSetYieldEnabled = (enabled) => {
+    applyHotelAdjustment((hotel) => setYieldEnabled(hotel, enabled)).catch(() => undefined);
+  };
+  const handleSetYieldRule = (ruleId, patch) => {
+    applyHotelAdjustment((hotel) => setYieldRule(hotel, ruleId, patch)).catch(() => undefined);
+  };
+  const handleLaunchCampaign = (typeId) => {
+    applyHotelAdjustment((hotel) => launchTargetedCampaign(hotel, typeId, { date: careerReferenceDate(careerState), day: careerState.day })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -318,6 +335,14 @@ export default function Dashboard() {
           >
             {displayMode === "experimental" ? "↩️ Ancienne vue" : "🧪 Nouvelle scène (bêta)"}
           </button>
+          <button
+            type="button"
+            data-testid="open-growth"
+            onClick={() => setGrowthOpen(true)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-700 hover:underline"
+          >
+            📈 Yield & marketing
+          </button>
           <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
         </div>
       </div>
@@ -332,6 +357,17 @@ export default function Dashboard() {
 
       {/* Season and events of the day about to be played (lib/hotelEvents/). */}
       <SeasonEventsBanner calendar={describeCalendar(careerReferenceDate(careerState), careerState?.hotel?.hotelState)} />
+
+      {growthOpen && (
+        <YieldMarketingModal
+          hotelState={careerState?.hotel?.hotelState}
+          date={careerReferenceDate(careerState)}
+          onSetYieldEnabled={handleSetYieldEnabled}
+          onSetYieldRule={handleSetYieldRule}
+          onLaunchCampaign={handleLaunchCampaign}
+          onClose={() => setGrowthOpen(false)}
+        />
+      )}
 
       <DashboardKpis
         kpis={dashboardState?.kpis ? {

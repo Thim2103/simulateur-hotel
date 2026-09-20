@@ -58,8 +58,9 @@ describe("hotel events / demand: the season", () => {
     expect(budget(500)).toBeCloseTo(0.7);
   });
 
-  it("still exposes exactly the five demand factors", () => {
-    expect(Object.keys(demand({}, summer).factors).sort()).toEqual(["events", "incidents", "price", "reputation", "season"]);
+  it("exposes exactly the six demand factors (the marketing one is neutral without a campaign)", () => {
+    expect(Object.keys(demand({}, summer).factors).sort()).toEqual(["events", "incidents", "marketing", "price", "reputation", "season"]);
+    expect(demand({}, summer).factors.marketing).toBe(1);
   });
 });
 

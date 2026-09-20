@@ -12,7 +12,7 @@
 // and fractional daily demand is carried over between days
 // (`hotelState.demand.carry`) rather than rounded away or sampled.
 //
-// A day's demand multiplier is the product of five factors, each shown
+// A day's demand multiplier is the product of six factors, each shown
 // separately to the player (see describeDemand()):
 //   reputation -- progression's reputation index (lib/progression/)
 //   price      -- how the player's price level compares to what their
@@ -20,6 +20,7 @@
 //   season     -- month + weekday (no calendar existed before this)
 //   events     -- still-active daily events (lib/events/), by the sign of
 //                 their revenue impact
+//   marketing  -- the targeted campaigns running today (lib/marketing/)
 //   incidents  -- unrepaired equipment incidents (lib/maintenance/) cut
 //                 the conversion rate on top of their reputation malus
 import { safeArray, safeNumber, safeObject } from "../safe";
@@ -27,6 +28,8 @@ import { createReservation, findReservationConflicts } from "../pmsModels";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { calendarEffects, seasonDemand } from "../hotelEvents/hotelEventsEngine";
+import { computeCampaignEffects } from "../marketing/targetedCampaigns";
+import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
 export const MIN_MULTIPLIER = 0.3;
@@ -131,6 +134,8 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   // Scheduled events (festival, trade fair, heat wave...) and the season's
   // price tolerance come from the calendar (lib/hotelEvents/).
   const calendar = calendarEffects(referenceDate, state);
+  // The targeted marketing campaigns running today (lib/marketing/).
+  const campaigns = computeCampaignEffects(state, referenceDate);
 
   const factors = {
     reputation: reputationFactor(reputation),
@@ -138,9 +143,10 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
     season: seasonFactor(referenceDate, state),
     events: eventFactor(state.progression?.activeEvents) * calendar.eventsDemandFactor,
     incidents: incidentFactor(state),
+    marketing: campaigns.factor,
   };
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
-  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index, premiumFirst: calendar.premiumFirst };
+  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
 }
 
 // Turns today's demand into concrete new reservations: each is assigned
@@ -159,7 +165,7 @@ function candidateRooms(bookableRooms, seq, premiumFirst) {
   return [...rotate(bookableRooms.filter(isPremium)), ...rotate(bookableRooms.filter((room) => !isPremium(room)))];
 }
 
-export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false } = {}) {
+export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null } = {}) {
   const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service");
   const existing = safeArray(reservations);
   const expected = bookableRooms.length * BASE_ARRIVALS_PER_ROOM * multiplier + safeNumber(carry, 0);
@@ -170,6 +176,11 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
   let nextId = existing.reduce((max, reservation) => Math.max(max, safeNumber(reservation.id, 0)), 0) + 1;
   let created = 0;
   let turnedAway = 0;
+  // Yield management (lib/rm/): `priceAdjust(room, arrival, reservations)`
+  // returns { multiplier, rules } for a booking; what each adjustment added
+  // (or took off) over the plain price is kept for the report.
+  const adjustments = [];
+  let newBookingsValue = 0;
 
   for (let i = 0; i < count; i += 1) {
     const seq = existing.length + nextId + i;
@@ -177,9 +188,14 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
     const departure = addDays(arrival, STAY_PATTERN[(seq * 3 + 1) % STAY_PATTERN.length]);
 
     let booking = null;
+    let bookingAdjustment = null;
+    const nights = STAY_PATTERN[(seq * 3 + 1) % STAY_PATTERN.length];
     const candidates = candidateRooms(bookableRooms, seq, premiumFirst);
     for (let offset = 0; offset < candidates.length && !booking; offset += 1) {
       const room = candidates[offset];
+      const plainPrice = Math.round(safeNumber(room.price, 0) * priceIdx);
+      const adjustment = priceAdjust ? priceAdjust(room, arrival, all) : null;
+      const price = adjustment ? Math.round(plainPrice * adjustment.multiplier) : plainPrice;
       const candidate = createReservation({
         id: nextId,
         client_name: `Client ${nextId}`,
@@ -189,16 +205,23 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
         arrival: toDateOnly(arrival),
         departure: toDateOnly(departure),
         status: "confirmée",
-        price: Math.round(safeNumber(room.price, 0) * priceIdx),
+        price,
         source: CHANNEL_PATTERN[seq % CHANNEL_PATTERN.length],
-        segment: SEGMENT_PATTERN[seq % SEGMENT_PATTERN.length],
+        // A targeted campaign (digital, corporate) tilts two bookings in three
+        // toward the segment it aims at.
+        segment: segmentBias && i % 3 !== 2 ? segmentBias : SEGMENT_PATTERN[seq % SEGMENT_PATTERN.length],
         created_at: new Date(referenceDate).toISOString(),
       });
-      if (findReservationConflicts(all, candidate).length === 0) booking = candidate;
+      if (findReservationConflicts(all, candidate).length === 0) {
+        booking = candidate;
+        bookingAdjustment = adjustment && price !== plainPrice ? { reservationId: nextId, rules: adjustment.rules, delta: (price - plainPrice) * nights } : null;
+      }
     }
 
     if (booking) {
       all = [...all, booking];
+      if (bookingAdjustment) adjustments.push(bookingAdjustment);
+      newBookingsValue += booking.price * nights;
       nextId += 1;
       created += 1;
     } else {
@@ -206,7 +229,7 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
     }
   }
 
-  return { reservations: all, created, turnedAway, carry: nextCarry };
+  return { reservations: all, created, turnedAway, carry: nextCarry, adjustments, newBookingsValue };
 }
 
 // The one call the career loop makes each day (see careerEngine.js's
@@ -223,6 +246,8 @@ export function applyDemand({ hotelState, rooms, reservations, referenceDate = n
     multiplier: demand.multiplier,
     priceIdx: demand.priceIndex,
     premiumFirst: demand.premiumFirst,
+    segmentBias: demand.segmentBias,
+    priceAdjust: createYieldPricer({ hotelState: state, rooms, referenceDate }),
     carry: safeObject(state.demand).carry,
   });
 
@@ -237,6 +262,13 @@ export function applyDemand({ hotelState, rooms, reservations, referenceDate = n
       priceIndex: demand.priceIndex,
       newBookings: generated.created,
       turnedAway: generated.turnedAway,
+      newBookingsValue: Math.round(generated.newBookingsValue),
+      // What the player's commercial levers did today: the marketing
+      // campaigns running and the yield-management price adjustments.
+      levers: {
+        marketing: { factor: demand.factors.marketing, campaigns: demand.campaigns },
+        yield: summarizeYield(generated.adjustments, isYieldEnabled(state)),
+      },
     },
   };
 }
@@ -246,6 +278,7 @@ const POSITIVE_DRIVER = {
   price: "des prix attractifs pour votre standing",
   season: "la haute saison",
   events: "des événements porteurs",
+  marketing: "vos campagnes marketing",
 };
 const NEGATIVE_DRIVER = {
   reputation: "une réputation en retrait",

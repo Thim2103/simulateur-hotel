@@ -23,6 +23,7 @@ import { advanceZoneUpgrades } from "../zones/zoneUpgradesEngine";
 import { advanceExpansion } from "../expansion/hotelExpansionEngine";
 import { recordMaintenance } from "../maintenance/maintenanceCostEngine";
 import { advanceHotelEvents } from "../hotelEvents/hotelEventsEngine";
+import { advanceTargetedCampaigns } from "../marketing/targetedCampaigns";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -184,12 +185,17 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // events (lib/staff/staffEventsEngine.js) -- deterministic, no rng.
       // Zone upgrades whose works finish today get installed
       // (lib/zones/zoneUpgradesEngine.js).
-      hotelState: recordMaintenance(
+      // Then the targeted marketing campaigns (lib/marketing/) are credited
+      // with today's extra bookings, and the ones ending today are closed.
+      hotelState: advanceTargetedCampaigns(
+        recordMaintenance(
         // Today's season and events (lib/hotelEvents/), snapshotted before the
         // upkeep is recorded: it reads their wear pressure.
         advanceHotelEvents(advanceExpansion(advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day), day), referenceDate, day),
         dailyReport.expenses?.maintenance,
         day
+      ),
+        { date: referenceDate, demandReport: demand.demandReport }
       ),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,

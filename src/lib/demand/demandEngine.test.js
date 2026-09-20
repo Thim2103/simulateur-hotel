@@ -85,9 +85,9 @@ describe("demandEngine / individual factors", () => {
 describe("demandEngine / computeDemand", () => {
   const args = (hotelState, date = NOV_WED) => ({ hotelState, rooms: rooms(), reservations: [], referenceDate: date });
 
-  it("multiplies the five factors and exposes each one", () => {
+  it("multiplies the six factors and exposes each one", () => {
     const { multiplier, factors } = computeDemand(args(hotelWith()));
-    expect(Object.keys(factors).sort()).toEqual(["events", "incidents", "price", "reputation", "season"]);
+    expect(Object.keys(factors).sort()).toEqual(["events", "incidents", "marketing", "price", "reputation", "season"]);
     const product = Object.values(factors).reduce((a, b) => a * b, 1);
     expect(multiplier).toBeCloseTo(product);
   });
@@ -189,7 +189,7 @@ describe("demandEngine / applyDemand", () => {
     expect(result.reservations.length).toBe(result.demandReport.newBookings);
     expect(result.demandState).toEqual({ carry: expect.any(Number), lastMultiplier: result.demandReport.multiplier });
     expect(result.demandReport).toMatchObject({ date: "2026-07-15", newBookings: expect.any(Number), turnedAway: expect.any(Number) });
-    expect(Object.keys(result.demandReport.factors)).toHaveLength(5);
+    expect(Object.keys(result.demandReport.factors)).toHaveLength(6);
   });
 
   it("feeds the persisted carry back in the next day", () => {
