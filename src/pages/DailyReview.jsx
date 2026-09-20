@@ -10,6 +10,9 @@ import { fadeIn, slideUp, delay } from "../ui/animations";
 
 const SEVERITY_ORDER = { high: 0, medium: 1, low: 2 };
 
+const MAINTENANCE_LEVEL_LABELS = { economy: "Économique", standard: "Standard", premium: "Premium" };
+const MAINTENANCE_CATEGORY_LABELS = { rooms: "Chambres", equipment: "Équipements", floors: "Étages" };
+
 const STAFF_EVENT_STYLES = {
   resigned: { icon: "🚪", className: "border-rose-200 bg-rose-50 text-rose-900" },
   "resignation-notice": { icon: "⚠️", className: "border-rose-200 bg-rose-50 text-rose-900" },
@@ -115,6 +118,28 @@ export default function DailyReview() {
         </div>
         <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
       </GameSection>
+
+      {review.maintenance && (
+        <GameSection id="review-maintenance" title="Entretien & charges d'exploitation" icon="🔧">
+          <GameCard>
+            <p data-testid="maintenance-total" className="text-sm font-semibold text-slate-800">
+              {review.maintenance.total.toLocaleString("fr-FR")} € aujourd'hui · niveau {MAINTENANCE_LEVEL_LABELS[review.maintenance.level] || review.maintenance.level}
+            </p>
+            <ul className="mt-2 flex flex-wrap gap-2 text-xs">
+              {Object.entries(MAINTENANCE_CATEGORY_LABELS)
+                .filter(([key]) => review.maintenance[key] > 0)
+                .map(([key, label]) => (
+                  <li key={key} data-testid={`maintenance-line-${key}`} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700">
+                    {label} {review.maintenance[key].toLocaleString("fr-FR")} €
+                  </li>
+                ))}
+            </ul>
+            <p data-testid="maintenance-condition" className={`mt-2 text-xs ${review.maintenance.condition < 60 ? "text-rose-700" : "text-slate-500"}`}>
+              État de l'hôtel : {review.maintenance.condition}/100
+            </p>
+          </GameCard>
+        </GameSection>
+      )}
 
       {review.demand && (
         <GameSection id="review-demand" title="Demande" icon="📈">

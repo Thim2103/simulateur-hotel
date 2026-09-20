@@ -12,6 +12,7 @@ import { describeDemand } from "../demand/demandEngine";
 import { todaysStaffEvents } from "../staff/staffEventsEngine";
 import { upgradesCompletedOn, UPGRADES } from "../zones/zoneUpgradesEngine";
 import { floorsCompletedOn, SLOTS_PER_FLOOR } from "../expansion/hotelExpansionEngine";
+import { maintenanceOn, WEAR_THRESHOLD } from "../maintenance/maintenanceCostEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -85,6 +86,10 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   floorsCompletedOn(careerState?.hotel?.hotelState, careerState?.day).forEach((entry) => {
     causalChain.push(`Gros œuvre terminé : l'étage ${entry.level} est construit. Aménagez ses chambres (jusqu'à ${SLOTS_PER_FLOOR}) pour augmenter votre capacité d'accueil.`);
   });
+  const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
+  if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
+    causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);
+  }
   if (incidentReviews.length > 0) {
     causalChain.push("Des pannes non réparées ont généré des avis négatifs et pèsent sur votre réputation : réparez-les vite (une réparation d'urgence évite toute pénalité).");
   }
@@ -103,6 +108,10 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     // Resignations, notices, sick leave and other HR news of the day (see
     // lib/staff/staffEventsEngine.js).
     staffEvents: todaysStaffEvents(careerState?.hotel?.hotelState, careerState?.day),
+    // Today's upkeep bill ("Entretien & Charges d'exploitation"): by category,
+    // at which level, and the hotel's condition -- null when nothing was
+    // recorded (see lib/maintenance/maintenanceCostEngine.js).
+    maintenance,
     // How strongly guests wanted to book today (see lib/demand/), null
     // until a day has been played with the demand model.
     demand: describeDemand(careerState?.lastDayReport?.demandReport),

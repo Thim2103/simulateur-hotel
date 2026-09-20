@@ -1,5 +1,7 @@
 import { useState } from "react";
 import GameModal from "../../components/GameModal";
+import MaintenanceLevelSelector from "./MaintenanceLevelSelector";
+import { ROOM_DAILY_COST } from "../../../lib/maintenance/maintenanceCostEngine";
 import { capitalOf, treasuryOf } from "../../../lib/finance/investmentFunding";
 import {
   ROOM_KINDS,
@@ -33,7 +35,7 @@ const FITOUT_STATUS_TEXT = { "floor-full": "Étage complet", "no-funds": "Fonds 
 // rooms all come from it. `onStartFloor()` and `onFitOut(level, kind)` do the
 // actual spending -- Dashboard.jsx wires them to startFloorConstruction() and
 // fitOutRooms() through applyHotelAdjustment().
-export default function ExpansionModal({ hotelState, rooms, day = 0, onStartFloor, onFitOut, onClose }) {
+export default function ExpansionModal({ hotelState, rooms, day = 0, onStartFloor, onFitOut, onSetMaintenanceLevel, onClose }) {
   const [floorRequested, setFloorRequested] = useState(false);
   const bundle = { hotelState, rooms };
   const status = floorConstructionStatus(hotelState);
@@ -110,7 +112,7 @@ export default function ExpansionModal({ hotelState, rooms, day = 0, onStartFloo
                   onClick={() => onFitOut?.(floor.level, kind)}
                   className="rounded-lg border border-cyan-700 px-3 py-1.5 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-transparent"
                 >
-                  + {spec.label} · {euro(spec.cost)}
+                  + {spec.label} · {euro(spec.cost)} · {ROOM_DAILY_COST[kind]} €/j
                 </button>
               );
             })}
@@ -118,6 +120,8 @@ export default function ExpansionModal({ hotelState, rooms, day = 0, onStartFloo
           {freeSlots(rooms, floor.level) === 0 && <p className="text-xs text-slate-500">Étage complet.</p>}
         </section>
       ))}
+
+      {onSetMaintenanceLevel && <MaintenanceLevelSelector hotelState={hotelState} rooms={rooms} onChange={onSetMaintenanceLevel} />}
 
       <p className="text-xs text-slate-500">Jour {day}. Plus de chambres, c'est plus de clients possibles — mais aussi plus de ménage et de personnel à prévoir.</p>
     </GameModal>

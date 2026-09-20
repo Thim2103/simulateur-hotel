@@ -17,6 +17,7 @@ import { generateFinancialForecast } from "./financeForecast";
 import { createFinanceState } from "./financeState";
 import { recordCycle } from "../scenario/scenarioReplay";
 import { effectiveHotelFinance } from "../staff/staffRoster";
+import { maintenanceByCategory, maintenanceSpent } from "../maintenance/maintenanceCostEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -35,7 +36,12 @@ export function runFinanceCycle({ hotelBundle, previousState = null, referenceDa
   const previous = safeObject(previousState);
   const cyclesElapsed = safeNumber(previous.cyclesElapsed, 0) + 1;
 
-  const incomeStatement = computeIncomeStatement({ hotelFinance: effectiveHotelFinance(hotelState), restaurantFinance: restaurantState.finance, roomCount });
+  const incomeStatement = computeIncomeStatement({
+    hotelFinance: effectiveHotelFinance(hotelState),
+    restaurantFinance: restaurantState.finance,
+    roomCount,
+    maintenanceDetail: maintenanceSpent(hotelState) > 0 ? maintenanceByCategory(hotelState) : null,
+  });
   const balanceSheet = computeBalanceSheet({ incomeStatement, roomCount, cyclesElapsed, previousCash: previous.cash });
   const cashFlow = computeCashFlow({ incomeStatement, balanceSheet, previousCash: previous.cash });
   const ratios = computeRatios({ incomeStatement, balanceSheet, roomCount });

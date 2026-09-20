@@ -102,3 +102,40 @@ test("clicking 'Exporter en HTML' opens the exported report in a new tab", () =>
   expect(openSpy).toHaveBeenCalledWith("blob:mock-url", "_blank", "noopener,noreferrer");
   openSpy.mockRestore();
 });
+
+test("shows the upkeep line of the income statement with its breakdown", () => {
+  const state = financeState({
+    incomeStatement: {
+      revenues: { hotel: 120000, restaurant: 24000, total: 144000 },
+      expenses: { variable: 50000, payroll: 6000, fixed: 3500, maintenance: 7600, maintenanceDetail: { rooms: 5000, equipment: 1600, floors: 1000 }, total: 67100 },
+      gop: 86400,
+      ebitda: 76900,
+      netIncome: 60000,
+    },
+  });
+  useFinance.mockReturnValue(
+    financeHook({
+      financeState: state,
+      getFinancialReport: jest.fn(() => ({ period: state.period, incomeStatement: state.incomeStatement, balanceSheet: state.balanceSheet, cashFlow: state.cashFlow, ratios: state.ratios, diagnostics: [], forecast: null, replay: { totalCycles: 0, entries: [] } })),
+    })
+  );
+  render(<FinanceReport />, { wrapper: MemoryRouter });
+  const line = screen.getByTestId("finance-maintenance");
+  expect(line).toHaveTextContent(/entretien & charges d'exploitation/i);
+  expect(line.textContent.replace(/\s| | /g, "")).toContain("7600€");
+  expect(line).toHaveTextContent(/chambres/i);
+  expect(line).toHaveTextContent(/équipements/i);
+  expect(line).toHaveTextContent(/étages/i);
+});
+
+test("has no upkeep line when there is no upkeep", () => {
+  const state = financeState();
+  useFinance.mockReturnValue(
+    financeHook({
+      financeState: state,
+      getFinancialReport: jest.fn(() => ({ period: state.period, incomeStatement: state.incomeStatement, balanceSheet: state.balanceSheet, cashFlow: state.cashFlow, ratios: state.ratios, diagnostics: [], forecast: null, replay: { totalCycles: 0, entries: [] } })),
+    })
+  );
+  render(<FinanceReport />, { wrapper: MemoryRouter });
+  expect(screen.queryByTestId("finance-maintenance")).not.toBeInTheDocument();
+});

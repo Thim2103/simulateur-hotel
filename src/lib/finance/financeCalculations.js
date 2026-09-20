@@ -29,7 +29,7 @@ const DEFAULT_OPENING_CASH = 50000; // €, a plausible starting cash position
 // 1. Compte de résultats: revenues, expenses, GOP (before fixed/overhead
 // charges -- the standard hotel-accounting distinction), EBITDA (after
 // them, before D&A/interest/tax), and net income.
-export function computeIncomeStatement({ hotelFinance, restaurantFinance, roomCount = 0 } = {}) {
+export function computeIncomeStatement({ hotelFinance, restaurantFinance, roomCount = 0, maintenanceDetail = null } = {}) {
   const hotel = safeObject(hotelFinance);
   const restaurant = safeObject(restaurantFinance);
 
@@ -41,15 +41,20 @@ export function computeIncomeStatement({ hotelFinance, restaurantFinance, roomCo
   // "costs" arrays), before the fixed/overhead layer.
   const hotelVariable = Math.round(safeNumber(sum(hotel.costs), 0));
   const restaurantVariable = Math.round(safeNumber(sum(restaurant.costs), 0));
-  const variableExpenses = hotelVariable + restaurantVariable;
+  // "Entretien & Charges d'exploitation" (lib/maintenance/): part of the
+  // hotel's costs above, shown on its own line rather than as variable.
+  const maintenance = Math.min(Math.round(safeNumber(sum(hotel.maintenance), 0)), hotelVariable);
+  const variableExpenses = hotelVariable + restaurantVariable - maintenance;
 
   const payroll = Math.round(safeNumber(hotel.payroll, 0));
   const fixedCosts = Math.round(safeNumber(hotel.fixedCosts, 0) + safeNumber(restaurant.fixedCosts, 0) + safeNumber(restaurant.rent, 0));
   const fixedExpenses = payroll + fixedCosts;
 
-  const totalExpenses = variableExpenses + fixedExpenses;
+  const totalExpenses = variableExpenses + maintenance + fixedExpenses;
 
-  const gop = totalRevenue - variableExpenses;
+  // Upkeep is an operating cost, so it weighs on GOP like the variable charges
+  // it was carved out of.
+  const gop = totalRevenue - variableExpenses - maintenance;
   const ebitda = gop - fixedExpenses; // = totalRevenue - totalExpenses
   const taxRate = normalizedTaxRate(hotel.taxes);
   const taxAmount = Math.max(0, Math.round(ebitda * (taxRate / 100)));
@@ -58,7 +63,7 @@ export function computeIncomeStatement({ hotelFinance, restaurantFinance, roomCo
 
   return {
     revenues: { hotel: hotelRevenue, restaurant: restaurantRevenue, total: totalRevenue },
-    expenses: { variable: variableExpenses, payroll, fixed: fixedCosts, total: totalExpenses },
+    expenses: { variable: variableExpenses, payroll, fixed: fixedCosts, maintenance, ...(maintenanceDetail ? { maintenanceDetail } : {}), total: totalExpenses },
     gop,
     ebitda,
     depreciation,

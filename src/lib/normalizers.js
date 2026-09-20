@@ -235,6 +235,8 @@ export function normalizeHotelFinance(input) {
     fixedCosts: safeNumber(source.fixedCosts ?? source.fixed_costs, hotelFinancials.fixedCosts),
     payroll: safeNumber(source.payroll, hotelFinancials.payroll),
     taxes,
+    // Upkeep ledger (see lib/dailyCycle/updateFinance.js), only when there is one.
+    ...(Array.isArray(source.maintenance) ? { maintenance: source.maintenance.map((value) => safeNumber(value, 0)) } : {}),
   };
 }
 

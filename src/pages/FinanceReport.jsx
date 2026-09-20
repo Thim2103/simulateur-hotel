@@ -69,6 +69,23 @@ export default function FinanceReport() {
                 <li>Revenus hôtel : {report.incomeStatement.revenues.hotel.toLocaleString()} €</li>
                 <li>Revenus restaurant : {report.incomeStatement.revenues.restaurant.toLocaleString()} €</li>
                 <li>Charges variables : {report.incomeStatement.expenses.variable.toLocaleString()} €</li>
+                {report.incomeStatement.expenses.maintenance > 0 && (
+                  <li data-testid="finance-maintenance">
+                    Entretien & charges d'exploitation : {report.incomeStatement.expenses.maintenance.toLocaleString()} €
+                    {report.incomeStatement.expenses.maintenanceDetail && (
+                      <span className="block text-xs text-slate-500">
+                        {[
+                          ["rooms", "Chambres"],
+                          ["equipment", "Équipements"],
+                          ["floors", "Étages"],
+                        ]
+                          .filter(([key]) => report.incomeStatement.expenses.maintenanceDetail[key] > 0)
+                          .map(([key, label]) => `${label} ${report.incomeStatement.expenses.maintenanceDetail[key].toLocaleString()} €`)
+                          .join(" · ")}
+                      </span>
+                    )}
+                  </li>
+                )}
                 <li>Masse salariale : {report.incomeStatement.expenses.payroll.toLocaleString()} €</li>
                 <li>Charges fixes : {report.incomeStatement.expenses.fixed.toLocaleString()} €</li>
                 <li className="font-semibold">GOP : {report.incomeStatement.gop.toLocaleString()} €</li>
