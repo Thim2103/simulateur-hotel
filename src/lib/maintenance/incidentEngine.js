@@ -27,6 +27,7 @@ import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { getRoster, employeeEfficiency, TECHNICIAN_MAX_SEVERITY, LEVELS } from "../staff/staffRoster";
 import { pseudoRandom } from "../staff/staffEventsEngine";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
+import { maintenanceIncidentMultiplier, wearBreakdown } from "./maintenanceCostEngine";
 
 // Diagnostics carry only "low"/"medium"/"high" (see
 // analyticsDiagnostics.js) -- mapped to the player-facing tiers the spec
@@ -104,12 +105,22 @@ export function reconcileIncidents(hotelState, diagnostics, day) {
   // happening: each diagnostic is either "prevented" or not, decided once
   // and for all by a hash of its own id (deterministic, no rng), with a
   // probability of 1 - the combined incident-rate multiplier.
-  const preventedShare = 1 - computeZoneEffects(state).incidentRateMultiplier;
+  // A Premium maintenance level prevents a further share.
+  const preventedShare = 1 - computeZoneEffects(state).incidentRateMultiplier * maintenanceIncidentMultiplier(state);
   const seenThisCycle = new Set();
-  const newIncidents = safeArray(diagnostics)
+  // Neglected upkeep (Économique level, a run-down hotel) breaks things:
+  // a wear breakdown, decided by a hash of the day (see
+  // maintenanceCostEngine.js), capped while earlier ones are unresolved.
+  const openWear = existing.filter((incident) => incident.origin === "wear" && incident.status !== "resolved").length;
+  const wear = wearBreakdown(state, day, openWear);
+  const wearIncidents = wear ? [{ ...createIncident(wear, day), origin: "wear" }] : [];
+  const newIncidents = [
+    ...safeArray(diagnostics)
     .filter(qualifies)
     .map((diagnostic) => createIncident(diagnostic, day))
-    .filter((incident) => preventedShare <= 0 || pseudoRandom(`${incident.id}:prevented`) >= preventedShare)
+    .filter((incident) => preventedShare <= 0 || pseudoRandom(`${incident.id}:prevented`) >= preventedShare),
+    ...wearIncidents,
+  ]
     .filter((incident) => {
       if (existingIds.has(incident.id) || seenThisCycle.has(incident.id)) return false;
       seenThisCycle.add(incident.id);

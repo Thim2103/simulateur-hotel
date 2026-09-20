@@ -73,6 +73,7 @@ export default function SchematicHotelView({
   onStartUpgrade,
   onStartFloor,
   onFitOut,
+  onSetMaintenanceLevel,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -335,7 +336,7 @@ export default function SchematicHotelView({
       )}
 
       {expansionOpen && hotelState && (
-        <ExpansionModal hotelState={hotelState} rooms={rooms} day={day} onStartFloor={onStartFloor} onFitOut={onFitOut} onClose={() => setExpansionOpen(false)} />
+        <ExpansionModal hotelState={hotelState} rooms={rooms} day={day} onStartFloor={onStartFloor} onFitOut={onFitOut} onSetMaintenanceLevel={onSetMaintenanceLevel} onClose={() => setExpansionOpen(false)} />
       )}
 
       {ActiveModal && (

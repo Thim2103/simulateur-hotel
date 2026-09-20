@@ -4,6 +4,7 @@
 // today's events (equipment failures, extra staffing, etc.).
 import { rosterDailyPayroll } from "../staff/staffRoster";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
+import { computeDailyMaintenance } from "../maintenance/maintenanceCostEngine";
 
 const DAYS_PER_MONTH = 30;
 
@@ -22,10 +23,13 @@ function eventCosts(events) {
 // Splits today's spend into fixed (rent, base payroll, fixed costs) and
 // variable (marketing, ESG investment, restaurant staff payroll, one-off
 // event costs) so the daily report can show where money is going.
-export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [] } = {}) {
+export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [], rooms = [] } = {}) {
   const hotelFinance = hotelState.finance || {};
   const restaurantFinance = restaurantState.finance || {};
   const restaurantStaff = safeArray(restaurantState.staff);
+  // Upkeep of the rooms, built floors and installed equipment, at the
+  // player's maintenance level (lib/maintenance/maintenanceCostEngine.js).
+  const maintenance = computeDailyMaintenance({ hotelState, rooms });
 
   const fixed =
     perDay(hotelFinance.fixedCosts) +
@@ -37,7 +41,8 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     rosterDailyPayroll(hotelState) -
     // Daily running-cost savings from installed zone upgrades (domotics,
     // heat recovery... see lib/zones/); 0 for a hotel that never upgraded.
-    computeZoneEffects(hotelState).energySavingsDaily;
+    computeZoneEffects(hotelState).energySavingsDaily +
+    maintenance.total;
 
   const restaurantPayroll = restaurantStaff.reduce((sum, person) => sum + Number(person.salary || 0), 0);
 
@@ -55,6 +60,8 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     fixed: Math.round(fixed),
     variable: Math.round(variable),
     eventCosts: Math.round(eventCosts(events)),
+    // "Entretien & Charges d'exploitation": already inside `fixed` and `total`.
+    maintenance,
     total: Math.round(total),
   };
 }

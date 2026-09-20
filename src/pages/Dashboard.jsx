@@ -15,6 +15,7 @@ import { findQuickAction } from "../lib/dashboard/dashboardActions";
 import { payForRepair, repairTerms } from "../lib/maintenance/incidentEngine";
 import { startUpgrade } from "../lib/zones/zoneUpgradesEngine";
 import { startFloorConstruction, fitOutRooms } from "../lib/expansion/hotelExpansionEngine";
+import { setMaintenanceLevel } from "../lib/maintenance/maintenanceCostEngine";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -217,6 +218,11 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => fitOutRooms(hotel, level, kind, 1)).catch(() => undefined);
   };
 
+  // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
+  const handleSetMaintenanceLevel = (level) => {
+    applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
+  };
+
   const handleRepairIncident = (entity, { emergency }) => {
     const incidentId = entity.metadata?.incidentId;
     if (!incidentId) return;
@@ -375,6 +381,7 @@ export default function Dashboard() {
           onStartUpgrade={handleStartUpgrade}
           onStartFloor={handleStartFloor}
           onFitOut={handleFitOut}
+          onSetMaintenanceLevel={handleSetMaintenanceLevel}
         />
       )}
 

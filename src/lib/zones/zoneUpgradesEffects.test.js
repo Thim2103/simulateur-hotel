@@ -8,6 +8,7 @@ import { computeStaffing, createEmployee } from "../staff/staffRoster";
 import { startCareer, runCareerDay } from "../career/careerEngine";
 import { buildDailyReview } from "../dashboard/dailyReview";
 import { startUpgrade, advanceZoneUpgrades, computeZoneEffects } from "./zoneUpgradesEngine";
+import { computeDailyMaintenance } from "../maintenance/maintenanceCostEngine";
 
 const installed = (...ids) => ({ zoneUpgrades: { installed: Object.fromEntries(ids.map((id) => [id, { day: 1 }])), works: {}, completedLog: [] } });
 const underWorks = (id) => ({ zoneUpgrades: { installed: {}, works: { [id]: { startedOnDay: 1, completesOnDay: 9 } }, completedLog: [] } });
@@ -95,10 +96,13 @@ describe("zone upgrades / incidents: a share of breakdowns never happens", () =>
 describe("zone upgrades / running costs", () => {
   const expenses = (hotelState) => calculateExpenses({ hotelState: { finance: { payroll: 30000, fixedCosts: 3000 }, ...hotelState } });
 
-  it("domotics and heat recovery cut the daily bill by exactly their saving", () => {
+  it("domotics and heat recovery cut the daily bill by their saving, net of their own upkeep", () => {
     const plain = expenses({});
-    const upgraded = expenses(installed("rooms-domotics", "laundry-heat"));
-    expect(plain.total - upgraded.total).toBe(25 + 20);
+    const state = installed("rooms-domotics", "laundry-heat");
+    const upgraded = expenses(state);
+    const upkeep = computeDailyMaintenance({ hotelState: state }).total;
+    expect(upkeep).toBeGreaterThan(0);
+    expect(plain.total - upgraded.total).toBe(25 + 20 - upkeep);
   });
 
   it("never drives expenses below zero", () => {
