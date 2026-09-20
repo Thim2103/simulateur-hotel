@@ -14,6 +14,7 @@ import { upgradesCompletedOn, UPGRADES } from "../zones/zoneUpgradesEngine";
 import { floorsCompletedOn, SLOTS_PER_FLOOR } from "../expansion/hotelExpansionEngine";
 import { maintenanceOn, WEAR_THRESHOLD } from "../maintenance/maintenanceCostEngine";
 import { describeCalendar, todaySnapshot, auditOn } from "../hotelEvents/hotelEventsEngine";
+import { activeCampaigns, campaignsEndedOn, describeCampaign } from "../marketing/targetedCampaigns";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -101,6 +102,28 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     });
     if (calendar.audit) causalChain.push(calendar.audit.message);
   }
+  // The commercial levers at work today (lib/rm/ yield management, lib/marketing/
+  // targeted campaigns): only when there is something to report.
+  const levers = careerState?.lastDayReport?.demandReport?.levers;
+  const playedDate = careerState?.lastDayReport?.date;
+  const marketingToday = safeArray(levers?.marketing?.campaigns);
+  const endedCampaigns = playedDate ? campaignsEndedOn(hotelState, playedDate).map((campaign) => describeCampaign(campaign, playedDate)) : [];
+  const growth =
+    levers && (levers.yield?.enabled || marketingToday.length > 0 || endedCampaigns.length > 0)
+      ? {
+          yield: levers.yield?.enabled ? levers.yield : null,
+          marketingFactor: levers.marketing?.factor ?? 1,
+          campaigns: marketingToday,
+          running: playedDate ? activeCampaigns(hotelState).map((campaign) => describeCampaign(campaign, playedDate)) : [],
+          ended: endedCampaigns,
+        }
+      : null;
+  if (growth?.yield && growth.yield.adjusted > 0) {
+    causalChain.push(`Yield management : ${growth.yield.adjusted} réservation(s) tarifée(s) automatiquement (${growth.yield.revenueDelta >= 0 ? "+" : "−"}${Math.abs(growth.yield.revenueDelta).toLocaleString("fr-FR")} € de revenu attendu).`);
+  }
+  endedCampaigns.forEach((campaign) => {
+    causalChain.push(`Campagne « ${campaign.name} » terminée : ${campaign.extraBookings.toLocaleString("fr-FR")} réservation(s) supplémentaire(s), ROI ${campaign.roi >= 0 ? "+" : "−"}${Math.abs(Math.round(campaign.roi * 100))} %.`);
+  });
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);
@@ -126,6 +149,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     // Season, events in progress, announced events and audit result -- null
     // until a day has been played (lib/hotelEvents/).
     calendar,
+    // Yield management and marketing campaigns at work today -- null when
+    // neither is in play.
+    growth,
     // Today's upkeep bill ("Entretien & Charges d'exploitation"): by category,
     // at which level, and the hotel's condition -- null when nothing was
     // recorded (see lib/maintenance/maintenanceCostEngine.js).

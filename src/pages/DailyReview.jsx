@@ -22,7 +22,9 @@ const STAFF_EVENT_STYLES = {
   "express-training": { icon: "🎓", className: "border-emerald-200 bg-emerald-50 text-emerald-900" },
 };
 
-const DEMAND_FACTOR_LABELS = { reputation: "Réputation", price: "Prix", season: "Saison", events: "Événements", incidents: "Pannes" };
+const DEMAND_FACTOR_LABELS = { reputation: "Réputation", price: "Prix", season: "Saison", events: "Événements", incidents: "Pannes", marketing: "Marketing" };
+
+const YIELD_RULE_LABELS = { occupancy: "occupation élevée", lastMinute: "dernière minute", events: "événements & haute saison" };
 
 function StatTile({ label, icon, value, tone = "default", index = 0 }) {
   return (
@@ -118,6 +120,52 @@ export default function DailyReview() {
         </div>
         <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
       </GameSection>
+
+      {review.growth && (
+        <GameSection id="review-growth" title="Yield & marketing" icon="🎯">
+          <GameCard>
+            {review.growth.yield && (
+              <div data-testid="growth-yield" className="text-sm text-slate-800">
+                <p className="font-semibold">Yield management actif</p>
+                <p className="text-xs text-slate-600">
+                  {review.growth.yield.adjusted > 0
+                    ? `${review.growth.yield.adjusted} réservation(s) ajustée(s) (${review.growth.yield.raised} hausse(s), ${review.growth.yield.lowered} baisse(s)) : ${review.growth.yield.revenueDelta >= 0 ? "+" : "−"}${Math.abs(review.growth.yield.revenueDelta).toLocaleString("fr-FR")} € de revenu attendu.`
+                    : "Aucune réservation à ajuster aujourd'hui : les prix sont restés au niveau habituel."}
+                </p>
+                {Object.keys(review.growth.yield.byRule || {}).length > 0 && (
+                  <ul className="mt-1 flex flex-wrap gap-2 text-xs">
+                    {Object.entries(review.growth.yield.byRule).map(([rule, count]) => (
+                      <li key={rule} data-testid="growth-yield-rule" className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-slate-700">
+                        {YIELD_RULE_LABELS[rule] || rule} ×{count}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+            {(review.growth.campaigns.length > 0 || review.growth.running.length > 0) && (
+              <div data-testid="growth-campaigns" className={review.growth.yield ? "mt-3" : ""}>
+                <p className="text-sm font-semibold text-slate-800">
+                  Campagnes marketing — demande ×{review.growth.marketingFactor.toFixed(2)} aujourd'hui
+                </p>
+                <ul className="mt-1 flex flex-col gap-1 text-xs text-slate-700">
+                  {review.growth.running.map((campaign) => (
+                    <li key={campaign.id} data-testid="growth-campaign-running" data-type={campaign.typeId}>
+                      {campaign.icon} {campaign.name} — {campaign.daysLeft} jour(s) restant(s) · {campaign.extraBookings.toLocaleString("fr-FR")} réservation(s) supplémentaire(s) · {campaign.extraRevenue.toLocaleString("fr-FR")} € générés
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {review.growth.ended.map((campaign) => (
+              <p key={campaign.id} data-testid="growth-campaign-ended" data-type={campaign.typeId} className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs text-slate-800">
+                {campaign.icon} {campaign.name} terminée — {campaign.extraBookings.toLocaleString("fr-FR")} réservation(s) supplémentaire(s), {campaign.extraRevenue.toLocaleString("fr-FR")} € pour {campaign.cost.toLocaleString("fr-FR")} € investis : ROI {campaign.roi >= 0 ? "+" : "−"}
+                {Math.abs(Math.round(campaign.roi * 100))} %
+              </p>
+            ))}
+          </GameCard>
+        </GameSection>
+      )}
 
       {review.calendar && (
         <GameSection id="review-calendar" title="Saison & événements" icon="📅">
