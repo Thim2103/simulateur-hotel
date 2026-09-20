@@ -69,7 +69,7 @@ function groupRoomsByFloor(rooms) {
   return { floors, roomsPerFloor };
 }
 
-function buildRoomEntities(rooms, cleaningRoomIds) {
+function buildRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
   const { floors } = groupRoomsByFloor(rooms);
   return floors.flatMap((floor) =>
     floor.rooms.map((room, indexInFloor) => {
@@ -89,7 +89,7 @@ function buildRoomEntities(rooms, cleaningRoomIds) {
         // quick-action modal, which needs to call back into
         // `cleaningRoomIds.has(room.id)`) never has to parse it back out
         // of `"room:<id>"` and risk a string/number mismatch.
-        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id },
+        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}) },
       };
     })
   );
@@ -102,7 +102,7 @@ function buildRoomEntities(rooms, cleaningRoomIds) {
 // (`includeExpansion`, the schematic view) gets them, as ordinary room
 // entities carrying their own `floorLevel`; the isometric scene, whose
 // layout has a fixed number of floors, keeps showing the base building only.
-function buildExpansionRoomEntities(rooms, cleaningRoomIds) {
+function buildExpansionRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
   return rooms.map((room, indexInFloor) => ({
     id: `room:${room.id}`,
     type: "room",
@@ -110,7 +110,7 @@ function buildExpansionRoomEntities(rooms, cleaningRoomIds) {
     footprint: zeroFootprint(),
     state: roomState(room, cleaningRoomIds),
     activity: null,
-    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type },
+    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}) },
   }));
 }
 
@@ -242,6 +242,7 @@ export function buildHotelSceneEntities(props = {}) {
     decisionFeedback = null,
     cleaningRoomIds,
     includeExpansion = false,
+    vipRoomIds,
   } = safeObject(props);
 
   const allRooms = safeArray(rawRooms);
@@ -263,8 +264,8 @@ export function buildHotelSceneEntities(props = {}) {
   const amenityEntities = rawActiveIncidents !== undefined ? buildAmenityEntitiesFromIncidents(safeArray(rawActiveIncidents)) : buildAmenityEntitiesFromDiagnostics(diagnostics);
 
   return [
-    ...buildRoomEntities(rooms, cleaningRoomIds),
-    ...buildExpansionRoomEntities(expansionRooms, cleaningRoomIds),
+    ...buildRoomEntities(rooms, cleaningRoomIds, vipRoomIds),
+    ...buildExpansionRoomEntities(expansionRooms, cleaningRoomIds, vipRoomIds),
     ...amenityEntities,
     ...buildCharacterEntities({ occupiedCount, staffCount, roomsPerFloor, phase, decisionFeedback }),
     ...buildIncidentEntities(diagnostics),

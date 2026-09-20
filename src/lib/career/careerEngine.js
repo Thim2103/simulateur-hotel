@@ -24,6 +24,7 @@ import { advanceExpansion } from "../expansion/hotelExpansionEngine";
 import { recordMaintenance } from "../maintenance/maintenanceCostEngine";
 import { advanceHotelEvents } from "../hotelEvents/hotelEventsEngine";
 import { advanceTargetedCampaigns } from "../marketing/targetedCampaigns";
+import { advanceGuestReviews } from "../clients/guestReviewEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -187,7 +188,11 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // (lib/zones/zoneUpgradesEngine.js).
       // Then the targeted marketing campaigns (lib/marketing/) are credited
       // with today's extra bookings, and the ones ending today are closed.
-      hotelState: advanceTargetedCampaigns(
+      // Finally the reviews already counted in today's reputation and demand
+      // are settled, and the guests leaving today post theirs
+      // (lib/clients/guestReviewEngine.js).
+      hotelState: advanceGuestReviews(
+      advanceTargetedCampaigns(
         recordMaintenance(
         // Today's season and events (lib/hotelEvents/), snapshotted before the
         // upkeep is recorded: it reads their wear pressure.
@@ -196,6 +201,8 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
         day
       ),
         { date: referenceDate, demandReport: demand.demandReport }
+      ),
+      { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
       ),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,

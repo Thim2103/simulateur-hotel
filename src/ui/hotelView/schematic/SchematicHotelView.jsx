@@ -74,6 +74,7 @@ export default function SchematicHotelView({
   onStartFloor,
   onFitOut,
   onSetMaintenanceLevel,
+  vipGuests = [],
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -83,7 +84,7 @@ export default function SchematicHotelView({
   const [upgradeZone, setUpgradeZone] = useState(null);
   // Whether the building-expansion modal is open (ExpansionModal.jsx).
   const [expansionOpen, setExpansionOpen] = useState(false);
-  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds, includeExpansion: !!hotelState });
+  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds, includeExpansion: !!hotelState, vipRoomIds: new Set(vipGuests.map((guest) => guest.roomId)) });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
   // Floors built by the hotel's expansion (lib/expansion/) that have no room
@@ -152,6 +153,16 @@ export default function SchematicHotelView({
             </span>
           ))}
       </header>
+
+      {vipGuests.length > 0 && (
+        <div data-testid="schematic-vip-alert" role="status" className="flex flex-col gap-0.5 rounded-lg border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
+          {vipGuests.map((guest) => (
+            <p key={guest.reservationId} data-testid="schematic-vip-guest">
+              <span aria-hidden="true">⭐</span> <strong>V.I.P. en séjour</strong> : {guest.guestName}, chambre {guest.roomNumber} ({guest.followers.toLocaleString("fr-FR")} abonnés), départ le {guest.departure}. Son avis pèsera ×3 sur votre réputation.
+            </p>
+          ))}
+        </div>
+      )}
 
       {zones.length > 0 && (
         <div data-testid="schematic-zones" className="flex flex-wrap gap-2" aria-label="Zones et améliorations">
@@ -248,6 +259,11 @@ export default function SchematicHotelView({
                       <span aria-hidden="true">{statusStyle.icon}</span>
                       <span>{room.metadata.number}</span>
                     </button>
+                    {room.metadata.vip && (
+                      <span data-testid={`schematic-room-${room.metadata.number}-vip`} role="img" aria-label={`V.I.P. dans la chambre ${room.metadata.number}`} title="V.I.P. en séjour" className="absolute -left-1 -top-1 text-xs leading-none">
+                        ⭐
+                      </span>
+                    )}
                     {roomNeedsAttention && (
                       <button
                         type="button"
@@ -308,6 +324,11 @@ export default function SchematicHotelView({
                       className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                       style={{ backgroundColor: alert.badgeColor }}
                     />
+                  )}
+                  {amenity.type === "reception" && vipGuests.length > 0 && (
+                    <span data-testid="schematic-amenity-reception-vip" role="img" aria-label="V.I.P. en séjour" title="V.I.P. en séjour" className="absolute -left-1 -top-1 text-xs leading-none">
+                      ⭐
+                    </span>
                   )}
                   {upgradeZoneOf(amenity.type, zoneById) && (
                     <button

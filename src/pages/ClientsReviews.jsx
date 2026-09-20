@@ -10,6 +10,9 @@ import { useCareerContext } from "../context/CareerContext";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 import { buildIncidentReviewHistory } from "../lib/maintenance/incidentImpact";
 import { ZONE_STYLES } from "../ui/hotelView/schematic/schematicTokens";
+import ReviewResponseModal, { points } from "../components/clients/ReviewResponseModal";
+import { listReviews, respondToReview, currentImpact, RESPONSE_TYPES } from "../lib/clients/guestReviewEngine";
+import { PROFILES } from "../lib/clients/guestProfiles";
 
 const TREND_BADGE = { improving: "success", stable: "info", declining: "danger" };
 const TREND_LABEL = { improving: "En hausse", stable: "Stable", declining: "En baisse" };
@@ -20,6 +23,14 @@ const INCIDENT_STATUS_BADGE = {
   repairing: { type: "warning", label: "Réparation en cours" },
   resolved: { type: "success", label: "Réparée" },
 };
+
+// Guest reviews of departed stays (see lib/clients/guestReviewEngine.js).
+const STAY_FILTERS = [
+  { id: "all", label: "Tous" },
+  { id: "todo", label: "À traiter", matches: (review) => review.impact < 0 && !review.response },
+  { id: "vip", label: "V.I.P.", matches: (review) => review.profile === "vip" },
+  { id: "answered", label: "Répondus", matches: (review) => !!review.response },
+];
 
 const REVIEW_FILTERS = [
   { id: "all", label: "Tous" },
@@ -32,7 +43,10 @@ const REVIEW_FILTERS = [
 // pattern as ClientsDashboard.jsx.
 export default function ClientsReviews() {
   const [reviewFilter, setReviewFilter] = useState("all");
-  const { careerState, isRunning: isCareerRunning } = useCareerContext();
+  const [stayFilter, setStayFilter] = useState("all");
+  // The review being answered (see ReviewResponseModal.jsx).
+  const [respondingId, setRespondingId] = useState(null);
+  const { careerState, isRunning: isCareerRunning, applyHotelAdjustment } = useCareerContext();
   const { clientsState, isRunning: isClientsRunning, error, loadClientsState, applyClientsAction } = useClientsEngine();
 
   useEffect(() => {
@@ -68,6 +82,44 @@ export default function ClientsReviews() {
   const incidentReviews = buildIncidentReviewHistory(careerState.hotel?.hotelState);
   const activeFilter = REVIEW_FILTERS.find((filter) => filter.id === reviewFilter) || REVIEW_FILTERS[0];
   const visibleIncidentReviews = activeFilter.matches ? incidentReviews.filter(activeFilter.matches) : incidentReviews;
+
+  // Every review the player can answer, breakdown reviews included.
+  const answerable = listReviews(careerState.hotel?.hotelState);
+  const answerableById = Object.fromEntries(answerable.map((review) => [review.id, review]));
+  const stayReviews = answerable.filter((review) => review.source === "stay");
+  const activeStayFilter = STAY_FILTERS.find((filter) => filter.id === stayFilter) || STAY_FILTERS[0];
+  const visibleStayReviews = activeStayFilter.matches ? stayReviews.filter(activeStayFilter.matches) : stayReviews;
+  const respondingReview = respondingId ? answerableById[respondingId] || null : null;
+
+  const handleRespond = (type) => {
+    if (!respondingId) return;
+    Promise.resolve(applyHotelAdjustment?.((hotel) => respondToReview(hotel, respondingId, type, { day: careerState.day })))
+      .catch(() => undefined)
+      .finally(() => setRespondingId(null));
+  };
+
+  // The button and answer badge of a review card.
+  const renderAnswer = (review) => {
+    if (!review) return null;
+    const answered = review.response ? RESPONSE_TYPES[review.response.type] : null;
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        {answered ? (
+          <Badge type="info">Répondu : {answered.label.toLowerCase()}</Badge>
+        ) : (
+          <button
+            type="button"
+            data-testid={`respond-${review.id}`}
+            onClick={() => setRespondingId(review.id)}
+            className="rounded-lg border border-cyan-700 px-3 py-1 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50"
+          >
+            {review.impact < 0 ? "Répondre / Offrir un geste commercial" : "Répondre"}
+          </button>
+        )}
+        <span className="text-xs text-slate-500">Impact réputation : {points(currentImpact(review))}</span>
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,6 +167,63 @@ export default function ClientsReviews() {
             />
           </div>
 
+          <section aria-labelledby="reviews-stays" className="flex flex-col gap-3">
+            <h2 id="reviews-stays" className="text-base font-semibold text-slate-900">
+              Avis des séjours <span className="text-sm font-normal text-slate-500">({stayReviews.length})</span>
+            </h2>
+            <Card>
+              {stayReviews.length === 0 ? (
+                <p className="text-sm text-slate-500">Aucun avis de séjour pour l'instant : ils arrivent quand des clients quittent l'hôtel.</p>
+              ) : (
+                <>
+                  <div role="group" aria-label="Filtrer les avis de séjour" className="mb-3 flex flex-wrap gap-2">
+                    {STAY_FILTERS.map((filter) => (
+                      <button
+                        key={filter.id}
+                        type="button"
+                        aria-pressed={stayFilter === filter.id}
+                        onClick={() => setStayFilter(filter.id)}
+                        className={`rounded-full border px-3 py-1 text-xs font-medium ${stayFilter === filter.id ? "border-cyan-700 bg-cyan-700 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  {visibleStayReviews.length === 0 ? (
+                    <p className="text-sm text-slate-500">Aucun avis dans cette catégorie.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-2">
+                      {visibleStayReviews.map((review) => {
+                        const profile = PROFILES[review.profile];
+                        return (
+                          <li key={review.id} data-testid="stay-review" data-profile={review.profile} data-vip={review.profile === "vip" ? "true" : "false"} className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 text-sm">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-semibold text-amber-600" aria-label={`Note ${review.rating} sur 5`}>
+                                {"★".repeat(review.rating)}
+                                {"☆".repeat(5 - review.rating)}
+                              </span>
+                              {profile && (
+                                <Badge type={review.profile === "vip" ? "warning" : "info"}>
+                                  {profile.icon} {profile.label}
+                                </Badge>
+                              )}
+                              {review.weight > 1 && <Badge type="warning">Poids ×{review.weight}</Badge>}
+                              <span className="text-xs text-slate-500">
+                                {review.guestName} · chambre {review.roomNumber} · Jour {review.day}
+                              </span>
+                            </div>
+                            <p className="text-slate-700">« {review.text} »</p>
+                            {renderAnswer(review)}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </>
+              )}
+            </Card>
+          </section>
+
           <section aria-labelledby="reviews-incidents" className="flex flex-col gap-3">
             <h2 id="reviews-incidents" className="text-base font-semibold text-slate-900">
               Avis liés aux pannes <span className="text-sm font-normal text-slate-500">({incidentReviews.length})</span>
@@ -157,6 +266,7 @@ export default function ClientsReviews() {
                               </span>
                             </div>
                             <p className="text-slate-700">« {review.text} »</p>
+                            {renderAnswer(answerableById[review.id])}
                           </li>
                         );
                       })}
@@ -201,6 +311,10 @@ export default function ClientsReviews() {
               </div>
             </Card>
           </section>
+
+          {respondingReview && (
+            <ReviewResponseModal hotelState={careerState.hotel?.hotelState} review={respondingReview} onRespond={handleRespond} onClose={() => setRespondingId(null)} />
+          )}
         </>
       )}
     </div>

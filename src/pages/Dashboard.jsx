@@ -20,6 +20,7 @@ import { careerReferenceDate } from "../lib/career/careerEngine";
 import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
 import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
+import { vipGuestsInHouse } from "../lib/clients/guestProfiles";
 import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
 import { launchTargetedCampaign } from "../lib/marketing/targetedCampaigns";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -424,6 +425,7 @@ export default function Dashboard() {
           onStartFloor={handleStartFloor}
           onFitOut={handleFitOut}
           onSetMaintenanceLevel={handleSetMaintenanceLevel}
+          vipGuests={vipGuestsInHouse({ reservations: careerState?.hotel?.reservations, rooms: careerState?.hotel?.rooms, date: careerReferenceDate(careerState) })}
         />
       )}
 
