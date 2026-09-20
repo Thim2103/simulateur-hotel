@@ -66,6 +66,7 @@ import Clients from "./pages/Clients";
 import ClientsDashboard from "./pages/ClientsDashboard";
 import ClientsSegments from "./pages/ClientsSegments";
 import ClientsReviews from "./pages/ClientsReviews";
+import CorporateEvents from "./pages/CorporateEvents";
 import ClientsForecast from "./pages/ClientsForecast";
 import ClientsReport from "./pages/ClientsReport";
 import RmAdvancedDashboard from "./pages/RmAdvancedDashboard";
@@ -174,6 +175,7 @@ function App() {
                   <Route path="/clients/legacy" element={<Clients />} />
                   <Route path="/clients/segments" element={<ClientsSegments />} />
                   <Route path="/clients/reviews" element={<ClientsReviews />} />
+                  <Route path="/corporate/events" element={<CorporateEvents />} />
                   <Route path="/clients/forecast" element={<ClientsForecast />} />
                   <Route path="/clients/report" element={<ClientsReport />} />
                   <Route path="/rm-advanced" element={<RmAdvancedDashboard />} />

@@ -94,7 +94,8 @@ export function vipGuestsInHouse({ reservations, rooms, date } = {}) {
   const night = dayIndex(date ?? new Date());
   const roomsById = new Map(safeArray(rooms).map((room) => [Number(room.id), room]));
   return safeArray(reservations)
-    .filter((reservation) => !isCancelled(reservation) && dayIndex(reservation.arrival) <= night && night < dayIndex(reservation.departure))
+    // The meeting room of a seminar (lib/mice/) is not a guest.
+    .filter((reservation) => !isCancelled(reservation) && reservation.source !== "mice-meeting" && dayIndex(reservation.arrival) <= night && night < dayIndex(reservation.departure))
     .map((reservation) => ({ reservation, room: roomsById.get(Number(reservation.room_id)) }))
     .filter(({ reservation, room }) => isVip(reservation, room))
     .map(({ reservation, room }) => ({

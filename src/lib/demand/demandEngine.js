@@ -30,6 +30,7 @@ import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { calendarEffects, seasonDemand } from "../hotelEvents/hotelEventsEngine";
 import { computeCampaignEffects } from "../marketing/targetedCampaigns";
 import { pendingDemandShift } from "../clients/guestReviewEngine";
+import { isMeetingRoom } from "../mice/miceEngine";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
@@ -168,7 +169,8 @@ function candidateRooms(bookableRooms, seq, premiumFirst) {
 }
 
 export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null } = {}) {
-  const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service");
+  // Meeting rooms are sold to companies (lib/mice/), not as ordinary bedrooms.
+  const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service" && !isMeetingRoom(room));
   const existing = safeArray(reservations);
   const expected = bookableRooms.length * BASE_ARRIVALS_PER_ROOM * multiplier + safeNumber(carry, 0);
   const count = bookableRooms.length === 0 ? 0 : Math.floor(expected);

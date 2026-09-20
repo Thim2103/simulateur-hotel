@@ -23,6 +23,7 @@
 // every price stays exactly as before. Pure and deterministic.
 import { safeArray, safeNumber, safeObject } from "../safe";
 import { calendarEffects, dayIndexOf } from "../hotelEvents/hotelEventsEngine";
+import { isMeetingRoom } from "../mice/miceEngine";
 
 export const MIN_YIELD_MULTIPLIER = 0.7;
 export const MAX_YIELD_MULTIPLIER = 1.5;
@@ -91,7 +92,7 @@ export function setYieldRule(hotelBundle, ruleId, patch) {
 
 // How full the hotel is on a night, in % of its bookable rooms.
 export function projectedOccupancy(rooms, reservations, date) {
-  const bookable = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service").length;
+  const bookable = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service" && !isMeetingRoom(room)).length;
   if (bookable === 0) return 0;
   const night = dayIndexOf(date);
   const occupied = safeArray(reservations).filter((reservation) => {

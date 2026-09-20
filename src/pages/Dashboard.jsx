@@ -21,6 +21,7 @@ import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
 import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
+import { respondToRequest } from "../lib/mice/miceEngine";
 import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
 import { launchTargetedCampaign } from "../lib/marketing/targetedCampaigns";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -245,6 +246,11 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => applyVipAction(hotel, reservationId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
   };
 
+  // The seminar desk (schematic/MiceBookingModal.jsx): answer a company's quote.
+  const handleMiceRespond = (requestId, action) => {
+    applyHotelAdjustment((hotel) => respondToRequest(hotel, requestId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -435,6 +441,7 @@ export default function Dashboard() {
           reservations={careerState?.hotel?.reservations ?? []}
           date={careerReferenceDate(careerState)}
           onVipAction={handleVipAction}
+          onMiceRespond={handleMiceRespond}
         />
       )}
 

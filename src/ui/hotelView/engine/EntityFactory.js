@@ -17,6 +17,7 @@ import { tileToWorld } from "./IsoProjection";
 import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
 import { FLOOR_COUNT, AMENITY_LAYOUT, roomTile, guestTile, staffTile, incidentTile } from "../scene/HotelSceneLayout";
 import { isExpansionRoom } from "../../../lib/expansion/hotelExpansionEngine";
+import { isMeetingRoom } from "../../../lib/mice/miceEngine";
 
 const MAX_CHARACTERS = 6;
 
@@ -89,7 +90,7 @@ function buildRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
         // quick-action modal, which needs to call back into
         // `cleaningRoomIds.has(room.id)`) never has to parse it back out
         // of `"room:<id>"` and risk a string/number mismatch.
-        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}) },
+        metadata: { number: room.number, floorLevel: floor.level, roomId: room.id, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}) },
       };
     })
   );
@@ -110,7 +111,7 @@ function buildExpansionRoomEntities(rooms, cleaningRoomIds, vipRoomIds) {
     footprint: zeroFootprint(),
     state: roomState(room, cleaningRoomIds),
     activity: null,
-    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}) },
+    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type, ...(vipRoomIds?.has(room.id) ? { vip: true } : {}), ...(isMeetingRoom(room) ? { meeting: true } : {}) },
   }));
 }
 
