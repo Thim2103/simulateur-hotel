@@ -26,6 +26,7 @@ import { safeArray, safeNumber, safeObject } from "../safe";
 import { createReservation, findReservationConflicts } from "../pmsModels";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
+import { calendarEffects, seasonDemand } from "../hotelEvents/hotelEventsEngine";
 
 export const NEUTRAL_REPUTATION = 60;
 export const MIN_MULTIPLIER = 0.3;
@@ -39,7 +40,6 @@ export const BASE_ARRIVALS_PER_ROOM = 0.3;
 // justifies costs ~8% of demand.
 export const PRICE_ELASTICITY = 0.8;
 
-const SEASON_BY_MONTH = [0.85, 0.85, 0.95, 1.0, 1.05, 1.15, 1.25, 1.25, 1.05, 1.0, 0.9, 1.0]; // Jan..Dec
 const WEEKDAY_FACTOR = [1.0, 0.95, 0.95, 1.0, 1.0, 1.1, 1.1]; // Sun..Sat
 
 export const INCIDENT_CONVERSION_MALUS = { minor: 0.02, moderate: 0.05, critical: 0.1 };
@@ -68,9 +68,11 @@ function addDays(date, days) {
   return new Date(new Date(date).getTime() + days * 86400000);
 }
 
-export function seasonFactor(referenceDate) {
+// The named season's demand (lib/hotelEvents/: high season +40 %, low
+// season -30 %, marketing wins some of it back) times the weekday effect.
+export function seasonFactor(referenceDate, hotelState) {
   const date = new Date(referenceDate);
-  return SEASON_BY_MONTH[date.getUTCMonth()] * WEEKDAY_FACTOR[date.getUTCDay()];
+  return seasonDemand(date, hotelState) * WEEKDAY_FACTOR[date.getUTCDay()];
 }
 
 export function reputationFactor(reputation) {
@@ -126,16 +128,19 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const state = safeObject(hotelState);
   const reputation = safeNumber(state.progression?.player?.reputation, NEUTRAL_REPUTATION);
   const index = priceIndex(rooms, reservations, referenceDate);
+  // Scheduled events (festival, trade fair, heat wave...) and the season's
+  // price tolerance come from the calendar (lib/hotelEvents/).
+  const calendar = calendarEffects(referenceDate, state);
 
   const factors = {
     reputation: reputationFactor(reputation),
-    price: priceFactor(index, reputation, computeZoneEffects(state).standing),
-    season: seasonFactor(referenceDate),
-    events: eventFactor(state.progression?.activeEvents),
+    price: priceFactor(index, reputation, computeZoneEffects(state).standing + calendar.priceTolerance),
+    season: seasonFactor(referenceDate, state),
+    events: eventFactor(state.progression?.activeEvents) * calendar.eventsDemandFactor,
     incidents: incidentFactor(state),
   };
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
-  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index };
+  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index, premiumFirst: calendar.premiumFirst };
 }
 
 // Turns today's demand into concrete new reservations: each is assigned
@@ -144,7 +149,17 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
 // demand the report surfaces. Priced at the room's base rate times the
 // player's own price level, so raising prices also raises what new
 // guests pay (and lowers how many come, see priceFactor()).
-export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0 } = {}) {
+// Which rooms to try for a booking, in order: rotating through all of them
+// (the starting point moves with `seq`), or, when high-end guests are in
+// town (a festival, a trade fair), the deluxe rooms and suites first.
+function candidateRooms(bookableRooms, seq, premiumFirst) {
+  const rotate = (list) => list.map((_, offset) => list[(seq + offset) % list.length]);
+  if (!premiumFirst) return rotate(bookableRooms);
+  const isPremium = (room) => room.type === "deluxe" || room.type === "suite";
+  return [...rotate(bookableRooms.filter(isPremium)), ...rotate(bookableRooms.filter((room) => !isPremium(room)))];
+}
+
+export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false } = {}) {
   const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service");
   const existing = safeArray(reservations);
   const expected = bookableRooms.length * BASE_ARRIVALS_PER_ROOM * multiplier + safeNumber(carry, 0);
@@ -162,8 +177,9 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
     const departure = addDays(arrival, STAY_PATTERN[(seq * 3 + 1) % STAY_PATTERN.length]);
 
     let booking = null;
-    for (let offset = 0; offset < bookableRooms.length && !booking; offset += 1) {
-      const room = bookableRooms[(seq + offset) % bookableRooms.length];
+    const candidates = candidateRooms(bookableRooms, seq, premiumFirst);
+    for (let offset = 0; offset < candidates.length && !booking; offset += 1) {
+      const room = candidates[offset];
       const candidate = createReservation({
         id: nextId,
         client_name: `Client ${nextId}`,
@@ -206,6 +222,7 @@ export function applyDemand({ hotelState, rooms, reservations, referenceDate = n
     referenceDate,
     multiplier: demand.multiplier,
     priceIdx: demand.priceIndex,
+    premiumFirst: demand.premiumFirst,
     carry: safeObject(state.demand).carry,
   });
 

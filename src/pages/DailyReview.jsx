@@ -119,6 +119,40 @@ export default function DailyReview() {
         <RevenueProfitBar revenue={summary.revenue} profit={summary.profit} />
       </GameSection>
 
+      {review.calendar && (
+        <GameSection id="review-calendar" title="Saison & événements" icon="📅">
+          <GameCard>
+            <p data-testid="calendar-season" data-tier={review.calendar.season.tier} className="text-sm font-semibold text-slate-800">
+              {review.calendar.season.icon} {review.calendar.season.label}
+              {review.calendar.season.demandPercent !== 0 ? ` · demande ${review.calendar.season.demandPercent > 0 ? "+" : "−"}${Math.abs(review.calendar.season.demandPercent)} %` : ""}
+            </p>
+            <ul className="mt-2 flex flex-col gap-2 text-sm">
+              {review.calendar.ongoing.map((event) => (
+                <li key={`ongoing-${event.id}`} data-testid="calendar-ongoing" data-event={event.id} className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-900">
+                  <span aria-hidden="true">{event.icon}</span> <strong>{event.name}</strong> — {event.endsToday ? "dernier jour" : `jour ${event.dayNumber}/${event.totalDays}`}
+                  {event.endsToday && event.kind !== "audit" ? " : l'événement se termine aujourd'hui." : ""}
+                  <span className="block text-xs">{event.effects.join(" · ")}</span>
+                </li>
+              ))}
+              {review.calendar.upcoming.map((event) => (
+                <li key={`upcoming-${event.id}`} data-testid="calendar-upcoming" data-event={event.id} className="rounded-lg border border-dashed border-slate-300 p-2 text-slate-800">
+                  <span aria-hidden="true">{event.icon}</span> <strong>{event.name}</strong> — dans {event.startsInDays} jour{event.startsInDays > 1 ? "s" : ""} ({event.totalDays} j)
+                  <span className="block text-xs">{event.effects.join(" · ")}</span>
+                </li>
+              ))}
+              {review.calendar.audit && (
+                <li data-testid="calendar-audit" data-outcome={review.calendar.audit.outcome} className={`rounded-lg border p-2 ${review.calendar.audit.outcome === "label" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : review.calendar.audit.outcome === "warning" ? "border-rose-200 bg-rose-50 text-rose-900" : "border-slate-200 bg-slate-50 text-slate-800"}`}>
+                  🧾 {review.calendar.audit.message}
+                </li>
+              )}
+            </ul>
+            {review.calendar.ongoing.length === 0 && review.calendar.upcoming.length === 0 && !review.calendar.audit && (
+              <p className="mt-2 text-xs text-slate-500">Aucun événement en cours ni annoncé.</p>
+            )}
+          </GameCard>
+        </GameSection>
+      )}
+
       {review.maintenance && (
         <GameSection id="review-maintenance" title="Entretien & charges d'exploitation" icon="🔧">
           <GameCard>

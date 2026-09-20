@@ -13,6 +13,7 @@ import { todaysStaffEvents } from "../staff/staffEventsEngine";
 import { upgradesCompletedOn, UPGRADES } from "../zones/zoneUpgradesEngine";
 import { floorsCompletedOn, SLOTS_PER_FLOOR } from "../expansion/hotelExpansionEngine";
 import { maintenanceOn, WEAR_THRESHOLD } from "../maintenance/maintenanceCostEngine";
+import { describeCalendar, todaySnapshot, auditOn } from "../hotelEvents/hotelEventsEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -86,6 +87,20 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   floorsCompletedOn(careerState?.hotel?.hotelState, careerState?.day).forEach((entry) => {
     causalChain.push(`Gros œuvre terminé : l'étage ${entry.level} est construit. Aménagez ses chambres (jusqu'à ${SLOTS_PER_FLOOR}) pour augmenter votre capacité d'accueil.`);
   });
+  // Season and events around the day just played (lib/hotelEvents/): what is
+  // coming, what ends today, and the audit result if there was one.
+  const hotelState = careerState?.hotel?.hotelState;
+  const snapshot = todaySnapshot(hotelState);
+  const calendar = snapshot?.date && snapshot.day === careerState?.day ? { ...describeCalendar(snapshot.date, hotelState), audit: auditOn(hotelState, careerState.day) } : null;
+  if (calendar) {
+    calendar.upcoming.forEach((event) => {
+      causalChain.push(`${event.name} dans ${event.startsInDays} jour${event.startsInDays > 1 ? "s" : ""} (${event.totalDays} j) : ${event.effects[0] || event.description}`);
+    });
+    calendar.ongoing.filter((event) => event.endsToday && event.kind !== "audit").forEach((event) => {
+      causalChain.push(`${event.name} se termine aujourd'hui : la demande et les charges reviennent à la normale.`);
+    });
+    if (calendar.audit) causalChain.push(calendar.audit.message);
+  }
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);
@@ -108,6 +123,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     // Resignations, notices, sick leave and other HR news of the day (see
     // lib/staff/staffEventsEngine.js).
     staffEvents: todaysStaffEvents(careerState?.hotel?.hotelState, careerState?.day),
+    // Season, events in progress, announced events and audit result -- null
+    // until a day has been played (lib/hotelEvents/).
+    calendar,
     // Today's upkeep bill ("Entretien & Charges d'exploitation"): by category,
     // at which level, and the hotel's condition -- null when nothing was
     // recorded (see lib/maintenance/maintenanceCostEngine.js).
