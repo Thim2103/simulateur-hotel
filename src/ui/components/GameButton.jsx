@@ -12,7 +12,7 @@ const VARIANTS = {
 
 export default function GameButton({ children, variant = "primary", icon, className = "", ...props }) {
   const base =
-    "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition-all duration-150 " +
+    "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all duration-150 " +
     "hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
     "disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0";
 

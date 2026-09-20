@@ -5,7 +5,7 @@
 export default function GameCard({ title, description, icon, accent = false, children, className = "", as: Component = "section" }) {
   return (
     <Component
-      className={`rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5 ${
+      className={`rounded-2xl border border-[var(--ds-border)] bg-white p-4 shadow-[var(--ds-shadow-card)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--ds-shadow-lift)] sm:p-5 ${
         accent ? "border-l-4 border-l-[#e9ab1f]" : ""
       } ${className}`}
     >

@@ -6,7 +6,7 @@ import { fadeIn } from "../animations";
 export default function GamePanel({ title, actions, children, animate = true, className = "" }) {
   return (
     <div
-      className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm ${animate ? fadeIn : ""} ${className}`}
+      className={`rounded-2xl border border-[var(--ds-border)] bg-white p-5 shadow-[var(--ds-shadow-card)] ${animate ? fadeIn : ""} ${className}`}
     >
       {(title || actions) && (
         <div className="mb-4 flex items-center justify-between gap-3">

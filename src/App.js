@@ -92,6 +92,7 @@ import EsgCertifications from "./pages/EsgCertifications";
 import EsgForecast from "./pages/EsgForecast";
 import EsgReport from "./pages/EsgReport";
 import Expansion from "./pages/Expansion";
+import Management from "./pages/Management";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 import { GameThemeProvider } from "./ui/designSystem/GameThemeProvider";
 import { GmDeskProvider } from "./ui/gmDesk/GmDeskProvider";
@@ -201,6 +202,8 @@ function App() {
                   <Route path="/esg/forecast" element={<EsgForecast />} />
                   <Route path="/esg/report" element={<EsgReport />} />
                   <Route path="/expansion" element={<Expansion />} />
+                  <Route path="/management" element={<Management />} />
+                  <Route path="/hotel" element={<Navigate to="/dashboard#hotel-plan" replace />} />
                   <Route path="/restaurant/*" element={<RestaurantSimulator />} />
                   <Route path="/gm-desk" element={<GmDesk />} />
                 </Routes>
