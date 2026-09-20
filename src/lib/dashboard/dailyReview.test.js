@@ -69,3 +69,28 @@ describe("buildDailyReview / demand", () => {
     expect(buildDailyReview({ careerState: { day: 4 }, dashboardState: { kpis } }).demand).toBeNull();
   });
 });
+
+describe("buildDailyReview / staffing", () => {
+  const kpis = { occupancyRate: 50, housekeepingQuality: 80, satisfaction: 4, staffMorale: 70, profit: 100, revenueToday: 1000, date: "2026-01-04" };
+  const review = (hotelState) => buildDailyReview({ careerState: { day: 4, hotel: { hotelState } }, dashboardState: { kpis } });
+
+  test("explains a housekeeper shortage and its consequences", () => {
+    const { causalChain } = review({ staffing: { housekeepingCoverage: 0.6, cleaningDelayFactor: 1.7, receptionCoverage: 1 } });
+    expect(causalChain.some((line) => /manque de gouvernantes \(couverture 60 %\).*1\.7×/i.test(line))).toBe(true);
+  });
+
+  test("explains a reception shortage", () => {
+    const { causalChain } = review({ staffing: { housekeepingCoverage: 1, receptionCoverage: 0.5, cleaningDelayFactor: 1 } });
+    expect(causalChain.some((line) => /réception en sous-effectif \(couverture 50 %\)/i.test(line))).toBe(true);
+  });
+
+  test("mentions repairs the in-house technician took on", () => {
+    const { causalChain } = review({ activeIncidents: [{ id: "i", status: "repairing", autoRepaired: true }, { id: "j", status: "repairing" }] });
+    expect(causalChain.some((line) => /prise?\s+en charge 1 panne\(s\) sans prestataire externe/i.test(line) || /pris en charge 1 panne\(s\) sans prestataire externe/i.test(line))).toBe(true);
+  });
+
+  test("says nothing about staff for a hotel with no roster or with enough staff", () => {
+    expect(review({}).causalChain.some((line) => /gouvernantes|réception en sous-effectif|maintenance/i.test(line))).toBe(false);
+    expect(review({ staffing: { housekeepingCoverage: 1.3, receptionCoverage: 1.2, cleaningDelayFactor: 1 } }).causalChain.some((line) => /gouvernantes/i.test(line))).toBe(false);
+  });
+});

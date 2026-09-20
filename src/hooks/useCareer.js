@@ -11,7 +11,7 @@ import {
 import careerRepository from "../lib/career/careerRepository";
 import { buildReplayRunFromCareerRun } from "../lib/replay/replayEngine";
 import { analyzeRun } from "../lib/analytics/analyticsEngine";
-import { reconcileIncidents, advanceIncidentRepairs } from "../lib/maintenance/incidentEngine";
+import { reconcileIncidents, advanceIncidentRepairs, assignTechnicians } from "../lib/maintenance/incidentEngine";
 import { appendIncidentReviews } from "../lib/maintenance/incidentImpact";
 import { getHotelState } from "../lib/hotelRepository";
 import { getRestaurantState } from "../lib/restaurantRepository";
@@ -220,7 +220,9 @@ export function useCareer() {
         // today (see lib/maintenance/incidentImpact.js) -- read back by
         // DailyReview.jsx from hotelState.incidentReviews.
         const hotelStateWithIncidents = appendIncidentReviews(
-          advanceIncidentRepairs(reconcileIncidents(nextState.hotel.hotelState, lastAnalysis?.diagnostics, nextState.day), nextState.day),
+          // In-house technicians take on the incidents they can fix before
+          // the day's repair progress is applied (see incidentEngine.js).
+          advanceIncidentRepairs(assignTechnicians(reconcileIncidents(nextState.hotel.hotelState, lastAnalysis?.diagnostics, nextState.day), nextState.day), nextState.day),
           nextState.day
         );
 

@@ -2,6 +2,8 @@
 // (fixedCosts, payroll, rent, marketing budget, ESG investment); this
 // prorates them to a single day and adds any one-off costs raised by
 // today's events (equipment failures, extra staffing, etc.).
+import { rosterDailyPayroll } from "../staff/staffRoster";
+
 const DAYS_PER_MONTH = 30;
 
 function perDay(monthlyAmount) {
@@ -28,7 +30,10 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     perDay(hotelFinance.fixedCosts) +
     perDay(hotelFinance.payroll) +
     perDay(restaurantFinance.fixedCosts) +
-    perDay(restaurantFinance.rent);
+    perDay(restaurantFinance.rent) +
+    // The named hotel-side roster's daily salaries (lib/staff/staffRoster.js)
+    // -- 0 for a hotel with no roster, so nothing changes for it.
+    rosterDailyPayroll(hotelState);
 
   const restaurantPayroll = restaurantStaff.reduce((sum, person) => sum + Number(person.salary || 0), 0);
 

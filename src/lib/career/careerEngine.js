@@ -17,6 +17,7 @@ import { computeSkillBonuses, updateSkill } from "./careerSkills";
 import { applyCashRewardToHotel, claimReward as claimRewardPure, grantReward } from "./careerRewards";
 import { progressionSnapshot } from "./careerProgression";
 import { applyDemand } from "../demand/demandEngine";
+import { advanceRoster, seedStarterRoster } from "../staff/staffRoster";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -26,7 +27,14 @@ function clamp(value, min, max) {
 // whichever hotel bundle the caller provides (or bare defaults).
 export function startCareer({ playerId, hotelState, restaurantState, rooms, reservations, startDate = new Date() } = {}) {
   return {
-    ...createCareerState({ playerId, startDate: new Date(startDate).toISOString().slice(0, 10), hotel: { hotelState, restaurantState, rooms, reservations } }),
+    ...createCareerState({
+      playerId,
+      startDate: new Date(startDate).toISOString().slice(0, 10),
+      // A new career starts with a small named team, at no extra cost
+      // (see staffRoster.seedStarterRoster()); a hotel too small to absorb
+      // it, or one with no hotelState yet, starts without a roster.
+      hotel: { hotelState: hotelState ? seedStarterRoster(hotelState) : hotelState, restaurantState, rooms, reservations },
+    }),
     status: "active",
     missions: seedMissions(),
     objectives: seedObjectives(),
@@ -164,7 +172,10 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
     startDate: state.startDate || new Date(new Date(referenceDate).getTime() - state.day * 86400000).toISOString().slice(0, 10),
     hotel: {
       ...state.hotel,
-      hotelState: dailyReport.nextState.hotelState,
+      // One day of wear and progress for the named roster (staffing
+      // snapshot, fatigue/morale, trainings due) against today's real
+      // occupancy -- see lib/staff/staffRoster.js. No-op without a roster.
+      hotelState: advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

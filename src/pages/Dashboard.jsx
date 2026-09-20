@@ -12,7 +12,7 @@ import { skillLabel } from "../lib/career/careerSkills";
 import { buildAttentionItems } from "../lib/dashboard/attentionItems";
 import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
 import { findQuickAction } from "../lib/dashboard/dashboardActions";
-import { payForRepair } from "../lib/maintenance/incidentEngine";
+import { payForRepair, repairTerms } from "../lib/maintenance/incidentEngine";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -351,6 +351,7 @@ export default function Dashboard() {
           onPriorityClean={handlePriorityClean}
           onRepairNow={(entity) => handleRepairIncident(entity, { emergency: true })}
           onCallTechnician={(entity) => handleRepairIncident(entity, { emergency: false })}
+          repairTerms={repairTerms(careerState?.hotel?.hotelState)}
         />
       )}
 

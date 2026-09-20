@@ -22,6 +22,7 @@ import { generateStaffDiagnostics } from "./staffDiagnostics";
 import { generateStaffForecast } from "./staffForecast";
 import { createStaffState } from "./staffState";
 import { recordCycle } from "../scenario/scenarioReplay";
+import { effectiveHotelFinance } from "./staffRoster";
 import { applyStaffDecision, findStaffAction, STAFF_ACTION_CATALOG } from "./staffActions";
 
 function toDateOnly(referenceDate) {
@@ -44,14 +45,14 @@ export function runStaffCycle({ hotelBundle, dailyReport = null, previousState =
   const previous = safeObject(previousState);
   const cyclesElapsed = safeNumber(previous.cyclesElapsed, 0) + 1;
 
-  const headcount = computeHeadcount({ hotelFinance: hotelState.finance, restaurantStaff });
+  const headcount = computeHeadcount({ hotelFinance: effectiveHotelFinance(hotelState), restaurantStaff });
   const morale = computeMorale({ restaurantStaff, staffWellbeing });
   const { housekeepingLoad, serviceLoad, overload } = computeOverload({ roomCount, restaurantSeats, headcount });
   const absenteeism = computeAbsenteeism({ morale, overload });
   const productivity = computeProductivity({ restaurantStaff, overload });
   const departuresLast = safeArray(dailyReport?.staffChanges?.departures).length;
   const turnover = computeTurnover({ morale, overload, departuresLast, headcount });
-  const payroll = computePayrollCost({ hotelFinance: hotelState.finance, restaurantFinance: restaurantState.finance });
+  const payroll = computePayrollCost({ hotelFinance: effectiveHotelFinance(hotelState), restaurantFinance: restaurantState.finance });
 
   const diagnostics = generateStaffDiagnostics({ headcount, morale, productivity, absenteeism, overload, housekeepingLoad, serviceLoad, turnover });
 

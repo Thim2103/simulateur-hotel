@@ -23,6 +23,8 @@
 // lib/dashboard/dashboardActions.js's own quick actions already persist
 // through).
 import { safeArray, safeObject } from "../safe";
+import { debitCurrentMonth } from "../finance/oneOffCosts";
+import { getRoster, employeeEfficiency, TECHNICIAN_MAX_SEVERITY, LEVELS } from "../staff/staffRoster";
 
 // Diagnostics carry only "low"/"medium"/"high" (see
 // analyticsDiagnostics.js) -- mapped to the player-facing tiers the spec
@@ -134,21 +136,69 @@ export function advanceIncidentRepairs(hotelState, day) {
   return { ...state, activeIncidents };
 }
 
-// Bumps the CURRENT month's cost total by `amount` -- the only path that
-// actually survives lib/dailyCycle/updateFinance.js's own next accumulate
-// pass (its `Number(value) || 0` map over `finance.costs` would silently
-// zero out anything shaped as an object, so a labelled `{id, amount}`
-// entry is NOT safe here -- see this module's own research). Mirrors the
-// exact accumulation pattern useHotelSimulator.js/updateFinance.js already
-// use: `costs` is a flat array of plain numbers, one per month, and a
-// same-month cost is folded into its last entry.
-function debitCurrentMonth(hotelState, amount) {
-  const finance = safeObject(hotelState.finance);
-  const costs = safeArray(finance.costs).map((value) => Number(value) || 0);
-  if (costs.length === 0) costs.push(0);
-  const lastIndex = costs.length - 1;
-  const nextCosts = costs.map((value, index) => (index === lastIndex ? value + amount : value));
-  return { ...hotelState, finance: { ...finance, costs: nextCosts } };
+// ---- in-house technicians (see lib/staff/staffRoster.js) -----------------
+
+// What an in-house technician changes about repairs the PLAYER orders: with
+// one available (not exhausted), an emergency call costs 1.2x instead of
+// 1.5x (no external premium) and a standard repair is a day faster.
+export const TECHNICIAN_EMERGENCY_MULTIPLIER = 1.2;
+export const TECHNICIAN_DELAY_REDUCTION_DAYS = 1;
+// A repair the technician handles on their own only costs materials.
+export const TECHNICIAN_MATERIALS_RATIO = 0.25;
+
+const SEVERITY_RANK = { minor: 0, moderate: 1, critical: 2 };
+const MIN_TECHNICIAN_EFFICIENCY = 0.6;
+
+function technicians(hotelState) {
+  return getRoster(hotelState).filter((employee) => employee.role === "maintenance");
+}
+
+export function repairTerms(hotelState) {
+  const hasTechnician = technicians(hotelState).some((employee) => employeeEfficiency(employee) >= MIN_TECHNICIAN_EFFICIENCY);
+  return {
+    hasTechnician,
+    emergencyMultiplier: hasTechnician ? TECHNICIAN_EMERGENCY_MULTIPLIER : EMERGENCY_COST_MULTIPLIER,
+    delayReduction: hasTechnician ? TECHNICIAN_DELAY_REDUCTION_DAYS : 0,
+  };
+}
+
+export function standardRepairDelay(severity, terms) {
+  return Math.max(1, (REPAIR_DELAY_DAYS[severity] ?? REPAIR_DELAY_DAYS.moderate) - (terms?.delayReduction || 0));
+}
+
+// Puts each free in-house technician on an open incident their level can
+// handle (beginner: minor, experienced: up to moderate, expert: anything),
+// most severe first and using the least-skilled technician able to do it,
+// so experts stay free for the hard cases. The incident becomes
+// "repairing" (handledBy that employee) and only costs materials -- no
+// external contractor. Called once per day from useCareer.js's nextDay(),
+// right after reconcileIncidents(). No-op without technicians.
+export function assignTechnicians(hotelState, day) {
+  const state = safeObject(hotelState);
+  const incidents = safeArray(state.activeIncidents);
+  const busy = new Set(incidents.filter((incident) => incident.status === "repairing" && incident.handledBy).map((incident) => incident.handledBy));
+  const free = technicians(state)
+    .filter((employee) => !busy.has(employee.id) && !employee.training && employeeEfficiency(employee) >= MIN_TECHNICIAN_EFFICIENCY)
+    .sort((a, b) => LEVELS[a.level].rank - LEVELS[b.level].rank);
+  if (free.length === 0) return state;
+
+  const queue = incidents.filter((incident) => incident.status === "active").sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity]);
+  const assignments = new Map();
+  queue.forEach((incident) => {
+    const index = free.findIndex((employee) => SEVERITY_RANK[TECHNICIAN_MAX_SEVERITY[employee.level]] >= SEVERITY_RANK[incident.severity]);
+    if (index === -1) return;
+    assignments.set(incident.id, free.splice(index, 1)[0]);
+  });
+  if (assignments.size === 0) return state;
+
+  let nextState = state;
+  const nextIncidents = incidents.map((incident) => {
+    const technician = assignments.get(incident.id);
+    if (!technician) return incident;
+    nextState = debitCurrentMonth(nextState, Math.round(incident.repairCost * TECHNICIAN_MATERIALS_RATIO));
+    return { ...incident, status: "repairing", handledBy: technician.id, autoRepaired: true, repairEtaDay: day + (REPAIR_DELAY_DAYS[incident.severity] ?? 1) };
+  });
+  return { ...nextState, activeIncidents: nextIncidents };
 }
 
 // Pays for a repair: debits its real cost from the hotel's own finances,
@@ -171,10 +221,11 @@ export function payForRepair(hotelBundle, incidentId, { emergency = false, day }
   const incident = incidents.find((item) => item.id === incidentId);
   if (!incident || incident.status !== "active") return bundle;
 
-  const cost = emergency ? Math.round(incident.repairCost * EMERGENCY_COST_MULTIPLIER) : incident.repairCost;
+  const terms = repairTerms(hotelState);
+  const cost = emergency ? Math.round(incident.repairCost * terms.emergencyMultiplier) : incident.repairCost;
   const nextIncident = emergency
     ? { ...incident, status: "resolved" }
-    : { ...incident, status: "repairing", repairEtaDay: day + REPAIR_DELAY_DAYS[incident.severity] };
+    : { ...incident, status: "repairing", repairEtaDay: day + standardRepairDelay(incident.severity, terms) };
 
   const nextHotelState = {
     ...debitCurrentMonth(hotelState, cost),
@@ -188,6 +239,8 @@ const IncidentEngine = {
   reconcileIncidents,
   advanceIncidentRepairs,
   payForRepair,
+  assignTechnicians,
+  repairTerms,
   SEVERITY_TIER,
   REPAIR_COST,
   REPAIR_DELAY_DAYS,

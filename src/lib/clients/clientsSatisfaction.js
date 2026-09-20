@@ -50,8 +50,10 @@ export function computeSatisfaction({
   // equipment incidents -- see lib/maintenance/incidentImpact.js. 0 (the
   // default) leaves every existing caller's result untouched.
   incidentPenalty = 0,
+  // Points lost to understaffing (see lib/staff/staffRoster.js).
+  staffingPenalty = 0,
 } = {}) {
-  const penalty = Math.max(0, safeNumber(incidentPenalty, 0));
+  const penalty = Math.max(0, safeNumber(incidentPenalty, 0)) + Math.max(0, safeNumber(staffingPenalty, 0));
   const inputs = [
     { weight: SATISFACTION_WEIGHTS.housekeeping, value: housekeepingQuality },
     { weight: SATISFACTION_WEIGHTS.staff, value: staffMorale },

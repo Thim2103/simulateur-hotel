@@ -11,6 +11,7 @@ import HeatmapChart from "../components/charts/HeatmapChart";
 import { useCareerContext } from "../context/CareerContext";
 import { useStaffEngine } from "../hooks/useStaffEngine";
 import { STAFF_ACTION_CATALOG } from "../lib/staff/staffEngine";
+import StaffRosterPanel from "../components/staff/StaffRosterPanel";
 
 const SEVERITY_BADGE = { high: "danger", medium: "warning", low: "info" };
 const CATEGORY_LABEL = { headcount: "Recrutement", training: "Formation", promotion: "Promotion", organization: "Organisation", overload: "Surcharge", wellbeing: "Bien-être" };
@@ -28,7 +29,7 @@ function sampleEvery(list, step) {
 // pattern pages/FinanceDashboard.jsx already established. Works
 // identically for a real Supabase session and a Guest Mode session.
 export default function StaffDashboard() {
-  const { careerState, isRunning: isCareerRunning, error: careerError, startCareer } = useCareerContext();
+  const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, applyHotelAdjustment } = useCareerContext();
   const { staffState, isRunning: isStaffRunning, error: staffError, loadStaffState, applyStaffAction } = useStaffEngine();
 
   useEffect(() => {
@@ -118,6 +119,8 @@ export default function StaffDashboard() {
       </header>
 
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">Une erreur est survenue : {error.message}</div>}
+
+      <StaffRosterPanel hotelState={careerState.hotel?.hotelState} day={careerState.day} onAdjust={applyHotelAdjustment} isRunning={isRunning} />
 
       {!staffState ? (
         <Card><p className="text-sm text-slate-500">Chargement du cycle RH…</p></Card>

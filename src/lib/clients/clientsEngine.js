@@ -28,6 +28,7 @@ import { staffFromCareerState } from "../staff/staffEngine";
 import { marketingFromCareerState } from "../marketing/marketingEngine";
 import { housekeepingFromCareerState } from "../housekeeping/housekeepingEngine";
 import { incidentSatisfactionPenalty } from "../maintenance/incidentImpact";
+import { staffingSatisfactionPenalty } from "../staff/staffRoster";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -116,6 +117,8 @@ export function runClientsCycle({
     // Unrepaired equipment incidents lower guest satisfaction directly
     // (see lib/maintenance/incidentImpact.js).
     incidentPenalty: incidentSatisfactionPenalty(hotelState),
+    // A shortage of housekeepers/receptionists (see lib/staff/staffRoster.js).
+    staffingPenalty: staffingSatisfactionPenalty(hotelState),
   });
 
   // 3. Reviews

@@ -84,3 +84,29 @@ test("housekeepingDiagnosticsToAnalytics adapts diagnostics into the Analytics s
     expect(entry).toHaveProperty("cycleIndex", null);
   });
 });
+
+describe("housekeeping / staffing shortage from the hotel roster", () => {
+  const run = (staffing) => {
+    const bundle = bundleFixture();
+    return runHousekeepingCycle({
+      hotelBundle: { ...bundle, hotelState: { ...bundle.hotelState, ...(staffing ? { staffing } : {}) } },
+      staffProductivity: 70,
+      hotelHeadcount: 15,
+      referenceDate: REFERENCE_DATE,
+    });
+  };
+
+  test("a housekeeper shortage stretches cleaning time proportionally, and hurts quality", () => {
+    const normal = run(null);
+    const short = run({ cleaningDelayFactor: 2, housekeepingCoverage: 0.5 });
+    expect(short.cleaningTime.totalMinutes).toBe(normal.cleaningTime.totalMinutes * 2);
+    expect(short.cleaningTime.minutesPerRoom).toBe(normal.cleaningTime.minutesPerRoom); // per-room care is unchanged
+    expect(short.quality).toBeLessThan(normal.quality);
+    expect(short.overload.totalMinutes ?? short.cleaningTime.totalMinutes).toBeGreaterThan(normal.cleaningTime.totalMinutes);
+  });
+
+  test("no roster snapshot, or enough staff, changes nothing", () => {
+    const normal = run(null);
+    expect(run({ cleaningDelayFactor: 1, housekeepingCoverage: 1.4 }).cleaningTime).toEqual(normal.cleaningTime);
+  });
+});

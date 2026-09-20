@@ -207,3 +207,69 @@ test("a legacy career (no start date) is dated from its next played day, keeping
   expect(first.state.startDate).toBe("2026-09-06"); // 2026-09-10 minus 4 days
   expect(careerReferenceDate(first.state).toISOString().slice(0, 10)).toBe("2026-09-11");
 });
+
+describe("career staff roster", () => {
+  const { effectiveHotelFinance, rosterDailyPayroll, staffingSatisfactionPenalty, hireEmployee, createEmployee } = require("../staff/staffRoster");
+
+  function bigPayrollCareer() {
+    const state = baseState();
+    return {
+      ...state,
+      startDate: "2026-07-13",
+      hotel: {
+        ...state.hotel,
+        hotelState: { ...state.hotel.hotelState, finance: { ...state.hotel.hotelState.finance, payroll: 38000 } },
+        rooms: Array.from({ length: 8 }, (_, i) => ({ id: i + 1, number: `${100 + i}`, type: "standard", price: 120, status: "libre", housekeeping_status: "clean" })),
+        reservations: [],
+      },
+    };
+  }
+
+  test("a new career whose payroll can absorb it starts with a small team at no extra cost", () => {
+    const started = startCareer({ playerId: "p", hotelState: { finance: { payroll: 38000 } } });
+    const hotelState = started.hotel.hotelState;
+    expect(hotelState.staffRoster.length).toBeGreaterThan(0);
+    expect(effectiveHotelFinance(hotelState).payroll).toBe(38000);
+  });
+
+  test("a career with too small a payroll starts without a roster, exactly as before", () => {
+    expect(baseState().hotel.hotelState.staffRoster).toBeUndefined();
+  });
+
+  test("playing a day records the staffing snapshot and wears the roster", async () => {
+    const state = startCareer({ playerId: "p", startDate: "2026-07-13", hotelState: bigPayrollCareer().hotel.hotelState, restaurantState: baseState().hotel.restaurantState, rooms: bigPayrollCareer().hotel.rooms, reservations: [] });
+    const { state: next } = await runCareerDay({ state, rng: () => 0.999 });
+    expect(next.hotel.hotelState.staffing).toMatchObject({ day: 1, occupiedRooms: expect.any(Number), housekeepingCoverage: expect.any(Number) });
+    expect(next.hotel.hotelState.staffRoster).toHaveLength(state.hotel.hotelState.staffRoster.length);
+  });
+
+  test("the roster's payroll is charged on top of the base payroll in the day's expenses", async () => {
+    const base = bigPayrollCareer();
+    const plain = await runCareerDay({ state: base, rng: () => 0.999 });
+    const roster = [createEmployee({ id: "a", name: "A", role: "housekeeping", level: "experienced" }), createEmployee({ id: "b", name: "B", role: "maintenance", level: "expert" })];
+    const withRoster = await runCareerDay({ state: { ...base, hotel: { ...base.hotel, hotelState: { ...base.hotel.hotelState, staffRoster: roster } } }, rng: () => 0.999 });
+    expect(withRoster.report.dailyReport.expenses.total - plain.report.dailyReport.expenses.total).toBe(rosterDailyPayroll({ staffRoster: roster }));
+  });
+
+  test("a hotel with no housekeepers falls short of coverage once guests arrive, which costs guest satisfaction", async () => {
+    const base = bigPayrollCareer();
+    let state = { ...base, hotel: { ...base.hotel, hotelState: { ...base.hotel.hotelState, staffRoster: [] } } };
+    for (let i = 0; i < 6; i += 1) ({ state } = await runCareerDay({ state, rng: () => 0.999 }));
+    const staffing = state.hotel.hotelState.staffing;
+    expect(staffing.occupiedRooms).toBeGreaterThan(0);
+    expect(staffing.housekeepingCoverage).toBe(0);
+    expect(staffing.cleaningDelayFactor).toBe(2.5);
+    expect(staffingSatisfactionPenalty(state.hotel.hotelState)).toBeGreaterThan(0);
+  });
+
+  test("hiring housekeepers removes the shortage", async () => {
+    const base = bigPayrollCareer();
+    let state = { ...base, hotel: { ...base.hotel, hotelState: { ...base.hotel.hotelState, staffRoster: [] } } };
+    for (let i = 0; i < 3; i += 1) {
+      state = { ...state, hotel: hireEmployee(state.hotel, { role: "housekeeping", level: "experienced", day: 0 }) };
+    }
+    for (let i = 0; i < 6; i += 1) ({ state } = await runCareerDay({ state, rng: () => 0.999 }));
+    expect(state.hotel.hotelState.staffing.housekeepingCoverage).toBeGreaterThanOrEqual(1);
+    expect(state.hotel.hotelState.staffing.cleaningDelayFactor).toBe(1);
+  });
+});
