@@ -141,7 +141,11 @@ export function recordMaintenance(hotelState, breakdown, day) {
   const current = state(hotelState);
   const bill = safeObject(breakdown);
   const total = safeNumber(bill.total, 0);
-  const condition = Math.max(0, Math.min(100, current.condition + LEVELS[current.level].conditionDrift));
+  // Seasonal and climate pressure (lib/hotelEvents/) wears the building
+  // faster on the day it applies; a Premium level absorbs half of it.
+  const today = safeObject(safeObject(safeObject(hotelState).hotelEvents).today);
+  const pressure = today.day === day ? safeNumber(today.wearPressure, 0) * (current.level === "premium" ? 0.5 : 1) : 0;
+  const condition = Math.max(0, Math.min(100, current.condition + LEVELS[current.level].conditionDrift - pressure));
   if (total === 0 && condition === current.condition && !safeObject(hotelState).maintenance) return hotelState;
 
   return {
@@ -187,7 +191,11 @@ export function maintenanceSatisfactionAdjustment(hotelState) {
 
 // The chance, per day, that neglect breaks something.
 export function wearChance(hotelState) {
-  return Math.max(0, Math.min(MAX_WEAR_CHANCE, (WEAR_THRESHOLD - hotelCondition(hotelState)) / 100));
+  // A heat or cold wave adds to it, even for a hotel in good shape (see
+  // lib/hotelEvents/: the bonus depends on the upkeep level).
+  const climateBonus = safeNumber(safeObject(safeObject(safeObject(hotelState).hotelEvents).today).wearChanceBonus, 0);
+  const neglect = Math.max(0, (WEAR_THRESHOLD - hotelCondition(hotelState)) / 100);
+  return Math.min(MAX_WEAR_CHANCE, neglect + Math.max(0, climateBonus));
 }
 
 // A diagnostic-shaped wear breakdown for `day`, or null. Decided by a hash

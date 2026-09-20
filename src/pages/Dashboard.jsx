@@ -16,6 +16,9 @@ import { payForRepair, repairTerms } from "../lib/maintenance/incidentEngine";
 import { startUpgrade } from "../lib/zones/zoneUpgradesEngine";
 import { startFloorConstruction, fitOutRooms } from "../lib/expansion/hotelExpansionEngine";
 import { setMaintenanceLevel } from "../lib/maintenance/maintenanceCostEngine";
+import { careerReferenceDate } from "../lib/career/careerEngine";
+import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
+import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -326,6 +329,9 @@ export default function Dashboard() {
           Un événement narratif vous attend. <Link to="/career/story" className="font-semibold underline">Le consulter →</Link>
         </div>
       )}
+
+      {/* Season and events of the day about to be played (lib/hotelEvents/). */}
+      <SeasonEventsBanner calendar={describeCalendar(careerReferenceDate(careerState), careerState?.hotel?.hotelState)} />
 
       <DashboardKpis
         kpis={dashboardState?.kpis ? {

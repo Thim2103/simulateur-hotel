@@ -102,7 +102,7 @@ export async function runDailyCycle(options = {}) {
   });
 
   // 4. Fixed and variable expenses (event costs included).
-  const expenses = calculateExpenses({ hotelState, restaurantState, events, rooms });
+  const expenses = calculateExpenses({ hotelState, restaurantState, events, rooms, referenceDate });
 
   // 5. Staff fatigue, morale, and turnover. Today's demand is approximated
   // from actual occupancy, so a busy day tires staff out faster.

@@ -27,6 +27,7 @@ import { applyHousekeepingDecision, findHousekeepingAction, HOUSEKEEPING_ACTION_
 import { staffFromCareerState } from "../staff/staffEngine";
 import { cleaningDelayFactor } from "../staff/staffRoster";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
+import { housekeepingPressureOf } from "../hotelEvents/hotelEventsEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -70,7 +71,7 @@ export function runHousekeepingCycle({
   // that shows up as lower quality below.
   // Zone upgrades (industrial laundry equipment...) speed it up, works in
   // the laundry slow it down (lib/zones/): x1 for a hotel that never upgraded.
-  const slowdown = cleaningDelayFactor(hotelState) * computeZoneEffects(hotelState).cleaningTimeMultiplier;
+  const slowdown = cleaningDelayFactor(hotelState) * computeZoneEffects(hotelState).cleaningTimeMultiplier * housekeepingPressureOf(hotelState);
   const cleaningTime = { totalMinutes: Math.round(baseCleaningTime.totalMinutes * slowdown), minutesPerRoom: baseCleaningTime.minutesPerRoom };
   const productivity = computeHousekeepingProductivity({ staffProductivity: staffProductivity ?? 65, staffOverload: staffOverload ?? 0, trainingLevel: settings.trainingLevel });
   const housekeeperCount = computeHousekeeperCount({ hotelHeadcount: hotelHeadcount ?? 0, staffingBonus: settings.staffingBonus });

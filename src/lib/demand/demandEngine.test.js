@@ -18,7 +18,8 @@ import { calculateHotelRevenue } from "../dailyCycle/calculateHotelRevenue";
 
 const JULY_WED = new Date("2026-07-15T12:00:00Z"); // high season, midweek
 const JAN_TUE = new Date("2026-01-13T12:00:00Z"); // low season, midweek
-const NOV_WED = new Date("2026-11-11T12:00:00Z");
+const NOV_WED = new Date("2026-11-11T12:00:00Z"); // low season
+const APR_WED = new Date("2026-04-15T12:00:00Z"); // shoulder season: the season factor is neutral
 
 function rooms(count = 6, price = 120) {
   return Array.from({ length: count }, (_, i) => ({ id: i + 1, number: String(100 + i), type: "standard", status: "libre", price }));
@@ -92,8 +93,8 @@ describe("demandEngine / computeDemand", () => {
   });
 
   it("a well-reputed hotel gets more demand than a poorly-reputed one", () => {
-    const good = computeDemand(args(hotelWith({ progression: { player: { reputation: 90 } } }))).multiplier;
-    const bad = computeDemand(args(hotelWith({ progression: { player: { reputation: 30 } } }))).multiplier;
+    const good = computeDemand(args(hotelWith({ progression: { player: { reputation: 90 } } }), APR_WED)).multiplier;
+    const bad = computeDemand(args(hotelWith({ progression: { player: { reputation: 30 } } }), APR_WED)).multiplier;
     expect(good).toBeGreaterThan(1);
     expect(bad).toBeLessThan(good);
   });

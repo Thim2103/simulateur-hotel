@@ -5,6 +5,7 @@
 import { rosterDailyPayroll } from "../staff/staffRoster";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { computeDailyMaintenance } from "../maintenance/maintenanceCostEngine";
+import { calendarEffects } from "../hotelEvents/hotelEventsEngine";
 
 const DAYS_PER_MONTH = 30;
 
@@ -23,7 +24,7 @@ function eventCosts(events) {
 // Splits today's spend into fixed (rent, base payroll, fixed costs) and
 // variable (marketing, ESG investment, restaurant staff payroll, one-off
 // event costs) so the daily report can show where money is going.
-export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [], rooms = [] } = {}) {
+export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [], rooms = [], referenceDate } = {}) {
   const hotelFinance = hotelState.finance || {};
   const restaurantFinance = restaurantState.finance || {};
   const restaurantStaff = safeArray(restaurantState.staff);
@@ -52,7 +53,9 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     perDay(restaurantState.marketing?.budget) +
     perDay(restaurantState.esg?.monthlyInvestment) +
     perDay(restaurantPayroll) +
-    eventCosts(events);
+    eventCosts(events) +
+    // A heat or cold wave (lib/hotelEvents/) raises the energy bill that day.
+    (referenceDate ? calendarEffects(referenceDate, hotelState).energyExtra : 0);
 
   const total = Math.max(0, fixed + variable);
 
