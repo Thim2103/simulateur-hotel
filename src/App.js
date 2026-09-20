@@ -66,6 +66,7 @@ import Clients from "./pages/Clients";
 import ClientsDashboard from "./pages/ClientsDashboard";
 import ClientsSegments from "./pages/ClientsSegments";
 import ClientsReviews from "./pages/ClientsReviews";
+import CorporateEvents from "./pages/CorporateEvents";
 import ClientsForecast from "./pages/ClientsForecast";
 import ClientsReport from "./pages/ClientsReport";
 import RmAdvancedDashboard from "./pages/RmAdvancedDashboard";
@@ -91,6 +92,7 @@ import EsgCertifications from "./pages/EsgCertifications";
 import EsgForecast from "./pages/EsgForecast";
 import EsgReport from "./pages/EsgReport";
 import Expansion from "./pages/Expansion";
+import Management from "./pages/Management";
 import RestaurantSimulator from "./pages/RestaurantSimulator";
 import { GameThemeProvider } from "./ui/designSystem/GameThemeProvider";
 import { GmDeskProvider } from "./ui/gmDesk/GmDeskProvider";
@@ -174,6 +176,7 @@ function App() {
                   <Route path="/clients/legacy" element={<Clients />} />
                   <Route path="/clients/segments" element={<ClientsSegments />} />
                   <Route path="/clients/reviews" element={<ClientsReviews />} />
+                  <Route path="/corporate/events" element={<CorporateEvents />} />
                   <Route path="/clients/forecast" element={<ClientsForecast />} />
                   <Route path="/clients/report" element={<ClientsReport />} />
                   <Route path="/rm-advanced" element={<RmAdvancedDashboard />} />
@@ -199,6 +202,8 @@ function App() {
                   <Route path="/esg/forecast" element={<EsgForecast />} />
                   <Route path="/esg/report" element={<EsgReport />} />
                   <Route path="/expansion" element={<Expansion />} />
+                  <Route path="/management" element={<Management />} />
+                  <Route path="/hotel" element={<Navigate to="/dashboard#hotel-plan" replace />} />
                   <Route path="/restaurant/*" element={<RestaurantSimulator />} />
                   <Route path="/gm-desk" element={<GmDesk />} />
                 </Routes>

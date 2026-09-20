@@ -165,6 +165,43 @@ export default function DailyReview() {
         </GameSection>
       )}
 
+      {review.mice && (
+        <GameSection id="review-mice" title="Séminaires & événements pro" icon="🤝">
+          <GameCard>
+            <ul className="flex flex-col gap-2 text-sm">
+              {review.mice.newRequests.map((request) => (
+                <li key={`new-${request.id}`} data-testid="mice-new" className="rounded-lg border border-cyan-200 bg-cyan-50 p-2 text-cyan-900">
+                  📨 Nouvelle demande : <strong>{request.company}</strong> — {request.attendees} personnes, {request.days} jour{request.days > 1 ? "s" : ""}, à partir du {request.startDate}.
+                </li>
+              ))}
+              {review.mice.today.map((event) => (
+                <li key={`today-${event.id}`} data-testid="mice-today" className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-900">
+                  🤝 <strong>{event.company}</strong> aujourd'hui — salle {event.meetingRoomNumber}, {event.attendees} personnes, {event.cateringPerDay.toLocaleString("fr-FR")} € de restauration.
+                </li>
+              ))}
+              {review.mice.startingSoon.map((event) => (
+                <li key={`soon-${event.id}`} data-testid="mice-soon" className="rounded-lg border border-dashed border-slate-300 p-2 text-slate-800">
+                  ⏳ <strong>{event.company}</strong> démarre le {event.startDate} — {event.attendees} personnes.
+                </li>
+              ))}
+              {review.mice.completed.map((event) => (
+                <li key={`done-${event.id}`} data-testid="mice-completed" className="rounded-lg border border-slate-200 bg-slate-50 p-2 text-slate-800">
+                  ✅ <strong>{event.company}</strong> terminé — {event.quote.total.toLocaleString("fr-FR")} € de chiffre d'affaires.
+                </li>
+              ))}
+            </ul>
+            {review.mice.pending > 0 && (
+              <p data-testid="mice-pending" className="mt-2 text-sm text-slate-700">
+                {review.mice.pending} devis en attente.{" "}
+                <Link to="/corporate/events" className="font-semibold underline">
+                  Les traiter →
+                </Link>
+              </p>
+            )}
+          </GameCard>
+        </GameSection>
+      )}
+
       {review.growth && (
         <GameSection id="review-growth" title="Yield & marketing" icon="🎯">
           <GameCard>

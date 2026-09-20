@@ -20,3 +20,9 @@ export function useCareerContext() {
   }
   return context;
 }
+
+// For chrome that only *shows* the career when there is one (the status bar):
+// null outside a provider instead of throwing.
+export function useOptionalCareerContext() {
+  return useContext(CareerContext);
+}

@@ -16,6 +16,7 @@ import { maintenanceOn, WEAR_THRESHOLD } from "../maintenance/maintenanceCostEng
 import { describeCalendar, todaySnapshot, auditOn } from "../hotelEvents/hotelEventsEngine";
 import { activeCampaigns, campaignsEndedOn, describeCampaign } from "../marketing/targetedCampaigns";
 import { reviewsPostedOn, unansweredNegativeReviews, currentImpact } from "../clients/guestReviewEngine";
+import { describeMiceDay } from "../mice/miceReport";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -135,6 +136,22 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     .forEach((review) => {
       causalChain.push(`${review.guestName} (V.I.P.) a laissé un avis ${review.rating}/5 : il pèse ×${review.weight} sur votre réputation et sur la demande de demain.`);
     });
+  // Seminar quotes and events around the day just played (lib/mice/).
+  const mice = playedDate ? describeMiceDay(hotelState, playedDate) : null;
+  if (mice) {
+    mice.newRequests.forEach((request) => {
+      causalChain.push(`Nouvelle demande de devis : ${request.company}, ${request.attendees} personnes sur ${request.days} jour${request.days > 1 ? "s" : ""}. À traiter avant le ${request.expiresOn}.`);
+    });
+    mice.startingSoon.forEach((event) => {
+      causalChain.push(`Séminaire ${event.company} le ${event.startDate} : ${event.attendees} personnes, préparez la salle ${event.meetingRoomNumber} et la restauration.`);
+    });
+    mice.today.forEach((event) => {
+      causalChain.push(`Séminaire ${event.company} aujourd'hui : ${event.cateringPerDay.toLocaleString("fr-FR")} € de restauration et une salle pleine.`);
+    });
+    mice.completed.forEach((event) => {
+      causalChain.push(`Séminaire ${event.company} terminé : ${event.quote.total.toLocaleString("fr-FR")} € de chiffre d'affaires.`);
+    });
+  }
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);
@@ -163,6 +180,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
     // The reviews left today by departing guests and how many bad ones are
     // still unanswered -- null when there is nothing to report.
     guestReviews,
+    // Seminar quotes, events in progress, starting soon and finished -- null
+    // when there is nothing to report.
+    mice,
     // Yield management and marketing campaigns at work today -- null when
     // neither is in play.
     growth,

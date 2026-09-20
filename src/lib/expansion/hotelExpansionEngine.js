@@ -37,6 +37,9 @@ export const ROOM_KINDS = {
   standard: { label: "Standard", cost: 12000, defaultPrice: 120, capacity: 2 },
   deluxe: { label: "Deluxe", cost: 20000, defaultPrice: 180, capacity: 3 },
   suite: { label: "Suite", cost: 35000, defaultPrice: 320, capacity: 4 },
+  // Meeting rooms, sold to companies (lib/mice/): capacity = how many attendees.
+  seminar: { label: "Salle de séminaire", cost: 30000, defaultPrice: 450, capacity: 40 },
+  conference: { label: "Salle de conférence", cost: 60000, defaultPrice: 900, capacity: 100 },
 };
 
 function state(hotelState) {

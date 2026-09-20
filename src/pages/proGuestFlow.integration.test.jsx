@@ -5,7 +5,7 @@
 // navigation. Same pattern as tfeGuestFlow.integration.test.jsx: Pro is
 // a self-contained 24-month run (see lib/pro/proState.js) so this flow
 // never starts the regular Carrière first.
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import App from "../App";
 
 beforeEach(() => {
@@ -18,6 +18,10 @@ function expectNoSupabaseError() {
   expect(screen.queryByText(/pas configure/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/indisponible/i)).not.toBeInTheDocument();
 }
+
+// The app's sidebar carries its own "Tableau de bord" link (the hotel's), so the
+// page's back link of the same name is looked up inside <main>.
+const inPage = () => within(screen.getByRole("main"));
 
 test(
   "Mode invité → Mode Professionnel → créer le programme → jouer un mois → crises → opportunités → audits → objectifs → prévisions → rapport, zero Supabase error at any step",
@@ -53,32 +57,32 @@ test(
     // bord" back link -- only rendered once the real proState has
     // loaded -- rather than the heading alone.
     fireEvent.click(screen.getByRole("link", { name: /^crises$/i }));
-    await waitFor(() => expect(screen.getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
+    await waitFor(() => expect(inPage().getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
     expectNoSupabaseError();
 
     // Opportunités (/pro/opportunities).
-    fireEvent.click(screen.getByRole("link", { name: /tableau de bord/i }));
+    fireEvent.click(inPage().getByRole("link", { name: /tableau de bord/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /mois suivant/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("link", { name: /opportunités/i }));
-    await waitFor(() => expect(screen.getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
+    await waitFor(() => expect(inPage().getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
     expectNoSupabaseError();
 
     // Audits (/pro/audits).
-    fireEvent.click(screen.getByRole("link", { name: /tableau de bord/i }));
+    fireEvent.click(inPage().getByRole("link", { name: /tableau de bord/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /mois suivant/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("link", { name: /^audits$/i }));
-    await waitFor(() => expect(screen.getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
+    await waitFor(() => expect(inPage().getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
     expectNoSupabaseError();
 
     // Objectifs (/pro/objectives).
-    fireEvent.click(screen.getByRole("link", { name: /tableau de bord/i }));
+    fireEvent.click(inPage().getByRole("link", { name: /tableau de bord/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /mois suivant/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("link", { name: /^objectifs$/i }));
-    await waitFor(() => expect(screen.getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
+    await waitFor(() => expect(inPage().getByRole("link", { name: /tableau de bord/i })).toBeInTheDocument());
     expectNoSupabaseError();
 
     // Prévisions (/pro/forecast).
-    fireEvent.click(screen.getByRole("link", { name: /tableau de bord/i }));
+    fireEvent.click(inPage().getByRole("link", { name: /tableau de bord/i }));
     await waitFor(() => expect(screen.getByRole("button", { name: /mois suivant/i })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("link", { name: /prévisions/i }));
     await waitFor(() => expect(screen.getByRole("tab", { name: "Réaliste" })).toBeInTheDocument());

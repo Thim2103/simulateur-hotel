@@ -65,4 +65,9 @@ export function useGmDesk() {
   return context;
 }
 
+// Same, for chrome that only shows the inbox count (null outside a provider).
+export function useOptionalGmDesk() {
+  return useContext(GmDeskContext);
+}
+
 export default GmDeskProvider;

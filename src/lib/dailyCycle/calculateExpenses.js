@@ -6,6 +6,7 @@ import { rosterDailyPayroll } from "../staff/staffRoster";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { computeDailyMaintenance } from "../maintenance/maintenanceCostEngine";
 import { calendarEffects } from "../hotelEvents/hotelEventsEngine";
+import { miceCateringCostOn } from "../mice/miceEngine";
 
 const DAYS_PER_MONTH = 30;
 
@@ -55,7 +56,9 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     perDay(restaurantPayroll) +
     eventCosts(events) +
     // A heat or cold wave (lib/hotelEvents/) raises the energy bill that day.
-    (referenceDate ? calendarEffects(referenceDate, hotelState).energyExtra : 0);
+    (referenceDate ? calendarEffects(referenceDate, hotelState).energyExtra : 0) +
+    // The food cost of the seminar catering served today (lib/mice/).
+    (referenceDate ? miceCateringCostOn(hotelState, referenceDate) : 0);
 
   const total = Math.max(0, fixed + variable);
 

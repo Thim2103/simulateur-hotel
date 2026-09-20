@@ -7,6 +7,8 @@ import ZoneUpgradeModal from "./ZoneUpgradeModal";
 import { ZONES, zoneSummary, zoneForCell, levelStars } from "../../../lib/zones/zoneUpgradesEngine";
 import ExpansionModal from "./ExpansionModal";
 import VipActionModal from "./VipActionModal";
+import MiceBookingModal from "./MiceBookingModal";
+import { pendingRequests, meetingRooms } from "../../../lib/mice/miceEngine";
 import { expansionFloors, floorUnderConstruction, freeSlots } from "../../../lib/expansion/hotelExpansionEngine";
 
 // A synthetic, architectural "coupe longitudinale" (elevation/section) of
@@ -79,6 +81,7 @@ export default function SchematicHotelView({
   reservations = [],
   date,
   onVipAction,
+  onMiceRespond,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -90,6 +93,8 @@ export default function SchematicHotelView({
   const [expansionOpen, setExpansionOpen] = useState(false);
   // The V.I.P. whose welcome modal is open (VipActionModal.jsx), by reservation.
   const [vipModalId, setVipModalId] = useState(null);
+  // Whether the seminar / corporate events modal is open (MiceBookingModal.jsx).
+  const [miceOpen, setMiceOpen] = useState(false);
   const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds, includeExpansion: !!hotelState, vipRoomIds: new Set(vipGuests.map((guest) => guest.roomId)) });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
@@ -104,6 +109,8 @@ export default function SchematicHotelView({
   ].sort((a, b) => b.level - a.level);
   const newFloorByLevel = Object.fromEntries(newFloors.map((floor) => [floor.level, floor]));
   const construction = hotelState ? floorUnderConstruction(hotelState) : null;
+  const hasMeetingRoom = !!hotelState && meetingRooms(rooms).length > 0;
+  const pendingQuotes = hasMeetingRoom ? pendingRequests(hotelState, date ?? new Date()).length : 0;
   const zones = hotelState ? Object.keys(ZONES).map((zoneId) => zoneSummary(hotelState, zoneId)) : [];
   const zoneById = Object.fromEntries(zones.map((zone) => [zone.zoneId, zone]));
   const rooftop = zoneById.pool && zoneById.pool.exists ? zoneById.pool : null;
@@ -115,6 +122,11 @@ export default function SchematicHotelView({
   const handleSelect = (entity) => {
     if (onSelectZone) {
       onSelectZone(entity);
+      return;
+    }
+    // A meeting room opens the seminar desk (quotes, calendar, revenue).
+    if (entity.type === "room" && entity.metadata?.meeting && hotelState) {
+      setMiceOpen(true);
       return;
     }
     // The room of a V.I.P. opens their welcome modal (attentions before they
@@ -211,6 +223,21 @@ export default function SchematicHotelView({
               {!zone.exists && <span className="text-slate-400">non construit</span>}
             </button>
           ))}
+          {hasMeetingRoom && (
+            <button
+              type="button"
+              data-testid="schematic-mice"
+              data-pending={pendingQuotes}
+              aria-label={`Séminaires et événements pro, ${pendingQuotes} devis en attente`}
+              title="Devis de séminaires et événements pro"
+              onClick={() => setMiceOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            >
+              <span aria-hidden="true">🤝</span>
+              <span>Séminaires</span>
+              {pendingQuotes > 0 && <span className="rounded-full bg-cyan-700 px-1.5 text-[10px] font-semibold text-white">{pendingQuotes}</span>}
+            </button>
+          )}
           <button
             type="button"
             data-testid="schematic-expansion"
@@ -401,6 +428,10 @@ export default function SchematicHotelView({
 
       {upgradeZone && hotelState && (
         <ZoneUpgradeModal zoneId={upgradeZone} hotelState={hotelState} day={day} onStart={onStartUpgrade} onClose={() => setUpgradeZone(null)} />
+      )}
+
+      {miceOpen && hotelState && (
+        <MiceBookingModal hotelState={hotelState} rooms={rooms} reservations={reservations} date={date} onRespond={(requestId, action) => onMiceRespond?.(requestId, action)} onClose={() => setMiceOpen(false)} />
       )}
 
       {vipModalId !== null && hotelState && (

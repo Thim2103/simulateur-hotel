@@ -5,7 +5,7 @@
 //
 // Same pattern as housekeepingGuestFlow.integration.test.jsx: guest mode
 // → /solo (to get the TopBar) → navigate to /clients → verify each page.
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import App from "../App";
 
 beforeEach(() => {
@@ -18,6 +18,10 @@ function expectNoSupabaseError() {
   expect(screen.queryByText(/pas configure/i)).not.toBeInTheDocument();
   expect(screen.queryByText(/indisponible/i)).not.toBeInTheDocument();
 }
+
+// The app's sidebar carries its own "Tableau de bord" link (the hotel's), so the
+// page's back link of the same name is looked up inside <main>.
+const inPage = () => within(screen.getByRole("main"));
 
 test(
   "Mode invité → Hôtel → Clients → segments → reviews → forecast → report, zero Supabase error at any step",
@@ -61,7 +65,7 @@ test(
     }
 
     // Back to dashboard then reviews
-    const dashLink = screen.queryByRole("link", { name: /tableau de bord/i });
+    const dashLink = inPage().queryByRole("link", { name: /tableau de bord/i });
     if (dashLink) {
       fireEvent.click(dashLink);
       await waitFor(() => expect(screen.getByRole("heading", { name: /^clients$/i })).toBeInTheDocument());
@@ -77,7 +81,7 @@ test(
     }
 
     // Back to dashboard then forecast
-    const dashLink2 = screen.queryByRole("link", { name: /tableau de bord/i });
+    const dashLink2 = inPage().queryByRole("link", { name: /tableau de bord/i });
     if (dashLink2) {
       fireEvent.click(dashLink2);
       await waitFor(() => expect(screen.getByRole("heading", { name: /^clients$/i })).toBeInTheDocument());
@@ -93,7 +97,7 @@ test(
     }
 
     // Back to dashboard then report
-    const dashLink3 = screen.queryByRole("link", { name: /tableau de bord/i });
+    const dashLink3 = inPage().queryByRole("link", { name: /tableau de bord/i });
     if (dashLink3) {
       fireEvent.click(dashLink3);
       await waitFor(() => expect(screen.getByRole("heading", { name: /^clients$/i })).toBeInTheDocument());

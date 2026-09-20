@@ -25,6 +25,7 @@ import { recordMaintenance } from "../maintenance/maintenanceCostEngine";
 import { advanceHotelEvents } from "../hotelEvents/hotelEventsEngine";
 import { advanceTargetedCampaigns } from "../marketing/targetedCampaigns";
 import { advanceGuestReviews } from "../clients/guestReviewEngine";
+import { advanceMice } from "../mice/miceEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -191,7 +192,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // Finally the reviews already counted in today's reputation and demand
       // are settled, and the guests leaving today post theirs
       // (lib/clients/guestReviewEngine.js).
-      hotelState: advanceGuestReviews(
+      // The day's new seminar quote arrives, stale ones expire, finished
+      // events are closed (lib/mice/miceEngine.js).
+      hotelState: advanceMice(advanceGuestReviews(
       advanceTargetedCampaigns(
         recordMaintenance(
         // Today's season and events (lib/hotelEvents/), snapshotted before the
@@ -203,7 +206,7 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
         { date: referenceDate, demandReport: demand.demandReport }
       ),
       { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
-      ),
+      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

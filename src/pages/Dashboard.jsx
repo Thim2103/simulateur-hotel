@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { useCareerContext } from "../context/CareerContext";
@@ -18,9 +18,13 @@ import { startFloorConstruction, fitOutRooms } from "../lib/expansion/hotelExpan
 import { setMaintenanceLevel } from "../lib/maintenance/maintenanceCostEngine";
 import { careerReferenceDate } from "../lib/career/careerEngine";
 import { describeCalendar } from "../lib/hotelEvents/hotelEventsEngine";
-import SeasonEventsBanner from "../components/dashboard/SeasonEventsBanner";
+import DashboardBento, { QuickActions } from "../components/dashboard/DashboardBento";
+import { buildDailyReview } from "../lib/dashboard/dailyReview";
+import { urgentItems } from "../lib/dashboard/statusSummary";
+import { unansweredNegativeReviews } from "../lib/clients/guestReviewEngine";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
+import { respondToRequest } from "../lib/mice/miceEngine";
 import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
 import { launchTargetedCampaign } from "../lib/marketing/targetedCampaigns";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
@@ -60,6 +64,7 @@ const VIEW_DISPLAY_MODES = [
 // already bypass Supabase transparently in guest mode.
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, nextDay, applyHotelAdjustment } = useCareerContext();
   const {
     dashboardState,
@@ -141,6 +146,24 @@ export default function Dashboard() {
     loadProState().catch(() => undefined);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The sidebar's own entries land on this page with a hash: "#yield" opens
+  // the yield & marketing desk, "#hotel-plan" scrolls to the hotel plan.
+  // `location.key` makes a second click on the same entry work again.
+  const hasCareer = Boolean(careerState);
+  useEffect(() => {
+    if (!hasCareer) return;
+    if (location.hash === "#yield") setGrowthOpen(true);
+    if (location.hash === "#hotel-plan") {
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+      document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+    }
+  }, [location.key, location.hash, hasCareer]);
+
+  const closeGrowth = () => {
+    setGrowthOpen(false);
+    if (location.hash === "#yield") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
 
   const isRunning = isCareerRunning || isDashboardRunning;
   const error = dashboardError || careerError;
@@ -245,6 +268,11 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => applyVipAction(hotel, reservationId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
   };
 
+  // The seminar desk (schematic/MiceBookingModal.jsx): answer a company's quote.
+  const handleMiceRespond = (requestId, action) => {
+    applyHotelAdjustment((hotel) => respondToRequest(hotel, requestId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -297,17 +325,32 @@ export default function Dashboard() {
   const careerSummary = dashboardState?.careerSummary;
   const attentionItems = buildAttentionItems(dashboardState?.notifications);
   const decisionGroups = buildDecisionGroups(dashboardState?.quickActions);
+  const calendar = describeCalendar(careerReferenceDate(careerState), careerState?.hotel?.hotelState);
+  const review = buildDailyReview({ careerState, dashboardState });
+  const alerts = urgentItems(careerState, { gmMessages: gmMessages.length });
+  const reviewsToAnswer = unansweredNegativeReviews(careerState?.hotel?.hotelState).length;
 
   return (
     <div className="flex flex-col gap-6">
       <DashboardHeader day={careerState.day} date={dashboardState?.kpis?.date} isGuest={isGuest} onNextDay={handleNextDay} isRunning={isRunning} />
 
-      <div className="flex items-center justify-between gap-3">
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} />
+
+      <DashboardBento
+        review={review}
+        calendar={calendar}
+        rooms={careerState?.hotel?.rooms ?? []}
+        kpis={dashboardState?.kpis}
+        hotelState={careerState?.hotel?.hotelState}
+        alerts={alerts}
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">
           Statut : {careerState.status}
           {careerSummary && ` · Objectifs atteints : ${careerSummary.achievedObjectivesCount}/${careerSummary.totalObjectives}`}
         </p>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Link to="/briefing" className="text-sm font-medium text-cyan-700 hover:underline">Briefing du matin →</Link>
           <Link to="/gm-desk" className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline">
             📬 GM Desk
@@ -362,9 +405,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Season and events of the day about to be played (lib/hotelEvents/). */}
-      <SeasonEventsBanner calendar={describeCalendar(careerReferenceDate(careerState), careerState?.hotel?.hotelState)} />
-
       {growthOpen && (
         <YieldMarketingModal
           hotelState={careerState?.hotel?.hotelState}
@@ -372,7 +412,7 @@ export default function Dashboard() {
           onSetYieldEnabled={handleSetYieldEnabled}
           onSetYieldRule={handleSetYieldRule}
           onLaunchCampaign={handleLaunchCampaign}
-          onClose={() => setGrowthOpen(false)}
+          onClose={closeGrowth}
         />
       )}
 
@@ -387,6 +427,7 @@ export default function Dashboard() {
         viewMode={viewMode}
       />
 
+      <div id="hotel-plan" className="scroll-mt-32">
       {displayMode === "experimental" ? (
         <HotelScene />
       ) : displayMode === "isometric" ? (
@@ -435,8 +476,10 @@ export default function Dashboard() {
           reservations={careerState?.hotel?.reservations ?? []}
           date={careerReferenceDate(careerState)}
           onVipAction={handleVipAction}
+          onMiceRespond={handleMiceRespond}
         />
       )}
+      </div>
 
       <div className={fadeIn}>
         <AttentionPanel items={attentionItems} />

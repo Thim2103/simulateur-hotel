@@ -20,6 +20,7 @@ import { updateReservations } from "./updateReservations";
 import { updateFinance } from "./updateFinance";
 import { saveDailyState } from "./saveDailyState";
 import { runRestaurantCycle } from "../restaurant/restaurantEngine";
+import { miceCateringRevenueOn } from "../mice/miceEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -86,7 +87,11 @@ export async function runDailyCycle(options = {}) {
   const hotelRevenue = calculateHotelRevenue({ reservations: reservationUpdate.reservations, referenceDate });
 
   // 3. Restaurant revenue (sales, margin, VAT).
-  const restaurantRevenue = calculateRestaurantRevenue({ menu: restaurantState.menu, finance: restaurantState.finance, referenceDate });
+  const plainRestaurantRevenue = calculateRestaurantRevenue({ menu: restaurantState.menu, finance: restaurantState.finance, referenceDate });
+  // A seminar's catering (coffee breaks, lunch -- lib/mice/) is a peak of
+  // restaurant revenue on each event day.
+  const miceCatering = miceCateringRevenueOn(hotelState, referenceDate);
+  const restaurantRevenue = miceCatering > 0 ? { ...plainRestaurantRevenue, miceCatering, netRevenue: plainRestaurantRevenue.netRevenue + miceCatering } : plainRestaurantRevenue;
 
   // 6. Daily events -- weather, VIPs, restaurant rushes, inspections, power
   // outages, staff strikes, reviews, technical incidents, local events (see

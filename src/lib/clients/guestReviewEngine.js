@@ -264,7 +264,7 @@ export function reviewsForDepartures({ hotelState, reservations, rooms, date, da
   const roomsById = new Map(safeArray(rooms).map((room) => [Number(room.id), room]));
   const today = toDay(date);
   return safeArray(reservations)
-    .filter((reservation) => !String(reservation.status || "").toLowerCase().includes("annul") && toDay(reservation.departure) === today)
+    .filter((reservation) => !String(reservation.status || "").toLowerCase().includes("annul") && reservation.source !== "mice-meeting" && toDay(reservation.departure) === today)
     .map((reservation) => ({ reservation, room: roomsById.get(Number(reservation.room_id)) }))
     .map(({ reservation, room }) => ({ reservation, room, profileId: profileIdFor(reservation, room) }))
     .filter(({ reservation, profileId }) => profileId === "vip" || mixedRandom(`posts:${reservation.id}`) < REVIEWER_SHARE)
