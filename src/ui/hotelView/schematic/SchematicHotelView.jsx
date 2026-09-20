@@ -5,6 +5,8 @@ import { ZONE_STYLES, ROOM_STATE_STYLES, AMENITY_STATE_STYLES } from "./schemati
 import { DIRECT_ACTION_MODALS, getDirectActionModal } from "./directActions";
 import ZoneUpgradeModal from "./ZoneUpgradeModal";
 import { ZONES, zoneSummary, zoneForCell, levelStars } from "../../../lib/zones/zoneUpgradesEngine";
+import ExpansionModal from "./ExpansionModal";
+import { expansionFloors, floorUnderConstruction, freeSlots } from "../../../lib/expansion/hotelExpansionEngine";
 
 // A synthetic, architectural "coupe longitudinale" (elevation/section) of
 // the hotel: one horizontal row per floor (top floor at the top, ground
@@ -69,6 +71,8 @@ export default function SchematicHotelView({
   hotelState,
   day = 0,
   onStartUpgrade,
+  onStartFloor,
+  onFitOut,
 }) {
   const navigate = useNavigate();
   const [activeModal, setActiveModal] = useState(null);
@@ -76,10 +80,22 @@ export default function SchematicHotelView({
   // whole upgrade layer (level stars, works badges, the zone strip, the
   // rooftop) only exists when the caller hands in the hotel's state.
   const [upgradeZone, setUpgradeZone] = useState(null);
-  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds });
+  // Whether the building-expansion modal is open (ExpansionModal.jsx).
+  const [expansionOpen, setExpansionOpen] = useState(false);
+  const entities = buildHotelSceneEntities({ rooms, staffCount, diagnostics, activeIncidents, decisionFeedback, cleaningRoomIds, includeExpansion: !!hotelState });
   const roomEntities = entities.filter((entity) => entity.type === "room");
   const amenityEntities = entities.filter((entity) => entity.type in ZONE_STYLES && entity.type !== "room");
-  const floors = groupRoomsByFloor(roomEntities);
+  // Floors built by the hotel's expansion (lib/expansion/) that have no room
+  // yet still get a row -- a shell waiting to be fitted out -- and the floor
+  // being built gets its own "chantier" row on top of the building.
+  const newFloors = hotelState ? expansionFloors(hotelState) : [];
+  const floorsByRooms = groupRoomsByFloor(roomEntities);
+  const floors = [
+    ...floorsByRooms,
+    ...newFloors.filter((floor) => floor.status === "built" && !floorsByRooms.some(({ level }) => level === floor.level)).map((floor) => ({ level: floor.level, rooms: [] })),
+  ].sort((a, b) => b.level - a.level);
+  const newFloorByLevel = Object.fromEntries(newFloors.map((floor) => [floor.level, floor]));
+  const construction = hotelState ? floorUnderConstruction(hotelState) : null;
   const zones = hotelState ? Object.keys(ZONES).map((zoneId) => zoneSummary(hotelState, zoneId)) : [];
   const zoneById = Object.fromEntries(zones.map((zone) => [zone.zoneId, zone]));
   const rooftop = zoneById.pool && zoneById.pool.exists ? zoneById.pool : null;
@@ -157,6 +173,19 @@ export default function SchematicHotelView({
               {!zone.exists && <span className="text-slate-400">non construit</span>}
             </button>
           ))}
+          <button
+            type="button"
+            data-testid="schematic-expansion"
+            data-works={construction ? "true" : "false"}
+            aria-label={`Agrandir l'hôtel${construction ? `, chantier de l'étage ${construction.level} en cours` : ""}`}
+            title="Ajouter un étage et de nouvelles chambres"
+            onClick={() => setExpansionOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-cyan-600 px-3 py-1 text-xs font-medium text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+          >
+            <span aria-hidden="true">🏗️</span>
+            <span>Extension</span>
+            {construction && <span aria-hidden="true">🚧</span>}
+          </button>
         </div>
       )}
 
@@ -181,8 +210,22 @@ export default function SchematicHotelView({
             </div>
           </div>
         )}
+        {construction && (
+          <div data-testid="schematic-construction" data-level={construction.level} className="flex items-center gap-2">
+            <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Étage {construction.level}</span>
+            <button
+              type="button"
+              onClick={() => setExpansionOpen(true)}
+              aria-label={`Chantier / Extension en cours, étage ${construction.level}, terminé au jour ${construction.completesOnDay}`}
+              className="flex h-9 flex-1 items-center gap-2 rounded-md border-2 border-dashed border-amber-500 bg-amber-50 px-3 text-xs font-semibold text-amber-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+            >
+              <span aria-hidden="true">🚧</span>
+              <span>Chantier / Extension en cours — terminé au jour {construction.completesOnDay}</span>
+            </button>
+          </div>
+        )}
         {floors.map(({ level, rooms: floorRooms }) => (
-          <div key={level} data-testid={`schematic-floor-${level}`} className="flex items-center gap-2">
+          <div key={level} data-testid={`schematic-floor-${level}`} data-expansion={newFloorByLevel[level] ? "true" : undefined} className="flex items-center gap-2">
             <span className="w-16 shrink-0 text-xs font-semibold text-slate-500">Étage {level}</span>
             <div className="flex flex-wrap gap-1.5">
               {floorRooms.map((room) => {
@@ -218,6 +261,17 @@ export default function SchematicHotelView({
                   </div>
                 );
               })}
+              {newFloorByLevel[level] && freeSlots(rooms, level) > 0 && (
+                <button
+                  type="button"
+                  data-testid={`schematic-floor-${level}-fitout`}
+                  onClick={() => setExpansionOpen(true)}
+                  aria-label={`Aménager l'étage ${level}, ${freeSlots(rooms, level)} emplacements libres`}
+                  className="flex h-9 items-center rounded-md border-2 border-dashed border-cyan-600 px-2 text-[10px] font-semibold text-cyan-800 transition hover:bg-cyan-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                >
+                  {floorRooms.length === 0 ? "À aménager" : "＋ chambre"} · {freeSlots(rooms, level)} libre{freeSlots(rooms, level) > 1 ? "s" : ""}
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -278,6 +332,10 @@ export default function SchematicHotelView({
 
       {upgradeZone && hotelState && (
         <ZoneUpgradeModal zoneId={upgradeZone} hotelState={hotelState} day={day} onStart={onStartUpgrade} onClose={() => setUpgradeZone(null)} />
+      )}
+
+      {expansionOpen && hotelState && (
+        <ExpansionModal hotelState={hotelState} rooms={rooms} day={day} onStartFloor={onStartFloor} onFitOut={onFitOut} onClose={() => setExpansionOpen(false)} />
       )}
 
       {ActiveModal && (

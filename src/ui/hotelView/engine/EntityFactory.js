@@ -16,6 +16,7 @@
 import { tileToWorld } from "./IsoProjection";
 import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
 import { FLOOR_COUNT, AMENITY_LAYOUT, roomTile, guestTile, staffTile, incidentTile } from "../scene/HotelSceneLayout";
+import { isExpansionRoom } from "../../../lib/expansion/hotelExpansionEngine";
 
 const MAX_CHARACTERS = 6;
 
@@ -92,6 +93,25 @@ function buildRoomEntities(rooms, cleaningRoomIds) {
       };
     })
   );
+}
+
+// Rooms added by the hotel's own expansion (lib/expansion/) sit on floors
+// ABOVE the existing building, each with its real floor level -- so they are
+// NOT spread over the fixed-height floors the base rooms are grouped into
+// (groupRoomsByFloor() above). Only a caller that asks for them
+// (`includeExpansion`, the schematic view) gets them, as ordinary room
+// entities carrying their own `floorLevel`; the isometric scene, whose
+// layout has a fixed number of floors, keeps showing the base building only.
+function buildExpansionRoomEntities(rooms, cleaningRoomIds) {
+  return rooms.map((room, indexInFloor) => ({
+    id: `room:${room.id}`,
+    type: "room",
+    position: toWorldPosition(roomTile({ floorIndex: 0, indexInFloor })),
+    footprint: zeroFootprint(),
+    state: roomState(room, cleaningRoomIds),
+    activity: null,
+    metadata: { number: room.number, floorLevel: Number(room.metadata.expansionFloor), roomId: room.id, expansion: true, roomType: room.type },
+  }));
 }
 
 // When the laundry amenity is in "alert" state, its own metadata carries
@@ -221,13 +241,16 @@ export function buildHotelSceneEntities(props = {}) {
     activeIncidents: rawActiveIncidents,
     decisionFeedback = null,
     cleaningRoomIds,
+    includeExpansion = false,
   } = safeObject(props);
 
-  const rooms = safeArray(rawRooms);
+  const allRooms = safeArray(rawRooms);
+  const rooms = allRooms.filter((room) => !isExpansionRoom(room));
+  const expansionRooms = includeExpansion ? allRooms.filter(isExpansionRoom) : [];
   const staffCount = safeNumber(rawStaffCount, 0);
   const diagnostics = safeArray(rawDiagnostics);
 
-  const occupiedCount = rooms.filter((room) => room.status === "occupée").length;
+  const occupiedCount = allRooms.filter((room) => room.status === "occupée").length;
   const { roomsPerFloor } = groupRoomsByFloor(rooms);
   const phase = dayPhase();
 
@@ -241,6 +264,7 @@ export function buildHotelSceneEntities(props = {}) {
 
   return [
     ...buildRoomEntities(rooms, cleaningRoomIds),
+    ...buildExpansionRoomEntities(expansionRooms, cleaningRoomIds),
     ...amenityEntities,
     ...buildCharacterEntities({ occupiedCount, staffCount, roomsPerFloor, phase, decisionFeedback }),
     ...buildIncidentEntities(diagnostics),

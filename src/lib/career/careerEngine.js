@@ -20,6 +20,7 @@ import { applyDemand } from "../demand/demandEngine";
 import { advanceRoster, seedStarterRoster } from "../staff/staffRoster";
 import { runStaffEvents } from "../staff/staffEventsEngine";
 import { advanceZoneUpgrades } from "../zones/zoneUpgradesEngine";
+import { advanceExpansion } from "../expansion/hotelExpansionEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -181,7 +182,7 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // events (lib/staff/staffEventsEngine.js) -- deterministic, no rng.
       // Zone upgrades whose works finish today get installed
       // (lib/zones/zoneUpgradesEngine.js).
-      hotelState: advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day),
+      hotelState: advanceExpansion(advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day), day),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

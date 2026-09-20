@@ -1,5 +1,6 @@
 import { useState } from "react";
 import GameModal from "../../components/GameModal";
+import { treasuryOf } from "../../../lib/finance/investmentFunding";
 import {
   UPGRADES,
   upgradesForZone,
@@ -42,6 +43,7 @@ export default function ZoneUpgradeModal({ zoneId, hotelState, day = 0, onStart,
   const summary = zoneSummary(hotelState, zoneId);
   const upgrades = upgradesForZone(zoneId);
   const capital = availableCapital(hotelState);
+  const treasury = treasuryOf(hotelState);
 
   const handleStart = (upgradeId) => {
     setRequested(upgradeId);
@@ -56,6 +58,7 @@ export default function ZoneUpgradeModal({ zoneId, hotelState, day = 0, onStart,
         </span>
         <span data-testid="zone-capital" className="text-slate-600">
           Capital disponible : <strong>{euro(capital)}</strong>
+          {treasury > 0 && <span data-testid="zone-treasury"> · Trésorerie : <strong>{euro(treasury)}</strong></span>}
         </span>
       </div>
 

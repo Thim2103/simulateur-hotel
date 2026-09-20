@@ -11,6 +11,7 @@ import { buildAttentionItems } from "./attentionItems";
 import { describeDemand } from "../demand/demandEngine";
 import { todaysStaffEvents } from "../staff/staffEventsEngine";
 import { upgradesCompletedOn, UPGRADES } from "../zones/zoneUpgradesEngine";
+import { floorsCompletedOn, SLOTS_PER_FLOOR } from "../expansion/hotelExpansionEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -80,6 +81,9 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   upgradesCompletedOn(careerState?.hotel?.hotelState, careerState?.day).forEach((entry) => {
     const upgrade = UPGRADES[entry.upgradeId];
     if (upgrade) causalChain.push(`Travaux terminés : ${upgrade.name}. Ses bénéfices s'appliquent dès maintenant.`);
+  });
+  floorsCompletedOn(careerState?.hotel?.hotelState, careerState?.day).forEach((entry) => {
+    causalChain.push(`Gros œuvre terminé : l'étage ${entry.level} est construit. Aménagez ses chambres (jusqu'à ${SLOTS_PER_FLOOR}) pour augmenter votre capacité d'accueil.`);
   });
   if (incidentReviews.length > 0) {
     causalChain.push("Des pannes non réparées ont généré des avis négatifs et pèsent sur votre réputation : réparez-les vite (une réparation d'urgence évite toute pénalité).");

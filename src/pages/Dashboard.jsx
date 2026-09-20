@@ -14,6 +14,7 @@ import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
 import { findQuickAction } from "../lib/dashboard/dashboardActions";
 import { payForRepair, repairTerms } from "../lib/maintenance/incidentEngine";
 import { startUpgrade } from "../lib/zones/zoneUpgradesEngine";
+import { startFloorConstruction, fitOutRooms } from "../lib/expansion/hotelExpansionEngine";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -207,6 +208,15 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => startUpgrade(hotel, upgradeId, { day: careerState.day })).catch(() => undefined);
   };
 
+  // The schematic view's expansion modal (see schematic/ExpansionModal.jsx):
+  // builds a new floor, then fits its rooms out -- same primitive again.
+  const handleStartFloor = () => {
+    applyHotelAdjustment((hotel) => startFloorConstruction(hotel, { day: careerState.day })).catch(() => undefined);
+  };
+  const handleFitOut = (level, kind) => {
+    applyHotelAdjustment((hotel) => fitOutRooms(hotel, level, kind, 1)).catch(() => undefined);
+  };
+
   const handleRepairIncident = (entity, { emergency }) => {
     const incidentId = entity.metadata?.incidentId;
     if (!incidentId) return;
@@ -363,6 +373,8 @@ export default function Dashboard() {
           hotelState={careerState?.hotel?.hotelState}
           day={careerState.day}
           onStartUpgrade={handleStartUpgrade}
+          onStartFloor={handleStartFloor}
+          onFitOut={handleFitOut}
         />
       )}
 

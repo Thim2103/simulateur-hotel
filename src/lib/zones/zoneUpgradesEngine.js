@@ -28,6 +28,7 @@
 // every effect below is its neutral value (x1 / +0), so saved careers and
 // existing fixtures are untouched.
 import { safeArray, safeNumber, safeObject } from "../safe";
+import { canAfford, payInvestment } from "../finance/investmentFunding";
 
 export const MAX_STANDING = 0.25;
 export const MAX_LEVEL = 3;
@@ -129,7 +130,7 @@ export function upgradeStatus(hotelState, upgradeId) {
   if (worksFor(hotelState, upgradeId)) return "in-progress";
   if (activeWorks(hotelState, upgrade.zone)) return "zone-busy";
   if (safeArray(upgrade.requires).some((required) => !isInstalled(hotelState, required))) return "locked";
-  if (availableCapital(hotelState) < upgrade.cost) return "no-funds";
+  if (!canAfford(hotelState, upgrade.cost)) return "no-funds";
   return "available";
 }
 
@@ -186,7 +187,8 @@ export function zoneSatisfactionAdjustment(hotelState) {
 
 // ---- actions and daily progress ------------------------------------------
 
-// Starts the works: debits the capital now, and the upgrade is installed
+// Starts the works: pays now (capital first, then treasury, see
+// finance/investmentFunding.js), and the upgrade is installed
 // after `days` days (see advanceZoneUpgrades()). A no-op (returns the bundle
 // unchanged) unless the upgrade is "available".
 export function startUpgrade(hotelBundle, upgradeId, { day = 0 } = {}) {
@@ -195,12 +197,12 @@ export function startUpgrade(hotelBundle, upgradeId, { day = 0 } = {}) {
   if (upgradeStatus(hotelState, upgradeId) !== "available") return bundle;
   const upgrade = UPGRADES[upgradeId];
   const current = state(hotelState);
+  const { hotelState: paidState } = payInvestment(hotelState, upgrade.cost);
 
   return {
     ...bundle,
     hotelState: {
-      ...hotelState,
-      expansion: { ...safeObject(hotelState.expansion), availableCapital: availableCapital(hotelState) - upgrade.cost },
+      ...paidState,
       zoneUpgrades: {
         installed: current.installed,
         works: { ...current.works, [upgradeId]: { startedOnDay: day, completesOnDay: day + upgrade.days } },

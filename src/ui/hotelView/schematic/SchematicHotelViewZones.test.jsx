@@ -34,7 +34,7 @@ describe("SchematicHotelView / zone upgrades layer", () => {
   it("shows a chip per zone with its level as stars", () => {
     renderView({ hotelState: hotel(installed("rooms-bedding", "rooms-domotics")) });
     const chips = within(screen.getByTestId("schematic-zones"));
-    expect(chips.getAllByRole("button")).toHaveLength(5);
+    expect(chips.getAllByRole("button", { name: /^Améliorer / })).toHaveLength(5); // the 5 zones (the Extension chip is separate)
     const rooms = screen.getByTestId("schematic-zone-rooms");
     expect(rooms).toHaveAttribute("data-level", "2");
     expect(rooms).toHaveTextContent("⭐⭐☆");
