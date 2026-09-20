@@ -13,6 +13,7 @@ import { buildAttentionItems } from "../lib/dashboard/attentionItems";
 import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
 import { findQuickAction } from "../lib/dashboard/dashboardActions";
 import { payForRepair, repairTerms } from "../lib/maintenance/incidentEngine";
+import { startUpgrade } from "../lib/zones/zoneUpgradesEngine";
 import DashboardHeader from "../components/dashboard/DashboardHeader";
 import DashboardViewModeToggle from "../components/dashboard/DashboardViewModeToggle";
 import DashboardKpis from "../components/dashboard/DashboardKpis";
@@ -199,6 +200,13 @@ export default function Dashboard() {
   // schedules a standard repair that resolves automatically once its ETA
   // day arrives (see useCareer.js's own nextDay(), which now advances
   // repairs every day).
+  // The schematic view's zone upgrade modal (see schematic/ZoneUpgradeModal.jsx):
+  // spends the hotel's capital and starts the works, through the same
+  // applyHotelAdjustment() primitive as every other real action here.
+  const handleStartUpgrade = (upgradeId) => {
+    applyHotelAdjustment((hotel) => startUpgrade(hotel, upgradeId, { day: careerState.day })).catch(() => undefined);
+  };
+
   const handleRepairIncident = (entity, { emergency }) => {
     const incidentId = entity.metadata?.incidentId;
     if (!incidentId) return;
@@ -352,6 +360,9 @@ export default function Dashboard() {
           onRepairNow={(entity) => handleRepairIncident(entity, { emergency: true })}
           onCallTechnician={(entity) => handleRepairIncident(entity, { emergency: false })}
           repairTerms={repairTerms(careerState?.hotel?.hotelState)}
+          hotelState={careerState?.hotel?.hotelState}
+          day={careerState.day}
+          onStartUpgrade={handleStartUpgrade}
         />
       )}
 

@@ -19,6 +19,7 @@ import { progressionSnapshot } from "./careerProgression";
 import { applyDemand } from "../demand/demandEngine";
 import { advanceRoster, seedStarterRoster } from "../staff/staffRoster";
 import { runStaffEvents } from "../staff/staffEventsEngine";
+import { advanceZoneUpgrades } from "../zones/zoneUpgradesEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -178,7 +179,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // occupancy -- see lib/staff/staffRoster.js. No-op without a roster.
       // Then that wear turns into morale, notices, departures and small HR
       // events (lib/staff/staffEventsEngine.js) -- deterministic, no rng.
-      hotelState: runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }),
+      // Zone upgrades whose works finish today get installed
+      // (lib/zones/zoneUpgradesEngine.js).
+      hotelState: advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

@@ -26,6 +26,7 @@ import { recordCycle } from "../scenario/scenarioReplay";
 import { applyHousekeepingDecision, findHousekeepingAction, HOUSEKEEPING_ACTION_CATALOG } from "./housekeepingActions";
 import { staffFromCareerState } from "../staff/staffEngine";
 import { cleaningDelayFactor } from "../staff/staffRoster";
+import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate?.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -67,7 +68,9 @@ export function runHousekeepingCycle({
   // what quality reads as thoroughness -- is unchanged: fewer people don't
   // clean any room more carefully, they just clean fewer of them in time;
   // that shows up as lower quality below.
-  const slowdown = cleaningDelayFactor(hotelState);
+  // Zone upgrades (industrial laundry equipment...) speed it up, works in
+  // the laundry slow it down (lib/zones/): x1 for a hotel that never upgraded.
+  const slowdown = cleaningDelayFactor(hotelState) * computeZoneEffects(hotelState).cleaningTimeMultiplier;
   const cleaningTime = { totalMinutes: Math.round(baseCleaningTime.totalMinutes * slowdown), minutesPerRoom: baseCleaningTime.minutesPerRoom };
   const productivity = computeHousekeepingProductivity({ staffProductivity: staffProductivity ?? 65, staffOverload: staffOverload ?? 0, trainingLevel: settings.trainingLevel });
   const housekeeperCount = computeHousekeeperCount({ hotelHeadcount: hotelHeadcount ?? 0, staffingBonus: settings.staffingBonus });

@@ -2,6 +2,7 @@
 // target set by sustainability and staff morale, nudged day-to-day by
 // today's events (see lib/events/, whose impact.reputation this reads).
 import { incidentReputationPenalty } from "../maintenance/incidentImpact";
+import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 
 const DRIFT_RATE = 0.15; // how much of the gap to the target closes each day
 
@@ -30,7 +31,9 @@ function eventReputationImpact(events) {
 export function calculateReputation({ hotelState = {}, restaurantState = {}, events = [], previousReputation } = {}) {
   const sustainabilityScore = Number(hotelState.esg?.sustainabilityScore) || 50;
   const staffMorale = averageSatisfaction(restaurantState.staff);
-  const target = clamp(sustainabilityScore * 0.4 + staffMorale * 0.6, 0, 100);
+  // Installed zone upgrades (lib/zones/) lift the reputation the hotel
+  // converges to; 0 for a hotel that never upgraded.
+  const target = clamp(sustainabilityScore * 0.4 + staffMorale * 0.6 + computeZoneEffects(hotelState).reputationBonus, 0, 100);
 
   const base = Number.isFinite(previousReputation) ? previousReputation : target;
   const drifted = base + (target - base) * DRIFT_RATE;

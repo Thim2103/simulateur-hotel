@@ -3,6 +3,7 @@
 // prorates them to a single day and adds any one-off costs raised by
 // today's events (equipment failures, extra staffing, etc.).
 import { rosterDailyPayroll } from "../staff/staffRoster";
+import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 
 const DAYS_PER_MONTH = 30;
 
@@ -33,7 +34,10 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     perDay(restaurantFinance.rent) +
     // The named hotel-side roster's daily salaries (lib/staff/staffRoster.js)
     // -- 0 for a hotel with no roster, so nothing changes for it.
-    rosterDailyPayroll(hotelState);
+    rosterDailyPayroll(hotelState) -
+    // Daily running-cost savings from installed zone upgrades (domotics,
+    // heat recovery... see lib/zones/); 0 for a hotel that never upgraded.
+    computeZoneEffects(hotelState).energySavingsDaily;
 
   const restaurantPayroll = restaurantStaff.reduce((sum, person) => sum + Number(person.salary || 0), 0);
 
@@ -45,7 +49,7 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     perDay(restaurantPayroll) +
     eventCosts(events);
 
-  const total = fixed + variable;
+  const total = Math.max(0, fixed + variable);
 
   return {
     fixed: Math.round(fixed),

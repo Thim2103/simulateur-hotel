@@ -21,6 +21,7 @@
 // firing removes it.
 import { safeArray, safeNumber, safeObject } from "../safe";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
+import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 
 export const ROLES = {
   housekeeping: { label: "Gouvernante / Housekeeping", baseDailySalary: 62, roomsPerAgent: 10 },
@@ -104,8 +105,8 @@ export function effectiveHotelFinance(hotelState) {
 
 // ---- staffing coverage ------------------------------------------------
 
-function capacityFor(roster, role) {
-  const perAgent = ROLES[role].roomsPerAgent;
+function capacityFor(roster, role, multiplier = 1) {
+  const perAgent = ROLES[role].roomsPerAgent * multiplier;
   return roster.filter((employee) => employee.role === role).reduce((sum, employee) => sum + employeeEfficiency(employee) * perAgent, 0);
 }
 
@@ -115,7 +116,10 @@ export function computeStaffing(hotelState, { occupiedRooms = 0, day = null } = 
   if (!hasRoster(hotelState)) return null;
   const roster = getRoster(hotelState);
   const occupied = Math.max(0, safeNumber(occupiedRooms, 0));
-  const coverage = (role) => (occupied === 0 ? 1 : capacityFor(roster, role) / occupied);
+  // A self check-in kiosk (or works in the lobby) changes how many guests
+  // each receptionist handles -- see lib/zones/zoneUpgradesEngine.js.
+  const receptionMultiplier = computeZoneEffects(hotelState).receptionCapacityMultiplier;
+  const coverage = (role) => (occupied === 0 ? 1 : capacityFor(roster, role, role === "reception" ? receptionMultiplier : 1) / occupied);
 
   const housekeepingCoverage = coverage("housekeeping");
   const receptionCoverage = coverage("reception");
