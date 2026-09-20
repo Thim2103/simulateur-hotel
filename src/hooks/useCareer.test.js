@@ -152,6 +152,55 @@ test("nextDay resolves a repairing incident once its scheduled ETA day arrives",
   analyzeRunSpy.mockRestore();
 });
 
+test("nextDay ages an open incident and posts a guest review about it each day", async () => {
+  const analyzeRunSpy = jest.spyOn(analyticsEngine, "analyzeRun").mockReturnValue({
+    kpis: {},
+    diagnostics: [{ type: "error", severity: "high", message: "Panne machine à laver" }],
+  });
+
+  const { result } = renderHook(() => useCareer());
+  await act(async () => {
+    await result.current.startCareer("player-1");
+  });
+  await act(async () => {
+    await result.current.nextDay(); // day 1: incident detected, review posted
+  });
+  let hotelState = result.current.careerState.hotel.hotelState;
+  expect(hotelState.incidentReviews).toHaveLength(1);
+  expect(hotelState.incidentReviews[0]).toMatchObject({ day: 1, zone: "laundry", rating: 1 });
+  expect(hotelState.activeIncidents[0].daysOpen).toBe(0);
+
+  await act(async () => {
+    await result.current.nextDay(); // day 2: still open, ages, new review
+  });
+  hotelState = result.current.careerState.hotel.hotelState;
+  expect(hotelState.incidentReviews.map((r) => r.day)).toEqual([1, 2]);
+  expect(hotelState.activeIncidents[0].daysOpen).toBe(1);
+
+  analyzeRunSpy.mockRestore();
+});
+
+test("nextDay posts no incident review once the incident was repaired on the spot", async () => {
+  const analyzeRunSpy = jest.spyOn(analyticsEngine, "analyzeRun").mockReturnValue({ kpis: {}, diagnostics: [] });
+
+  const { result } = renderHook(() => useCareer());
+  await act(async () => {
+    await result.current.startCareer("player-1");
+  });
+  await act(async () => {
+    await result.current.applyHotelAdjustment((hotel) => ({
+      ...hotel,
+      hotelState: { ...hotel.hotelState, activeIncidents: [{ id: "i1", zone: "laundry", severity: "critical", status: "resolved", createdOnDay: 0, daysOpen: 0 }] },
+    }));
+  });
+  await act(async () => {
+    await result.current.nextDay();
+  });
+  expect(result.current.careerState.hotel.hotelState.incidentReviews).toEqual([]);
+
+  analyzeRunSpy.mockRestore();
+});
+
 test("triggerStoryEvent applies the choice and returns its consequence", async () => {
   const { result } = renderHook(() => useCareer());
   await act(async () => {

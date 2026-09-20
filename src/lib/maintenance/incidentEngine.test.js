@@ -161,3 +161,31 @@ describe("incidentEngine / payForRepair", () => {
     expect(next.hotelState.finance.costs).toEqual([REPAIR_COST.minor]);
   });
 });
+
+describe("incidentEngine / daysOpen aging", () => {
+  it("creates new incidents with daysOpen 0", () => {
+    const next = reconcileIncidents({}, [{ type: "error", severity: "high", message: "Panne" }], 3);
+    expect(next.activeIncidents[0].daysOpen).toBe(0);
+  });
+
+  it("does not age an incident on the day it was created", () => {
+    const state = { activeIncidents: [{ id: "i1", status: "active", createdOnDay: 3, daysOpen: 0 }] };
+    expect(advanceIncidentRepairs(state, 3).activeIncidents[0].daysOpen).toBe(0);
+  });
+
+  it("ages an open incident by one each later day, whether active or repairing", () => {
+    const state = {
+      activeIncidents: [
+        { id: "a", status: "active", createdOnDay: 3, daysOpen: 0 },
+        { id: "b", status: "repairing", repairEtaDay: 9, createdOnDay: 3, daysOpen: 1 },
+      ],
+    };
+    const next = advanceIncidentRepairs(state, 4).activeIncidents;
+    expect(next.map((i) => i.daysOpen)).toEqual([1, 2]);
+  });
+
+  it("stops aging once resolved", () => {
+    const state = { activeIncidents: [{ id: "a", status: "resolved", createdOnDay: 1, daysOpen: 2 }] };
+    expect(advanceIncidentRepairs(state, 9).activeIncidents[0].daysOpen).toBe(2);
+  });
+});

@@ -62,3 +62,36 @@ test("shows today's GM Desk messages with a link to the GM Desk", () => {
   expect(screen.getByText("Moral bas")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: /voir tous les messages/i })).toHaveAttribute("href", "/gm-desk");
 });
+
+describe("incident-related guest reviews", () => {
+  function reviewWith(incidentReviews) {
+    useDailyReview.mockReturnValue({
+      review: {
+        day: 4,
+        summary: { revenue: 3000, profit: 200, satisfaction: 4, staffMorale: 60 },
+        causalChain: [],
+        attentionItems: [],
+        incidentReviews,
+      },
+      isRunning: false,
+      error: null,
+      loadReview: jest.fn().mockResolvedValue(null),
+    });
+  }
+
+  test("shows a clearly labelled section with each incident review's rating and text", () => {
+    reviewWith([{ id: "review:i1:4", rating: 1, text: "Machine à laver HS, pas de serviettes propres." }]);
+    render(<DailyReview />, { wrapper: MemoryRouter });
+
+    expect(screen.getByRole("heading", { name: /avis clients liés aux pannes/i })).toBeInTheDocument();
+    expect(screen.getByTestId("incident-review")).toHaveTextContent("Machine à laver HS, pas de serviettes propres.");
+    expect(screen.getByLabelText("Note 1 sur 5")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /réparer depuis le plan de l'hôtel/i })).toHaveAttribute("href", "/dashboard");
+  });
+
+  test("hides the section entirely when there are no incident reviews", () => {
+    reviewWith([]);
+    render(<DailyReview />, { wrapper: MemoryRouter });
+    expect(screen.queryByRole("heading", { name: /avis clients liés aux pannes/i })).not.toBeInTheDocument();
+  });
+});

@@ -43,6 +43,16 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   const kpis = dashboardState?.kpis || null;
   if (!kpis) return null;
 
+  // Reviews guests posted today about a still-open equipment incident (see
+  // lib/maintenance/incidentImpact.js's appendIncidentReviews(), run by
+  // useCareer.js's nextDay()) -- only today's, so the player sees what
+  // just happened, not the whole backlog.
+  const incidentReviews = safeArray(careerState?.hotel?.hotelState?.incidentReviews).filter((review) => review.day === careerState?.day);
+  const causalChain = buildCausalChain(kpis);
+  if (incidentReviews.length > 0) {
+    causalChain.push("Des pannes non réparées ont généré des avis négatifs et pèsent sur votre réputation : réparez-les vite (une réparation d'urgence évite toute pénalité).");
+  }
+
   return {
     day: careerState?.day ?? null,
     date: kpis.date || null,
@@ -52,7 +62,8 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
       satisfaction: kpis.satisfaction,
       staffMorale: kpis.staffMorale,
     },
-    causalChain: buildCausalChain(kpis),
+    causalChain,
+    incidentReviews,
     diagnostics: safeArray(dashboardState?.insights?.diagnostics),
     recommendations: safeArray(dashboardState?.insights?.recommendations),
     attentionItems: buildAttentionItems(dashboardState?.notifications, 5),

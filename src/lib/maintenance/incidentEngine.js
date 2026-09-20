@@ -79,6 +79,7 @@ function createIncident(diagnostic, day) {
     status: "active",
     repairCost: REPAIR_COST[tier],
     createdOnDay: day,
+    daysOpen: 0,
     repairEtaDay: null,
   };
 }
@@ -114,13 +115,22 @@ export function reconcileIncidents(hotelState, diagnostics, day) {
 // ever renders an alert/repairing badge for a NON-resolved incident).
 // Called once per day advance, right after reconcileIncidents() -- see
 // useCareer.js's own nextDay().
+//
+// Also ages every still-open incident by one full day (`daysOpen`), except
+// one created today -- this is what incidentImpact.js's own grace period
+// and per-day reputation malus read (see that file's own docstring).
 export function advanceIncidentRepairs(hotelState, day) {
   const state = safeObject(hotelState);
-  const activeIncidents = safeArray(state.activeIncidents).map((incident) =>
-    incident.status === "repairing" && incident.repairEtaDay !== null && day >= incident.repairEtaDay
-      ? { ...incident, status: "resolved" }
-      : incident
-  );
+  const activeIncidents = safeArray(state.activeIncidents).map((incident) => {
+    if (incident.status === "resolved") return incident;
+    if (incident.status === "repairing" && incident.repairEtaDay !== null && day >= incident.repairEtaDay) {
+      return { ...incident, status: "resolved" };
+    }
+    if (Number.isFinite(incident.createdOnDay) && incident.createdOnDay < day) {
+      return { ...incident, daysOpen: (incident.daysOpen || 0) + 1 };
+    }
+    return incident;
+  });
   return { ...state, activeIncidents };
 }
 

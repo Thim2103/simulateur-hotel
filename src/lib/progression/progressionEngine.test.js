@@ -83,3 +83,13 @@ test("an achievement unlocked yesterday is not re-unlocked today", () => {
 test("never throws with no arguments at all", () => {
   expect(() => runProgression()).not.toThrow();
 });
+
+test("an unrepaired equipment incident lowers the day's reported reputation (and a repaired one does not)", () => {
+  const withIncidents = (activeIncidents) =>
+    runProgression(state({ hotelState: { esg: { sustainabilityScore: 60 }, progression: {}, activeIncidents } })).report.reputation;
+  const open = { id: "i1", zone: "laundry", severity: "critical", status: "active", daysOpen: 3 };
+
+  const clean = withIncidents([]);
+  expect(withIncidents([open])).toBeLessThan(clean);
+  expect(withIncidents([{ ...open, status: "resolved" }])).toBe(clean);
+});

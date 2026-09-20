@@ -122,6 +122,27 @@ export default function DailyReview() {
         </GameCard>
       </GameSection>
 
+      {review.incidentReviews?.length > 0 && (
+        <GameSection id="review-incident-reviews" title="Avis clients liés aux pannes" icon="💬">
+          <GameCard>
+            <ul className="flex flex-col gap-2">
+              {review.incidentReviews.map((incidentReview) => (
+                <li key={incidentReview.id} data-testid="incident-review" className="flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2 text-sm text-rose-900">
+                  <span className="shrink-0 font-semibold" aria-label={`Note ${incidentReview.rating} sur 5`}>
+                    {"★".repeat(incidentReview.rating)}
+                    {"☆".repeat(5 - incidentReview.rating)}
+                  </span>
+                  <span>« {incidentReview.text} »</span>
+                </li>
+              ))}
+            </ul>
+            <Link to="/dashboard" className="mt-3 inline-block text-xs font-semibold text-cyan-700 hover:underline">
+              Réparer depuis le plan de l'hôtel →
+            </Link>
+          </GameCard>
+        </GameSection>
+      )}
+
       <GameSection id="review-messages" title="Messages reçus aujourd'hui" icon="📬">
         <GameCard>
           {gmMessages.length === 0 ? (

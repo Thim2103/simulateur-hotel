@@ -1,6 +1,8 @@
 // Overall player/establishment reputation (0-100): slowly drifts toward a
 // target set by sustainability and staff morale, nudged day-to-day by
 // today's events (see lib/events/, whose impact.reputation this reads).
+import { incidentReputationPenalty } from "../maintenance/incidentImpact";
+
 const DRIFT_RATE = 0.15; // how much of the gap to the target closes each day
 
 function clamp(value, min, max) {
@@ -33,6 +35,11 @@ export function calculateReputation({ hotelState = {}, restaurantState = {}, eve
   const base = Number.isFinite(previousReputation) ? previousReputation : target;
   const drifted = base + (target - base) * DRIFT_RATE;
   const eventImpact = eventReputationImpact(events);
+  // Unrepaired equipment incidents (hotelState.activeIncidents, see
+  // lib/maintenance/) dent the reputation once they've dragged on past
+  // their grace period -- 0 when there are none, so existing behaviour is
+  // unchanged.
+  const incidentPenalty = incidentReputationPenalty(hotelState);
 
-  return Math.round(clamp(drifted + eventImpact, 0, 100));
+  return Math.round(clamp(drifted + eventImpact - incidentPenalty, 0, 100));
 }
