@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import GameModal from "../../components/GameModal";
 import { describeVipGuests, vipActionOptions, TARGET_SATISFACTION, PRAISE_BONUS_MIN, PRAISE_BONUS_SPAN } from "../../../lib/clients/vipServiceEngine";
 import { ZONE_STYLES } from "./schematicTokens";
+import { SoftButton, StatusBadge } from "../../bento";
 
 const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 const signed = (value) => `${value > 0 ? "+" : "−"}${Math.abs(value)}`;
@@ -33,14 +34,14 @@ export default function VipActionModal({ reservationId, hotelState, reservations
   };
 
   return (
-    <GameModal open onClose={onClose} title="⭐ Accueil V.I.P." className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto">
+    <GameModal open onClose={onClose} title="⭐ Accueil V.I.P." tone="vip" className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto">
       {!guest ? (
         <p data-testid="vip-gone" className="text-sm text-slate-600">
           Ce client n'est plus dans l'hôtel.
         </p>
       ) : (
         <>
-          <div data-testid="vip-profile" className="flex flex-col gap-0.5 text-sm">
+          <div data-testid="vip-profile" data-tone="vip" className="flex flex-col gap-0.5 rounded-2xl bg-[var(--tone-soft)] p-3 text-sm">
             <p className="font-semibold text-slate-900">
               {guest.profile.icon} {guest.guestName} — {guest.profile.label}
             </p>
@@ -72,13 +73,13 @@ export default function VipActionModal({ reservationId, hotelState, reservations
             {guest.lines.length > 0 && (
               <ul data-testid="vip-lines" className="flex flex-wrap gap-2 text-xs">
                 {guest.lines.map((line) => (
-                  <li key={line.key} data-testid={`vip-line-${line.key}`} className={`rounded-full border px-2 py-0.5 ${line.value > 0 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}>
+                  <li key={line.key} data-testid={`vip-line-${line.key}`} data-tone={line.value > 0 ? "success" : "danger"} className="badge-status">
                     {line.label} {signed(line.value)}
                   </li>
                 ))}
               </ul>
             )}
-            <p data-testid="vip-outcome" data-reached={guest.reached ? "true" : "false"} className={`rounded-lg p-2 text-xs ${guest.reached ? "bg-emerald-50 text-emerald-900" : "bg-slate-50 text-slate-700"}`}>
+            <p data-testid="vip-outcome" data-reached={guest.reached ? "true" : "false"} className={`rounded-2xl p-3 text-xs ${guest.reached ? "bg-emerald-50 text-emerald-900" : "bg-slate-50 text-slate-700"}`}>
               {guest.reached && guest.attentions.length > 0
                 ? `Avis élogieux attendu au départ : +${PRAISE_BONUS_MIN} à +${PRAISE_BONUS_MIN + PRAISE_BONUS_SPAN - 1} points de réputation en plus du poids ×3, et un article à la une.`
                 : guest.reached
@@ -89,25 +90,19 @@ export default function VipActionModal({ reservationId, hotelState, reservations
 
           <ul className="flex flex-col gap-2">
             {options.map((option) => (
-              <li key={option.id} data-testid={`vip-option-${option.id}`} data-available={option.available ? "true" : "false"} data-done={option.done ? "true" : "false"} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 p-2">
+              <li key={option.id} data-testid={`vip-option-${option.id}`} data-available={option.available ? "true" : "false"} data-done={option.done ? "true" : "false"} className={`flex flex-wrap items-center justify-between gap-2 rounded-2xl border p-3 shadow-[var(--ds-shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--ds-shadow-lift)] ${option.done ? "border-emerald-200 bg-emerald-50/50" : "border-[var(--ds-border)] bg-white"}`}>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-slate-900">
                     {option.label}
-                    <span className="ml-2 text-xs font-normal text-slate-600">{option.cost > 0 ? euro(option.cost) : "Gratuit"}</span>
+                    <StatusBadge tone={option.cost > 0 ? "neutral" : "success"} className="ml-2 !py-0 !text-[11px]">{option.cost > 0 ? euro(option.cost) : "Gratuit"}</StatusBadge>
                   </p>
                   <p className="text-xs text-slate-600">{option.description}</p>
                   <p className="text-xs text-emerald-800">Satisfaction {option.bonus}</p>
                   {option.reason && <p className={`text-xs ${option.done ? "text-emerald-700" : "text-rose-700"}`}>{option.done ? `✅ ${option.reason}` : option.reason}</p>}
                 </div>
-                <button
-                  type="button"
-                  data-testid={`vip-give-${option.id}`}
-                  disabled={!option.available || requested === option.id}
-                  onClick={() => handleGive(option)}
-                  className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <SoftButton tone="vip" data-testid={`vip-give-${option.id}`} disabled={!option.available || requested === option.id} onClick={() => handleGive(option)} className="!px-3 !py-1.5 !text-xs">
                   Accorder
-                </button>
+                </SoftButton>
               </li>
             ))}
           </ul>

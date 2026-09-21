@@ -13,6 +13,14 @@ import { ZONE_STYLES } from "../ui/hotelView/schematic/schematicTokens";
 import ReviewResponseModal, { points } from "../components/clients/ReviewResponseModal";
 import { listReviews, respondToReview, currentImpact, pressHighlights, RESPONSE_TYPES } from "../lib/clients/guestReviewEngine";
 import { PROFILES } from "../lib/clients/guestProfiles";
+import { BentoCard, SoftButton, StarRating, StatusBadge } from "../ui/bento";
+
+// A guest profile's badge tone: the V.I.P. stands out in orange.
+const PROFILE_TONE = { family: "success", business: "action", "long-stay": "mice", vip: "vip" };
+const INCIDENT_TONE = { danger: "danger", warning: "vip", success: "success" };
+
+const chipClass = (pressed) =>
+  `rounded-xl px-3 py-1 text-xs font-semibold transition ${pressed ? "bg-[var(--ds-action)] text-white shadow-sm" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`;
 
 const TREND_BADGE = { improving: "success", stable: "info", declining: "danger" };
 const TREND_LABEL = { improving: "En hausse", stable: "Stable", declining: "En baisse" };
@@ -106,16 +114,14 @@ export default function ClientsReviews() {
     return (
       <div className="mt-1 flex flex-wrap items-center gap-2">
         {answered ? (
-          <Badge type="info">Répondu : {answered.label.toLowerCase()}</Badge>
+          <StatusBadge tone="success" icon="✅" data-testid={`answered-${review.id}`}>Répondu : {answered.label.toLowerCase()}</StatusBadge>
         ) : (
-          <button
-            type="button"
-            data-testid={`respond-${review.id}`}
-            onClick={() => setRespondingId(review.id)}
-            className="rounded-lg border border-cyan-700 px-3 py-1 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50"
-          >
-            {review.impact < 0 ? "Répondre / Offrir un geste commercial" : "Répondre"}
-          </button>
+          <>
+            {review.impact < 0 && <StatusBadge tone="danger" icon="⏳" data-testid={`todo-${review.id}`}>À traiter</StatusBadge>}
+            <SoftButton tone={review.impact < 0 ? "danger" : "action"} data-testid={`respond-${review.id}`} onClick={() => setRespondingId(review.id)} className="!px-3 !py-1 !text-xs">
+              {review.impact < 0 ? "Répondre / Offrir un geste commercial" : "Répondre"}
+            </SoftButton>
+          </>
         )}
         <span className="text-xs text-slate-500">Impact réputation : {points(currentImpact(review))}</span>
       </div>
@@ -173,17 +179,17 @@ export default function ClientsReviews() {
               <h2 id="reviews-press" className="text-base font-semibold text-slate-900">
                 À la une <span className="text-sm font-normal text-slate-500">({frontPage.length})</span>
               </h2>
-              <Card>
-                <ul className="flex flex-col gap-2">
+              <BentoCard as="div" tone="vip">
+                <ul className="flex flex-col gap-3">
                   {frontPage.map((article) => (
-                    <li key={article.id} data-testid="press-highlight" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm">
+                    <li key={article.id} data-testid="press-highlight" className="rounded-2xl border border-amber-300/70 bg-gradient-to-br from-amber-50 to-orange-50 p-4 text-sm shadow-[0_0_0_4px_rgba(245,158,11,0.08)]">
                       <p className="font-semibold text-amber-950">🌟 {article.headline}</p>
-                      <p className="text-slate-700">« {article.text} »</p>
-                      <p className="text-xs text-slate-500">Jour {article.day}</p>
+                      <p className="mt-1 text-slate-700">« {article.text} »</p>
+                      <p className="mt-1 text-xs text-slate-500">Jour {article.day}</p>
                     </li>
                   ))}
                 </ul>
-              </Card>
+              </BentoCard>
             </section>
           )}
 
@@ -191,7 +197,7 @@ export default function ClientsReviews() {
             <h2 id="reviews-stays" className="text-base font-semibold text-slate-900">
               Avis des séjours <span className="text-sm font-normal text-slate-500">({stayReviews.length})</span>
             </h2>
-            <Card>
+            <BentoCard as="div" tone="action">
               {stayReviews.length === 0 ? (
                 <p className="text-sm text-slate-500">Aucun avis de séjour pour l'instant : ils arrivent quand des clients quittent l'hôtel.</p>
               ) : (
@@ -203,7 +209,7 @@ export default function ClientsReviews() {
                         type="button"
                         aria-pressed={stayFilter === filter.id}
                         onClick={() => setStayFilter(filter.id)}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium ${stayFilter === filter.id ? "border-cyan-700 bg-cyan-700 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                        className={chipClass(stayFilter === filter.id)}
                       >
                         {filter.label}
                       </button>
@@ -216,18 +222,21 @@ export default function ClientsReviews() {
                       {visibleStayReviews.map((review) => {
                         const profile = PROFILES[review.profile];
                         return (
-                          <li key={review.id} data-testid="stay-review" data-profile={review.profile} data-vip={review.profile === "vip" ? "true" : "false"} className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 text-sm">
+                          <li
+                            key={review.id}
+                            data-testid="stay-review"
+                            data-profile={review.profile}
+                            data-vip={review.profile === "vip" ? "true" : "false"}
+                            className={`flex flex-col gap-1.5 rounded-2xl border bg-white p-4 text-sm shadow-[var(--ds-shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--ds-shadow-lift)] ${review.profile === "vip" ? "border-amber-300 bg-gradient-to-br from-amber-50/60 to-white" : "border-[var(--ds-border)]"}`}
+                          >
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-amber-600" aria-label={`Note ${review.rating} sur 5`}>
-                                {"★".repeat(review.rating)}
-                                {"☆".repeat(5 - review.rating)}
-                              </span>
+                              <StarRating rating={review.rating} className="text-lg" />
                               {profile && (
-                                <Badge type={review.profile === "vip" ? "warning" : "info"}>
+                                <StatusBadge tone={PROFILE_TONE[review.profile] || "neutral"}>
                                   {profile.icon} {profile.label}
-                                </Badge>
+                                </StatusBadge>
                               )}
-                              {review.weight > 1 && <Badge type="warning">Poids ×{review.weight}</Badge>}
+                              {review.weight > 1 && <StatusBadge tone="vip">Poids ×{review.weight}</StatusBadge>}
                               <span className="text-xs text-slate-500">
                                 {review.guestName} · chambre {review.roomNumber} · Jour {review.day}
                               </span>
@@ -241,14 +250,14 @@ export default function ClientsReviews() {
                   )}
                 </>
               )}
-            </Card>
+            </BentoCard>
           </section>
 
           <section aria-labelledby="reviews-incidents" className="flex flex-col gap-3">
             <h2 id="reviews-incidents" className="text-base font-semibold text-slate-900">
               Avis liés aux pannes <span className="text-sm font-normal text-slate-500">({incidentReviews.length})</span>
             </h2>
-            <Card>
+            <BentoCard as="div" tone="danger">
               {incidentReviews.length === 0 ? (
                 <p className="text-sm text-slate-500">Aucun avis lié à une panne pour l'instant.</p>
               ) : (
@@ -260,7 +269,7 @@ export default function ClientsReviews() {
                         type="button"
                         aria-pressed={reviewFilter === filter.id}
                         onClick={() => setReviewFilter(filter.id)}
-                        className={`rounded-full border px-3 py-1 text-xs font-medium ${reviewFilter === filter.id ? "border-cyan-700 bg-cyan-700 text-white" : "border-slate-300 text-slate-700 hover:bg-slate-50"}`}
+                        className={chipClass(reviewFilter === filter.id)}
                       >
                         {filter.label}
                       </button>
@@ -273,14 +282,11 @@ export default function ClientsReviews() {
                       {visibleIncidentReviews.map((review) => {
                         const status = INCIDENT_STATUS_BADGE[review.incidentStatus];
                         return (
-                          <li key={review.id} data-testid="incident-review" className="flex flex-col gap-1 rounded-lg border border-slate-200 p-3 text-sm">
+                          <li key={review.id} data-testid="incident-review" className="flex flex-col gap-1.5 rounded-2xl border border-[var(--ds-border)] bg-white p-4 text-sm shadow-[var(--ds-shadow-card)] transition hover:-translate-y-0.5 hover:shadow-[var(--ds-shadow-lift)]">
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="font-semibold text-amber-600" aria-label={`Note ${review.rating} sur 5`}>
-                                {"★".repeat(review.rating)}
-                                {"☆".repeat(5 - review.rating)}
-                              </span>
-                              <Badge type="warning">Problème technique</Badge>
-                              {status && <Badge type={status.type}>{status.label}</Badge>}
+                              <StarRating rating={review.rating} className="text-lg" />
+                              <StatusBadge tone="vip" icon="🔧">Problème technique</StatusBadge>
+                              {status && <StatusBadge tone={INCIDENT_TONE[status.type] || "neutral"}>{status.label}</StatusBadge>}
                               <span className="text-xs text-slate-500">
                                 {(ZONE_STYLES[review.zone] || ZONE_STYLES.default).label} · Jour {review.day}
                               </span>
@@ -294,7 +300,7 @@ export default function ClientsReviews() {
                   )}
                 </>
               )}
-            </Card>
+            </BentoCard>
           </section>
 
           <section aria-labelledby="clients-complaints" className="flex flex-col gap-3">

@@ -13,6 +13,7 @@ import {
   roomCalendar,
 } from "../../lib/mice/miceEngine";
 import { toIsoDate, dayIndexOf } from "../../lib/hotelEvents/hotelEventsEngine";
+import { SoftButton } from "../../ui/bento";
 
 const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 const percent = (value) => `${Math.round(value * 100)} %`;
@@ -56,7 +57,7 @@ function RequestCard({ request, rooms, reservations, date, onRespond }) {
   };
 
   return (
-    <li data-testid={`mice-request-${request.id}`} data-feasible={feasibility.ok ? "true" : "false"} className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 text-sm">
+    <li data-testid={`mice-request-${request.id}`} data-feasible={feasibility.ok ? "true" : "false"} data-tone="mice" className="flex flex-col gap-2 rounded-2xl border border-l-4 border-[var(--ds-border)] border-l-[var(--tone)] bg-white p-4 text-sm shadow-[var(--ds-shadow-card)] transition hover:shadow-[var(--ds-shadow-lift)]">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="font-semibold text-slate-900">
           🤝 {request.company} — {request.attendees} personnes, {request.days} jour{request.days > 1 ? "s" : ""}
@@ -68,7 +69,7 @@ function RequestCard({ request, rooms, reservations, date, onRespond }) {
         {rooms_ > 0 ? ` · ${rooms_} chambre(s) Standard/Deluxe` : " · sans hébergement"}
       </p>
       {!feasibility.ok && (
-        <p data-testid={`mice-reason-${request.id}`} className="rounded-md border border-rose-200 bg-rose-50 p-2 text-xs text-rose-800">
+        <p data-testid={`mice-reason-${request.id}`} className="rounded-xl border border-rose-200 bg-rose-50 p-2.5 text-xs text-rose-800">
           Impossible à accueillir : {feasibility.reason}.
         </p>
       )}
@@ -78,15 +79,9 @@ function RequestCard({ request, rooms, reservations, date, onRespond }) {
       </p>
 
       <div className="flex flex-wrap items-end gap-3">
-        <button
-          type="button"
-          data-testid={`mice-accept-${request.id}`}
-          disabled={disabled}
-          onClick={() => send({ type: "accept" })}
-          className="rounded-lg bg-cyan-700 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-cyan-800 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        <SoftButton tone="success" data-testid={`mice-accept-${request.id}`} disabled={disabled} onClick={() => send({ type: "accept" })} className="!px-3 !py-1.5 !text-xs">
           Accepter (−{percent(STANDARD_DISCOUNT)}) · {euro(standard.total)}
-        </button>
+        </SoftButton>
         <label className="flex flex-col gap-0.5 text-xs text-slate-600">
           Remise de groupe (0 à {percent(MAX_DISCOUNT)})
           <input
@@ -96,27 +91,15 @@ function RequestCard({ request, rooms, reservations, date, onRespond }) {
             max={Math.round(MAX_DISCOUNT * 100)}
             value={discount}
             onChange={(event) => setDiscount(event.target.value)}
-            className="w-20 rounded-md border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-cyan-600 focus:outline-none focus:ring-2 focus:ring-cyan-100"
+            className="w-20 rounded-xl border border-slate-300 px-2 py-1 text-sm text-slate-900 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-100"
           />
         </label>
-        <button
-          type="button"
-          data-testid={`mice-negotiate-${request.id}`}
-          disabled={disabled}
-          onClick={() => send({ type: "negotiate", discount: offered })}
-          className="rounded-lg border border-cyan-700 px-3 py-1.5 text-xs font-semibold text-cyan-800 transition hover:bg-cyan-50 disabled:cursor-not-allowed disabled:border-slate-300 disabled:text-slate-400 disabled:hover:bg-transparent"
-        >
+        <SoftButton tone="mice" data-testid={`mice-negotiate-${request.id}`} disabled={disabled} onClick={() => send({ type: "negotiate", discount: offered })} className="!px-3 !py-1.5 !text-xs">
           Proposer ce tarif
-        </button>
-        <button
-          type="button"
-          data-testid={`mice-decline-${request.id}`}
-          disabled={sent}
-          onClick={() => send({ type: "decline" })}
-          className="rounded-lg border border-slate-400 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-        >
+        </SoftButton>
+        <SoftButton tone="neutral" data-testid={`mice-decline-${request.id}`} disabled={sent} onClick={() => send({ type: "decline" })} className="!px-3 !py-1.5 !text-xs">
           Refuser
-        </button>
+        </SoftButton>
       </div>
       <p data-testid={`mice-chance-${request.id}`} className="text-xs text-slate-600">
         À {percent(offered)} de remise : chance de signature <strong>{chanceLabel(conversionChance(request, offered))}</strong> · chiffre d'affaires garanti <strong>{euro(offer.total)}</strong>
@@ -143,15 +126,15 @@ export default function MicePanel({ hotelState, rooms, reservations, date, onRes
 
   return (
     <div data-testid="mice-panel" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-700">
-        <span data-testid="mice-forecast">
+      <div className="grid grid-cols-1 gap-2 text-sm text-slate-700 sm:grid-cols-2">
+        <span data-testid="mice-forecast" data-tone="success" className="rounded-2xl bg-[var(--tone-soft)] px-3 py-2">
           Chiffre d'affaires garanti : <strong>{euro(guaranteedRevenue(hotelState, today))}</strong>
         </span>
-        <span data-testid="mice-pending-count">{pending.length} devis en attente</span>
+        <span data-testid="mice-pending-count" data-tone="mice" className="rounded-2xl bg-[var(--tone-soft)] px-3 py-2">{pending.length} devis en attente</span>
       </div>
 
       {banner && (
-        <p data-testid="mice-outcome" data-outcome={outcome.outcome} className={`rounded-lg border p-2 text-sm ${banner.tone}`}>
+        <p data-testid="mice-outcome" data-outcome={outcome.outcome} className={`rounded-2xl border p-3 text-sm ${banner.tone}`}>
           {banner.text}
         </p>
       )}
@@ -184,7 +167,7 @@ export default function MicePanel({ hotelState, rooms, reservations, date, onRes
           </h3>
           <ul className="flex flex-col gap-1 text-sm">
             {upcoming.map((event) => (
-              <li key={event.id} data-testid={`mice-event-${event.id}`} className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-900">
+              <li key={event.id} data-testid={`mice-event-${event.id}`} className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-900">
                 🤝 {event.company} — {event.attendees} personnes · du {frDate(event.startDate)} au {frDate(event.endDate)} · salle {event.meetingRoomNumber} · <strong>{euro(event.quote.total)}</strong> garantis
               </li>
             ))}
@@ -209,13 +192,13 @@ export default function MicePanel({ hotelState, rooms, reservations, date, onRes
                     data-testid={`mice-cal-${entry.roomId}-${day.date}`}
                     data-busy={day.busy === null ? "free" : day.busy === "other" ? "other" : "event"}
                     title={`${frDate(day.date)} : ${day.busy === null ? "libre" : day.busy === "other" ? "réservée" : "séminaire"}`}
-                    className={`h-4 w-4 rounded-sm ${day.busy === null ? "bg-slate-200" : day.busy === "other" ? "bg-amber-400" : "bg-emerald-500"}`}
+                    className={`h-4 w-4 rounded-md ${day.busy === null ? "bg-slate-200" : day.busy === "other" ? "bg-amber-400" : "bg-[var(--ds-mice)]"}`}
                   />
                 ))}
               </div>
             </div>
           ))}
-          <p className="text-[11px] text-slate-500">Gris : libre · vert : séminaire signé · orange : autre réservation.</p>
+          <p className="text-[11px] text-slate-500">Gris : libre · violet : séminaire signé · orange : autre réservation.</p>
         </section>
       )}
 
