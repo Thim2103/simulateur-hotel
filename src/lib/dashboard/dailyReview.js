@@ -17,6 +17,7 @@ import { describeCalendar, todaySnapshot, auditOn } from "../hotelEvents/hotelEv
 import { activeCampaigns, campaignsEndedOn, describeCampaign } from "../marketing/targetedCampaigns";
 import { reviewsPostedOn, unansweredNegativeReviews, currentImpact } from "../clients/guestReviewEngine";
 import { describeMiceDay } from "../mice/miceReport";
+import { crisisNewsOn } from "../mediaCrisis/mediaCrisisEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -152,6 +153,8 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
       causalChain.push(`Séminaire ${event.company} terminé : ${event.quote.total.toLocaleString("fr-FR")} € de chiffre d'affaires.`);
     });
   }
+  // The media crisis: how it broke, what it costs, how it ended (lib/mediaCrisis/).
+  if (playedDate) causalChain.push(...crisisNewsOn(hotelState, playedDate));
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);

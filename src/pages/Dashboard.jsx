@@ -23,6 +23,9 @@ import { buildDailyReview } from "../lib/dashboard/dailyReview";
 import { urgentItems } from "../lib/dashboard/statusSummary";
 import { unansweredNegativeReviews } from "../lib/clients/guestReviewEngine";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
+import { MediaCrisisBanner, RehabBanner } from "../components/crisis/MediaCrisisBanner";
+import MediaCrisisModal from "../components/crisis/MediaCrisisModal";
+import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
 import { respondToRequest } from "../lib/mice/miceEngine";
 import { setYieldEnabled, setYieldRule } from "../lib/rm/yieldManagementEngine";
@@ -129,6 +132,8 @@ export default function Dashboard() {
   const [gmNotification, setGmNotification] = useState(null);
   // Whether the yield-management / marketing modal is open.
   const [growthOpen, setGrowthOpen] = useState(false);
+  // Whether the media crisis desk is open.
+  const [crisisOpen, setCrisisOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -154,6 +159,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!hasCareer) return;
     if (location.hash === "#yield") setGrowthOpen(true);
+    if (location.hash === "#crisis") setCrisisOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -163,6 +169,11 @@ export default function Dashboard() {
   const closeGrowth = () => {
     setGrowthOpen(false);
     if (location.hash === "#yield") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeCrisis = () => {
+    setCrisisOpen(false);
+    if (location.hash === "#crisis") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -273,6 +284,11 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => respondToRequest(hotel, requestId, action, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
   };
 
+  // The media crisis desk (components/crisis/MediaCrisisModal.jsx): the answer to a crisis.
+  const handleCrisisRespond = (type) => {
+    applyHotelAdjustment((hotel) => respondToCrisis(hotel, type, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -327,12 +343,18 @@ export default function Dashboard() {
   const decisionGroups = buildDecisionGroups(dashboardState?.quickActions);
   const calendar = describeCalendar(careerReferenceDate(careerState), careerState?.hotel?.hotelState);
   const review = buildDailyReview({ careerState, dashboardState });
+  const crisis = describeActiveCrisis(careerState?.hotel?.hotelState, careerReferenceDate(careerState));
+  const rehab = describeRehab(careerState?.hotel?.hotelState, careerReferenceDate(careerState));
   const alerts = urgentItems(careerState, { gmMessages: gmMessages.length });
   const reviewsToAnswer = unansweredNegativeReviews(careerState?.hotel?.hotelState).length;
 
   return (
     <div className="flex flex-col gap-6">
       <DashboardHeader day={careerState.day} date={dashboardState?.kpis?.date} isGuest={isGuest} onNextDay={handleNextDay} isRunning={isRunning} />
+
+      {/* A media crisis under way, and the rehabilitation campaign after one (lib/mediaCrisis/). */}
+      <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
+      <RehabBanner rehab={rehab} />
 
       <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} />
 
@@ -403,6 +425,10 @@ export default function Dashboard() {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           Un événement narratif vous attend. <Link to="/career/story" className="font-semibold underline">Le consulter →</Link>
         </div>
+      )}
+
+      {crisisOpen && (
+        <MediaCrisisModal hotelState={careerState?.hotel?.hotelState} date={careerReferenceDate(careerState)} onRespond={handleCrisisRespond} onClose={closeCrisis} />
       )}
 
       {growthOpen && (

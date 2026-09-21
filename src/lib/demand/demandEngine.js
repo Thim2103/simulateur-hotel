@@ -31,6 +31,7 @@ import { calendarEffects, seasonDemand } from "../hotelEvents/hotelEventsEngine"
 import { computeCampaignEffects } from "../marketing/targetedCampaigns";
 import { pendingDemandShift } from "../clients/guestReviewEngine";
 import { isMeetingRoom } from "../mice/miceEngine";
+import { mediaDemandFactor, reputationHoldOn } from "../mediaCrisis/mediaCrisisEngine";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
@@ -131,7 +132,11 @@ export function incidentFactor(hotelState) {
 
 export function computeDemand({ hotelState, rooms, reservations, referenceDate = new Date() } = {}) {
   const state = safeObject(hotelState);
-  const reputation = safeNumber(state.progression?.player?.reputation, NEUTRAL_REPUTATION);
+  // A media crisis holds the stored reputation down (lib/mediaCrisis/); its
+  // effect on demand is its own `media` factor, so the hold is added back here.
+  const storedReputation = safeNumber(state.progression?.player?.reputation, NEUTRAL_REPUTATION);
+  const hold = reputationHoldOn(state, referenceDate);
+  const reputation = hold > 0 ? Math.min(100, storedReputation + hold) : storedReputation;
   const index = priceIndex(rooms, reservations, referenceDate);
   // Scheduled events (festival, trade fair, heat wave...) and the season's
   // price tolerance come from the calendar (lib/hotelEvents/).
@@ -148,6 +153,10 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
     incidents: incidentFactor(state),
     marketing: campaigns.factor,
   };
+  // A media crisis under way (or the rehabilitation campaign that follows one,
+  // lib/mediaCrisis/) moves demand too -- a factor listed only when it does.
+  const media = mediaDemandFactor(state, referenceDate);
+  if (media !== 1) factors.media = media;
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
   return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
 }
@@ -283,6 +292,7 @@ const POSITIVE_DRIVER = {
   season: "la haute saison",
   events: "des événements porteurs",
   marketing: "vos campagnes marketing",
+  media: "votre campagne de réhabilitation",
 };
 const NEGATIVE_DRIVER = {
   reputation: "une réputation en retrait",
@@ -290,6 +300,7 @@ const NEGATIVE_DRIVER = {
   season: "la basse saison",
   events: "des événements défavorables",
   incidents: "des pannes non réparées et les avis négatifs qui en découlent",
+  media: "la crise médiatique",
 };
 
 const STRONG = 1.1;
