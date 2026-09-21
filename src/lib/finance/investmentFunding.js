@@ -18,12 +18,20 @@ export function capitalOf(hotelState) {
   return Math.max(0, safeNumber(safeObject(safeObject(hotelState).expansion).availableCapital, 0));
 }
 
-// What the hotel has earned so far, net of everything it has spent. Never
-// negative: a hotel in the red has no treasury to draw on (its capital is
-// still usable).
+// The bank account, as it stands: what the hotel has earned, net of what it has
+// spent, plus the money the bank has lent it and not yet had back (the loans'
+// principal is neither income nor expense -- see lib/banking/). Negative when
+// the hotel is overdrawn.
+export function balanceOf(hotelState) {
+  const state = safeObject(hotelState);
+  const finance = safeObject(state.finance);
+  return sum(finance.revenue) - sum(finance.costs) + safeNumber(safeObject(state.banking).cashAdjustment, 0);
+}
+
+// What the hotel can spend: its account. Never negative: a hotel in the red has
+// no treasury to draw on (its capital is still usable).
 export function treasuryOf(hotelState) {
-  const finance = safeObject(safeObject(hotelState).finance);
-  return Math.max(0, sum(finance.revenue) - sum(finance.costs));
+  return Math.max(0, balanceOf(hotelState));
 }
 
 export function availableFunds(hotelState) {

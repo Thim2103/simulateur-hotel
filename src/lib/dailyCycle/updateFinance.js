@@ -44,13 +44,16 @@ function accumulateFinance(finance = {}, { revenue, cost, maintenance = 0, refer
 // hotel and restaurant finance objects based on each department's share of
 // today's revenue, so a single "expenses" figure still lands somewhere
 // sensible in both monthly ledgers.
-export function updateFinance({ hotelState = {}, restaurantState = {}, hotelRevenue = 0, restaurantRevenue = 0, expenses = 0, maintenance = 0, referenceDate = new Date() } = {}) {
+export function updateFinance({ hotelState = {}, restaurantState = {}, hotelRevenue = 0, restaurantRevenue = 0, expenses = 0, maintenance = 0, banking = 0, referenceDate = new Date() } = {}) {
   const totalRevenue = Math.max(1, hotelRevenue + restaurantRevenue);
   // The upkeep bill (`maintenance`, already inside `expenses`) is a hotel
   // cost: it goes entirely to the hotel's ledger, and only the rest is
   // split by revenue share.
   const hotelOnly = Math.max(0, Math.min(maintenance, expenses));
-  const hotelExpenseShare = (expenses - hotelOnly) * (hotelRevenue / totalRevenue) + hotelOnly;
+  // So is what the bank takes (the interest on the hotel's loans, agios): it is
+  // the hotel's account that pays it (lib/banking/).
+  const bankOnly = Math.max(0, Math.min(banking, expenses - hotelOnly));
+  const hotelExpenseShare = (expenses - hotelOnly - bankOnly) * (hotelRevenue / totalRevenue) + hotelOnly + bankOnly;
   const restaurantExpenseShare = expenses - hotelExpenseShare;
 
   const hotelFinance = accumulateFinance(hotelState.finance, { revenue: hotelRevenue, cost: hotelExpenseShare, maintenance: hotelOnly, referenceDate });

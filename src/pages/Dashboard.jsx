@@ -27,6 +27,8 @@ import { MediaCrisisBanner, RehabBanner } from "../components/crisis/MediaCrisis
 import MediaCrisisModal from "../components/crisis/MediaCrisisModal";
 import EventCalendarWidget from "../components/dashboard/EventCalendarWidget";
 import LoyaltyProgramModal from "../components/loyalty/LoyaltyProgramModal";
+import BankingModal from "../components/banking/BankingModal";
+import { takeLoan, repayLoan } from "../lib/banking/bankingLoanEngine";
 import { launchProgram, setBenefit } from "../lib/loyalty/loyaltyProgramEngine";
 import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
@@ -139,6 +141,8 @@ export default function Dashboard() {
   const [crisisOpen, setCrisisOpen] = useState(false);
   // Whether the loyalty club desk is open.
   const [loyaltyOpen, setLoyaltyOpen] = useState(false);
+  // Whether the bank's desk is open.
+  const [bankingOpen, setBankingOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -166,6 +170,7 @@ export default function Dashboard() {
     if (location.hash === "#yield") setGrowthOpen(true);
     if (location.hash === "#crisis") setCrisisOpen(true);
     if (location.hash === "#loyalty") setLoyaltyOpen(true);
+    if (location.hash === "#banking") setBankingOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -185,6 +190,11 @@ export default function Dashboard() {
   const closeLoyalty = () => {
     setLoyaltyOpen(false);
     if (location.hash === "#loyalty") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeBanking = () => {
+    setBankingOpen(false);
+    if (location.hash === "#banking") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -308,6 +318,14 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => setBenefit(hotel, benefitId, enabled)).catch(() => undefined);
   };
 
+  // The bank's desk (components/banking/): taking a loan and repaying one early.
+  const handleTakeLoan = (typeId, amount) => {
+    applyHotelAdjustment((hotel) => takeLoan(hotel, typeId, amount, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+  const handleRepayLoan = (loanId) => {
+    applyHotelAdjustment((hotel) => repayLoan(hotel, loanId, { day: careerState.day })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -375,7 +393,7 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} />
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} />
 
       <DashboardBento
         review={review}
@@ -450,6 +468,8 @@ export default function Dashboard() {
           Un événement narratif vous attend. <Link to="/career/story" className="font-semibold underline">Le consulter →</Link>
         </div>
       )}
+
+      {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 
       {loyaltyOpen && (
         <LoyaltyProgramModal

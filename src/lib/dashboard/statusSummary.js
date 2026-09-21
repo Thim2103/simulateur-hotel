@@ -6,6 +6,7 @@ import { listReviews, unansweredNegativeReviews } from "../clients/guestReviewEn
 import { describeVipGuests } from "../clients/vipServiceEngine";
 import { isMeetingRoom, pendingRequests } from "../mice/miceEngine";
 import { describeActiveCrisis } from "../mediaCrisis/mediaCrisisEngine";
+import { isOverdrawn, overdraftCostOn } from "../banking/bankingLoanEngine";
 
 // What the top bar keeps in view at all times, and what the notification
 // centre lists, read straight off the career's hotel: treasury, the date and
@@ -50,6 +51,20 @@ export function urgentItems(careerState, { gmMessages = 0 } = {}) {
       priority: !crisis.decided,
       label: crisis.decided ? `Crise médiatique en cours : ${crisis.title}` : `Crise médiatique : ${crisis.title}. Répondez !`,
       to: "/dashboard#crisis",
+    });
+  }
+
+  // An overdrawn account costs agios every day: the bank wants to hear from the player.
+  if (isOverdrawn(hotelState)) {
+    items.push({
+      id: "overdraft",
+      kind: "banking",
+      tone: "danger",
+      icon: "🏦",
+      count: 1,
+      priority: true,
+      label: `Compte à découvert : environ ${Math.round(overdraftCostOn(hotelState)).toLocaleString("fr-FR")} € d'agios par jour`,
+      to: "/dashboard#banking",
     });
   }
 

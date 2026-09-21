@@ -79,6 +79,7 @@ import RmAdvancedReport from "./pages/RmAdvancedReport";
 import FinanceDashboard from "./pages/FinanceDashboard";
 import FinanceReport from "./pages/FinanceReport";
 import FinanceForecast from "./pages/FinanceForecast";
+import FinanceBanking from "./pages/FinanceBanking";
 import HousekeepingDashboard from "./pages/HousekeepingDashboard";
 import HousekeepingForecast from "./pages/HousekeepingForecast";
 import HousekeepingReport from "./pages/HousekeepingReport";
@@ -190,6 +191,7 @@ function App() {
                   <Route path="/finance" element={<FinanceDashboard />} />
                   <Route path="/finance/report" element={<FinanceReport />} />
                   <Route path="/finance/forecast" element={<FinanceForecast />} />
+                  <Route path="/finance/banking" element={<FinanceBanking />} />
                   <Route path="/housekeeping" element={<HousekeepingDashboard />} />
                   <Route path="/housekeeping/forecast" element={<HousekeepingForecast />} />
                   <Route path="/housekeeping/report" element={<HousekeepingReport />} />
