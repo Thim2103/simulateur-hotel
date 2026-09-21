@@ -26,6 +26,8 @@ import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
 import { MediaCrisisBanner, RehabBanner } from "../components/crisis/MediaCrisisBanner";
 import MediaCrisisModal from "../components/crisis/MediaCrisisModal";
 import EventCalendarWidget from "../components/dashboard/EventCalendarWidget";
+import LoyaltyProgramModal from "../components/loyalty/LoyaltyProgramModal";
+import { launchProgram, setBenefit } from "../lib/loyalty/loyaltyProgramEngine";
 import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
 import { respondToRequest } from "../lib/mice/miceEngine";
@@ -135,6 +137,8 @@ export default function Dashboard() {
   const [growthOpen, setGrowthOpen] = useState(false);
   // Whether the media crisis desk is open.
   const [crisisOpen, setCrisisOpen] = useState(false);
+  // Whether the loyalty club desk is open.
+  const [loyaltyOpen, setLoyaltyOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -161,6 +165,7 @@ export default function Dashboard() {
     if (!hasCareer) return;
     if (location.hash === "#yield") setGrowthOpen(true);
     if (location.hash === "#crisis") setCrisisOpen(true);
+    if (location.hash === "#loyalty") setLoyaltyOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -175,6 +180,11 @@ export default function Dashboard() {
   const closeCrisis = () => {
     setCrisisOpen(false);
     if (location.hash === "#crisis") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeLoyalty = () => {
+    setLoyaltyOpen(false);
+    if (location.hash === "#loyalty") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -290,6 +300,14 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => respondToCrisis(hotel, type, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
   };
 
+  // The loyalty club desk (components/loyalty/): launching the club and its perks.
+  const handleLaunchLoyalty = () => {
+    applyHotelAdjustment((hotel) => launchProgram(hotel, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+  const handleToggleBenefit = (benefitId, enabled) => {
+    applyHotelAdjustment((hotel) => setBenefit(hotel, benefitId, enabled)).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -357,7 +375,7 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} />
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} />
 
       <DashboardBento
         review={review}
@@ -431,6 +449,17 @@ export default function Dashboard() {
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           Un événement narratif vous attend. <Link to="/career/story" className="font-semibold underline">Le consulter →</Link>
         </div>
+      )}
+
+      {loyaltyOpen && (
+        <LoyaltyProgramModal
+          hotelState={careerState?.hotel?.hotelState}
+          reservations={careerState?.hotel?.reservations}
+          date={careerReferenceDate(careerState)}
+          onLaunch={handleLaunchLoyalty}
+          onToggleBenefit={handleToggleBenefit}
+          onClose={closeLoyalty}
+        />
       )}
 
       {crisisOpen && (

@@ -256,6 +256,13 @@ function ratingOf({ reservation, profileId, hotelState }) {
   return clamp(Math.round(score), 1, 5);
 }
 
+// The stars a departing guest would give, whether or not they write a review
+// (a V.I.P.'s follow their satisfaction): what the loyalty club reads.
+export function stayRating({ reservation, room, hotelState }) {
+  const profileId = profileIdFor(reservation, room);
+  return profileId === "vip" ? vipStayOutcome({ reservation, hotelState }).rating : ratingOf({ reservation, profileId, hotelState });
+}
+
 function textOf({ profileId, rating, id, praise = false }) {
   const pool = praise ? TEXTS[profileId].praise : TEXTS[profileId][rating >= 4 ? "good" : rating === 3 ? "ok" : "bad"];
   return pool[Math.floor(mixedRandom(`text:${id}`) * pool.length) % pool.length];

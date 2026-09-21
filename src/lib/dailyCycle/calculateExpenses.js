@@ -25,7 +25,7 @@ function eventCosts(events) {
 // Splits today's spend into fixed (rent, base payroll, fixed costs) and
 // variable (marketing, ESG investment, restaurant staff payroll, one-off
 // event costs) so the daily report can show where money is going.
-export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [], rooms = [], referenceDate } = {}) {
+export function calculateExpenses({ hotelState = {}, restaurantState = {}, events = [], rooms = [], referenceDate, loyaltyCost = 0 } = {}) {
   const hotelFinance = hotelState.finance || {};
   const restaurantFinance = restaurantState.finance || {};
   const restaurantStaff = safeArray(restaurantState.staff);
@@ -58,7 +58,9 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     // A heat or cold wave (lib/hotelEvents/) raises the energy bill that day.
     (referenceDate ? calendarEffects(referenceDate, hotelState).energyExtra : 0) +
     // The food cost of the seminar catering served today (lib/mice/).
-    (referenceDate ? miceCateringCostOn(hotelState, referenceDate) : 0);
+    (referenceDate ? miceCateringCostOn(hotelState, referenceDate) : 0) +
+    // The perks granted to the loyalty club's members in the hotel tonight (lib/loyalty/).
+    loyaltyCost;
 
   const total = Math.max(0, fixed + variable);
 
@@ -68,6 +70,7 @@ export function calculateExpenses({ hotelState = {}, restaurantState = {}, event
     eventCosts: Math.round(eventCosts(events)),
     // "Entretien & Charges d'exploitation": already inside `fixed` and `total`.
     maintenance,
+    ...(loyaltyCost > 0 ? { loyalty: Math.round(loyaltyCost) } : {}),
     total: Math.round(total),
   };
 }

@@ -18,6 +18,7 @@ import { activeCampaigns, campaignsEndedOn, describeCampaign } from "../marketin
 import { reviewsPostedOn, unansweredNegativeReviews, currentImpact } from "../clients/guestReviewEngine";
 import { describeMiceDay } from "../mice/miceReport";
 import { crisisNewsOn } from "../mediaCrisis/mediaCrisisEngine";
+import { loyaltyNewsOn } from "../loyalty/loyaltyProgramEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -155,6 +156,8 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   }
   // The media crisis: how it broke, what it costs, how it ended (lib/mediaCrisis/).
   if (playedDate) causalChain.push(...crisisNewsOn(hotelState, playedDate));
+  // The loyalty club: new members, promotions, perks and savings (lib/loyalty/).
+  if (playedDate) causalChain.push(...loyaltyNewsOn(hotelState, playedDate));
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);

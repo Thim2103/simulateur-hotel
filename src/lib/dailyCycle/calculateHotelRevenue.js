@@ -3,7 +3,7 @@
 // bookings. Operates on a single calendar day, unlike lib/hotel.js's
 // buildHotelSimulation() which works off monthly aggregates.
 const UPSELL_PER_OCCUPIED_ROOM = 14; // EUR/room/day: minibar, spa, breakfast extras, etc.
-const OTA_COMMISSION_RATE = 0.18; // matches rm.js's channelYield() OTA commission assumption
+export const OTA_COMMISSION_RATE = 0.18; // matches rm.js's channelYield() OTA commission assumption
 
 function toDateOnly(value) {
   return String(value || "").slice(0, 10);

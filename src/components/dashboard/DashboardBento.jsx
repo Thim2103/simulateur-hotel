@@ -11,7 +11,7 @@ const REVENUE_DAYS = 14;
 // Quick access to the three things a manager does most: change the prices,
 // launch a campaign (both open the yield & marketing desk) and answer the
 // guests' reviews (a page of its own, with the count of the bad ones waiting).
-export function QuickActions({ onOpenGrowth, reviewsToAnswer = 0 }) {
+export function QuickActions({ onOpenGrowth, reviewsToAnswer = 0, onOpenLoyalty }) {
   return (
     <section aria-label="Accès rapide" data-testid="quick-actions" className="flex flex-wrap items-center gap-2">
       <SoftButton tone="success" icon="📈" data-testid="quick-yield" onClick={onOpenGrowth}>
@@ -24,6 +24,11 @@ export function QuickActions({ onOpenGrowth, reviewsToAnswer = 0 }) {
         Répondre aux avis
         {reviewsToAnswer > 0 && <StatusBadge tone="danger" data-testid="quick-reviews-count">{reviewsToAnswer}</StatusBadge>}
       </SoftButton>
+      {onOpenLoyalty && (
+        <SoftButton tone="vip" icon="🎖️" data-testid="quick-loyalty" onClick={onOpenLoyalty}>
+          Club & Fidélité
+        </SoftButton>
+      )}
     </section>
   );
 }

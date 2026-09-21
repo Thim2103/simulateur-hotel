@@ -27,6 +27,7 @@ import { advanceTargetedCampaigns } from "../marketing/targetedCampaigns";
 import { advanceGuestReviews } from "../clients/guestReviewEngine";
 import { advanceMice } from "../mice/miceEngine";
 import { advanceMediaCrisis } from "../mediaCrisis/mediaCrisisEngine";
+import { advanceLoyalty } from "../loyalty/loyaltyProgramEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -197,7 +198,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // events are closed (lib/mice/miceEngine.js).
       // A media crisis breaks, drags on or ends (lib/mediaCrisis/): it holds the
       // reputation down and reads the reviews just settled, so it comes last.
-      hotelState: advanceMediaCrisis(advanceMice(advanceGuestReviews(
+      // The loyalty club takes in the guests who leave satisfied and books the
+      // day's perks and savings (lib/loyalty/).
+      hotelState: advanceMediaCrisis(advanceLoyalty(advanceMice(advanceGuestReviews(
       advanceTargetedCampaigns(
         recordMaintenance(
         // Today's season and events (lib/hotelEvents/), snapshotted before the
@@ -209,7 +212,7 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
         { date: referenceDate, demandReport: demand.demandReport }
       ),
       { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
-      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }),
+      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,
