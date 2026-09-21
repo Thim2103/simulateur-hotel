@@ -22,6 +22,7 @@ import { saveDailyState } from "./saveDailyState";
 import { runRestaurantCycle } from "../restaurant/restaurantEngine";
 import { miceCateringRevenueOn } from "../mice/miceEngine";
 import { loyaltyCostOn } from "../loyalty/loyaltyProgramEngine";
+import { bankingCostOn } from "../banking/bankingLoanEngine";
 
 function toDateOnly(referenceDate) {
   return String(referenceDate.toISOString ? referenceDate.toISOString() : referenceDate).slice(0, 10);
@@ -110,7 +111,9 @@ export async function runDailyCycle(options = {}) {
   // 4. Fixed and variable expenses (event costs included).
   // The loyalty club's perks, for the members in the hotel tonight (lib/loyalty/).
   const loyaltyCost = loyaltyCostOn(hotelState, reservationUpdate.reservations, referenceDate);
-  const expenses = calculateExpenses({ hotelState, restaurantState, events, rooms, referenceDate, loyaltyCost });
+  // The interest on the hotel's loans and the agios of an overdrawn account (lib/banking/).
+  const bankingCost = bankingCostOn(hotelState);
+  const expenses = calculateExpenses({ hotelState, restaurantState, events, rooms, referenceDate, loyaltyCost, bankingCost });
 
   // 5. Staff fatigue, morale, and turnover. Today's demand is approximated
   // from actual occupancy, so a busy day tires staff out faster.
@@ -138,6 +141,7 @@ export async function runDailyCycle(options = {}) {
     restaurantRevenue: restaurantRevenueTotal,
     expenses: expenses.total,
     maintenance: expenses.maintenance?.total ?? 0,
+    banking: expenses.banking ?? 0,
     referenceDate,
   });
   const profit = hotelRevenueTotal + restaurantRevenueTotal - expenses.total;

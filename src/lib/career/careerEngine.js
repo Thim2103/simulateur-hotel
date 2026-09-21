@@ -28,6 +28,7 @@ import { advanceGuestReviews } from "../clients/guestReviewEngine";
 import { advanceMice } from "../mice/miceEngine";
 import { advanceMediaCrisis } from "../mediaCrisis/mediaCrisisEngine";
 import { advanceLoyalty } from "../loyalty/loyaltyProgramEngine";
+import { advanceBanking } from "../banking/bankingLoanEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -200,7 +201,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // reputation down and reads the reviews just settled, so it comes last.
       // The loyalty club takes in the guests who leave satisfied and books the
       // day's perks and savings (lib/loyalty/).
-      hotelState: advanceMediaCrisis(advanceLoyalty(advanceMice(advanceGuestReviews(
+      // Last of all, the bank takes the day's instalments out of the account the
+      // day left (lib/banking/).
+      hotelState: advanceBanking(advanceMediaCrisis(advanceLoyalty(advanceMice(advanceGuestReviews(
       advanceTargetedCampaigns(
         recordMaintenance(
         // Today's season and events (lib/hotelEvents/), snapshotted before the
@@ -212,7 +215,7 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
         { date: referenceDate, demandReport: demand.demandReport }
       ),
       { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
-      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }),
+      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }), { date: referenceDate, day }),
       restaurantState: dailyReport.nextState.restaurantState,
       rooms: dailyReport.nextState.rooms,
       reservations: dailyReport.nextState.reservations,

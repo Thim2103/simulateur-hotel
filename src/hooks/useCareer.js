@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   acceptMission as acceptMissionEngine,
   claimReward as claimRewardEngine,
@@ -58,6 +58,15 @@ export function useCareer() {
   const isGuest = session?.mode === "guest";
 
   const [careerState, setCareerState] = useState(null);
+  // The career as of the LAST write, not as of the last render. Two actions fired
+  // before React re-renders (two quick clicks on different switches) must each
+  // build on the other's result: an action reads this ref when it applies, never
+  // the `careerState` a callback happened to close over.
+  const latestRef = useRef(null);
+  const commit = useCallback((next) => {
+    latestRef.current = next;
+    setCareerState(next);
+  }, []);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState(null);
 
@@ -75,10 +84,15 @@ export function useCareer() {
     }
   }, []);
 
-  const persistCareerState = useCallback(
-    (state, guestNow) => (guestNow ? guestCareerRepository.save(state) : careerRepository.saveCareerState(state)),
-    []
-  );
+  // Saves go one after the other, in the order the states were written, so a
+  // slow older save can never land after (and overwrite) a newer one.
+  const persistQueue = useRef(Promise.resolve());
+  const persistCareerState = useCallback((state, guestNow) => {
+    const save = () => (guestNow ? guestCareerRepository.save(state) : careerRepository.saveCareerState(state));
+    const run = persistQueue.current.then(save, save);
+    persistQueue.current = run.catch(() => undefined);
+    return run;
+  }, []);
 
   // Starts a brand-new career against the player's real (persisted) hotel
   // -- the same hotel runDailyCycle()/chainEngine already know about -- or,
@@ -93,11 +107,11 @@ export function useCareer() {
               ([hotelState, restaurantState, rooms, reservations]) => ({ hotelState, restaurantState, rooms, reservations })
             );
         const state = startCareerEngine({ playerId, ...bundle });
-        setCareerState(state);
+        commit(state);
         await persistCareerState(state, guestNow);
         return state;
       }),
-    [persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const loadCareerState = useCallback(
@@ -105,70 +119,70 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
         const state = guestNow ? await guestCareerRepository.get() : await careerRepository.loadCareerState();
-        setCareerState(state);
+        commit(state);
         return state;
       }),
-    [resolveSession, runWithErrorHandling]
+    [commit, resolveSession, runWithErrorHandling]
   );
 
   const acceptMission = useCallback(
     (missionId) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const nextState = acceptMissionEngine(careerState, missionId);
-        setCareerState(nextState);
+        const nextState = acceptMissionEngine(latestRef.current, missionId);
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const completeMission = useCallback(
     (missionId) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const { state: nextState } = completeMissionEngine(careerState, missionId);
-        setCareerState(nextState);
+        const { state: nextState } = completeMissionEngine(latestRef.current, missionId);
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const triggerStoryEvent = useCallback(
     (eventId, choiceId) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const { state: nextState, consequence } = triggerStoryEventEngine(careerState, eventId, choiceId);
-        setCareerState(nextState);
+        const { state: nextState, consequence } = triggerStoryEventEngine(latestRef.current, eventId, choiceId);
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return consequence;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const updateSkill = useCallback(
     (skillId, delta) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const nextState = updateSkillPoints(careerState, skillId, delta);
-        setCareerState(nextState);
+        const nextState = updateSkillPoints(latestRef.current, skillId, delta);
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   const claimReward = useCallback(
     (rewardId) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const { state: nextState } = claimRewardEngine(careerState, rewardId);
-        setCareerState(nextState);
+        const { state: nextState } = claimRewardEngine(latestRef.current, rewardId);
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   // Applies a pure transform to the player's own hotel bundle (the
@@ -182,13 +196,14 @@ export function useCareer() {
     (updater) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const nextHotel = updater(careerState.hotel);
-        const nextState = { ...careerState, hotel: nextHotel };
-        setCareerState(nextState);
+        const current = latestRef.current;
+        const nextHotel = updater(current.hotel);
+        const nextState = { ...current, hotel: nextHotel };
+        commit(nextState);
         await persistCareerState(nextState, guestNow);
         return nextState;
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   // Plays one sandboxed day, then analyzes it (see lib/analytics/
@@ -199,7 +214,7 @@ export function useCareer() {
     (decisions = {}) =>
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
-        const { state: nextState, report } = await runCareerDay({ state: careerState, decisions });
+        const { state: nextState, report } = await runCareerDay({ state: latestRef.current, decisions });
 
         const replayRun = buildReplayRunFromCareerRun({
           playerId: nextState.playerId,
@@ -231,11 +246,11 @@ export function useCareer() {
           hotel: { ...nextState.hotel, hotelState: hotelStateWithIncidents },
           lastAnalysis,
         };
-        setCareerState(stateWithAnalysis);
+        commit(stateWithAnalysis);
         await persistCareerState(stateWithAnalysis, guestNow);
         return { state: stateWithAnalysis, report, analysis: lastAnalysis };
       }),
-    [careerState, persistCareerState, resolveSession, runWithErrorHandling]
+    [commit, persistCareerState, resolveSession, runWithErrorHandling]
   );
 
   return {

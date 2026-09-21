@@ -345,3 +345,120 @@ describe("guest mode", () => {
     expect(result.current.error).toBeNull();
   });
 });
+
+// Two actions fired before React re-renders (two quick clicks on different
+// switches) used to run on the same stale snapshot, so the second overwrote the
+// first. Each now builds on the latest state, and the saves keep their order.
+describe("actions fired back to back", () => {
+  const stored = () => ({ playerId: "p", status: "active", day: 1, hotel: { hotelState: { perks: {} }, rooms: [], reservations: [] } });
+  const setPerk = (name) => (hotel) => ({ ...hotel, hotelState: { ...hotel.hotelState, perks: { ...hotel.hotelState.perks, [name]: true } } });
+  const loaded = async () => {
+    careerRepository.loadCareerState.mockResolvedValue(stored());
+    const view = renderHook(() => useCareer());
+    await act(async () => {
+      await view.result.current.loadCareerState();
+    });
+    return view;
+  };
+
+  test("two adjustments in the same tick both survive", async () => {
+    const { result } = await loaded();
+    await act(async () => {
+      await Promise.all([result.current.applyHotelAdjustment(setPerk("breakfast")), result.current.applyHotelAdjustment(setPerk("drink"))]);
+    });
+    expect(result.current.careerState.hotel.hotelState.perks).toEqual({ breakfast: true, drink: true });
+  });
+
+  test("so do many, whatever the order they finish in", async () => {
+    const { result } = await loaded();
+    await act(async () => {
+      await Promise.all(["a", "b", "c", "d", "e"].map((name) => result.current.applyHotelAdjustment(setPerk(name))));
+    });
+    expect(Object.keys(result.current.careerState.hotel.hotelState.perks).sort()).toEqual(["a", "b", "c", "d", "e"]);
+  });
+
+  test("the last save carries every change", async () => {
+    const { result } = await loaded();
+    await act(async () => {
+      await Promise.all([result.current.applyHotelAdjustment(setPerk("breakfast")), result.current.applyHotelAdjustment(setPerk("drink"))]);
+    });
+    const saved = careerRepository.saveCareerState.mock.calls.map(([state]) => state);
+    expect(saved).toHaveLength(2);
+    expect(saved[saved.length - 1].hotel.hotelState.perks).toEqual({ breakfast: true, drink: true });
+  });
+
+  test("an adjustment and another kind of action do not undo each other", async () => {
+    careerRepository.loadCareerState.mockResolvedValue({ ...stored(), skills: { leadership: { points: 0, level: 0 } } });
+    const { result } = renderHook(() => useCareer());
+    await act(async () => {
+      await result.current.loadCareerState();
+    });
+    await act(async () => {
+      await Promise.all([result.current.applyHotelAdjustment(setPerk("breakfast")), result.current.updateSkill("leadership", 2)]);
+    });
+    expect(result.current.careerState.hotel.hotelState.perks).toEqual({ breakfast: true });
+    expect(result.current.careerState.skills.leadership.points).toBe(2);
+  });
+
+  test("a slow older save is never overtaken by a newer one", async () => {
+    const { result } = await loaded();
+    let releaseFirst;
+    const started = [];
+    careerRepository.saveCareerState.mockReset();
+    careerRepository.saveCareerState
+      .mockImplementationOnce((state) => {
+        started.push(Object.keys(state.hotel.hotelState.perks));
+        return new Promise((resolve) => {
+          releaseFirst = resolve;
+        });
+      })
+      .mockImplementation((state) => {
+        started.push(Object.keys(state.hotel.hotelState.perks));
+        return Promise.resolve();
+      });
+    let done;
+    await act(async () => {
+      done = Promise.all([result.current.applyHotelAdjustment(setPerk("breakfast")), result.current.applyHotelAdjustment(setPerk("drink"))]);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    // The second save waits for the first to finish.
+    expect(started).toEqual([["breakfast"]]);
+    await act(async () => {
+      releaseFirst();
+      await done;
+    });
+    expect(started).toEqual([["breakfast"], ["breakfast", "drink"]]);
+  });
+
+  test("a failed save does not block the next one", async () => {
+    const { result } = await loaded();
+    careerRepository.saveCareerState.mockReset();
+    careerRepository.saveCareerState.mockRejectedValueOnce(new Error("offline")).mockResolvedValue(undefined);
+    await act(async () => {
+      const first = result.current.applyHotelAdjustment(setPerk("breakfast")).catch((error) => error.message);
+      const second = result.current.applyHotelAdjustment(setPerk("drink"));
+      expect(await first).toBe("offline");
+      await second;
+    });
+    expect(careerRepository.saveCareerState).toHaveBeenCalledTimes(2);
+    expect(result.current.careerState.hotel.hotelState.perks).toEqual({ breakfast: true, drink: true });
+  });
+
+  test("a single adjustment still works as before", async () => {
+    const { result } = await loaded();
+    await act(async () => {
+      await result.current.applyHotelAdjustment(setPerk("breakfast"));
+    });
+    expect(result.current.careerState.hotel.hotelState.perks).toEqual({ breakfast: true });
+    expect(careerRepository.saveCareerState).toHaveBeenCalledTimes(1);
+  });
+
+  test("an adjustment after a load builds on the loaded career", async () => {
+    const { result } = await loaded();
+    await act(async () => {
+      await result.current.applyHotelAdjustment((hotel) => ({ ...hotel, hotelState: { ...hotel.hotelState, marker: hotel.hotelState.perks } }));
+    });
+    expect(result.current.careerState.hotel.hotelState.marker).toEqual({});
+  });
+});
