@@ -33,6 +33,8 @@ import { pendingDemandShift } from "../clients/guestReviewEngine";
 import { isMeetingRoom } from "../mice/miceEngine";
 import { mediaDemandFactor, reputationHoldOn } from "../mediaCrisis/mediaCrisisEngine";
 import { proShareOn } from "../seasonEvents/seasonEventEngine";
+import { programEffects } from "../loyalty/loyaltyProgramEngine";
+import { mixedRandom } from "../clients/guestProfiles";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
@@ -111,6 +113,11 @@ export function priceIndex(rooms, reservations, referenceDate) {
 // `standing` (0..0.3, from the zone upgrades the hotel has installed, see
 // lib/zones/zoneUpgradesEngine.js) raises that fair level: a hotel that
 // invested in quality can charge more without losing bookings.
+// A club's Gold and Platinum members bite less at high prices (1 when there is no relief).
+function relievedPrice(factor, relief) {
+  return relief > 0 && factor < 1 ? 1 - (1 - factor) * (1 - relief) : factor;
+}
+
 export function priceFactor(index, reputation, standing = 0) {
   const fair = (0.8 + (clamp(safeNumber(reputation, NEUTRAL_REPUTATION), 0, 100) / 100) * 0.4) * (1 + Math.max(0, safeNumber(standing, 0)));
   return clamp(1 - (index / fair - 1) * PRICE_ELASTICITY, 0.5, 1.3);
@@ -140,6 +147,9 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const hold = reputationHoldOn(state, referenceDate);
   const reputation = hold > 0 ? Math.min(100, storedReputation + hold) : storedReputation;
   const index = priceIndex(rooms, reservations, referenceDate);
+  // The loyalty club's members (lib/loyalty/): they come back, book direct and
+  // put up with higher prices -- all of it inert without a club.
+  const club = programEffects(state);
   // Scheduled events (festival, trade fair, heat wave...) and the season's
   // price tolerance come from the calendar (lib/hotelEvents/).
   const calendar = calendarEffects(referenceDate, state);
@@ -149,7 +159,7 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const factors = {
     // Yesterday's guest reviews (x3 for a V.I.P.) nudge it (lib/clients/guestReviewEngine.js).
     reputation: reputationFactor(reputation) * (1 + pendingDemandShift(state)),
-    price: priceFactor(index, reputation, computeZoneEffects(state).standing + calendar.priceTolerance),
+    price: relievedPrice(priceFactor(index, reputation, computeZoneEffects(state).standing + calendar.priceTolerance), club.priceRelief),
     season: seasonFactor(referenceDate, state),
     events: eventFactor(state.progression?.activeEvents) * calendar.eventsDemandFactor,
     incidents: incidentFactor(state),
@@ -159,8 +169,9 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   // lib/mediaCrisis/) moves demand too -- a factor listed only when it does.
   const media = mediaDemandFactor(state, referenceDate);
   if (media !== 1) factors.media = media;
+  if (club.returnBoost > 0) factors.loyalty = 1 + club.returnBoost;
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
-  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, proShare: proShareOn(referenceDate), priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
+  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, proShare: proShareOn(referenceDate), ...(club.active ? { loyalty: { share: club.directShare, members: club.pool } } : {}), priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
 }
 
 // Turns today's demand into concrete new reservations: each is assigned
@@ -179,7 +190,7 @@ function candidateRooms(bookableRooms, seq, premiumFirst) {
   return [...rotate(bookableRooms.filter(isPremium)), ...rotate(bookableRooms.filter((room) => !isPremium(room)))];
 }
 
-export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null, proShare = 0 } = {}) {
+export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null, proShare = 0, loyalty = null } = {}) {
   // Meeting rooms are sold to companies (lib/mice/), not as ordinary bedrooms.
   const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service" && !isMeetingRoom(room));
   const existing = safeArray(reservations);
@@ -205,6 +216,15 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
     let booking = null;
     let bookingAdjustment = null;
     const nights = STAY_PATTERN[(seq * 3 + 1) % STAY_PATTERN.length];
+    // A share of the day's bookings are club members coming back (lib/loyalty/):
+    // they book direct, under their own name -- those who would have booked
+    // through an OTA are the commission the club saves.
+    const patternChannel = CHANNEL_PATTERN[seq % CHANNEL_PATTERN.length];
+    const memberPool = safeArray(loyalty?.members);
+    const memberShare = safeNumber(loyalty?.share, 0);
+    // (a stable hash of the day and the booking: the average share holds whatever
+    // the hotel's size, deterministically)
+    const member = memberShare > 0 && memberPool.length > 0 && mixedRandom(`loyalty-book:${toDateOnly(referenceDate)}:${i}`) < memberShare ? memberPool[Math.floor(mixedRandom(`loyalty-who:${toDateOnly(referenceDate)}:${i}`) * memberPool.length) % memberPool.length] : null;
     const candidates = candidateRooms(bookableRooms, seq, premiumFirst);
     for (let offset = 0; offset < candidates.length && !booking; offset += 1) {
       const room = candidates[offset];
@@ -213,7 +233,7 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
       const price = adjustment ? Math.round(plainPrice * adjustment.multiplier) : plainPrice;
       const candidate = createReservation({
         id: nextId,
-        client_name: `Client ${nextId}`,
+        client_name: member ? member.name : `Client ${nextId}`,
         room_id: room.id,
         room: room.number,
         room_type: room.type,
@@ -221,7 +241,8 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
         departure: toDateOnly(departure),
         status: "confirmée",
         price,
-        source: CHANNEL_PATTERN[seq % CHANNEL_PATTERN.length],
+        source: member ? "direct" : patternChannel,
+        metadata: member ? { loyalty: { memberId: member.id, saved: patternChannel === "ota" } } : {},
         // A targeted campaign (digital, corporate) tilts two bookings in three
         // toward the segment it aims at.
         // In spring and autumn (lib/seasonEvents/) a fixed share of the bookings
@@ -265,6 +286,7 @@ export function applyDemand({ hotelState, rooms, reservations, referenceDate = n
     premiumFirst: demand.premiumFirst,
     segmentBias: demand.segmentBias,
     proShare: demand.proShare,
+    loyalty: demand.loyalty,
     priceAdjust: createYieldPricer({ hotelState: state, rooms, referenceDate }),
     carry: safeObject(state.demand).carry,
   });

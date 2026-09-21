@@ -43,6 +43,7 @@ const PRIMARY_MENUS = [
       { label: "Clients", to: "/clients", icon: icons.clients },
       { label: "Segments", to: "/clients/segments", icon: icons.clients },
       { label: "Avis", to: "/clients/reviews", icon: icons.reputation },
+      { label: "Club & Fidélité", to: "/clients/loyalty", icon: icons.reputation },
       { label: "Événements pro", to: "/corporate/events", icon: icons.business },
     ],
   },

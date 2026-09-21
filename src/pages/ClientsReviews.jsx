@@ -136,7 +136,10 @@ export default function ClientsReviews() {
           <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Avis clients</h1>
           <p className="mt-1 text-sm text-slate-500">Notes, tendances et plaintes -- jour {careerState.day}.</p>
         </div>
-        <Link to="/clients"><Button variant="outline">← Tableau de bord</Button></Link>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/clients/loyalty"><Button variant="outline">Club & Fidélité</Button></Link>
+          <Link to="/clients"><Button variant="outline">← Tableau de bord</Button></Link>
+        </div>
       </header>
 
       {error && <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">Une erreur est survenue : {error.message}</div>}
