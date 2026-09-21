@@ -124,7 +124,7 @@ export function UrgentAlertsCard({ items }) {
         <ul className="flex flex-col gap-2">
           {items.map((item) => (
             <li key={item.id}>
-              <Link to={item.to} data-testid={`alert-${item.id}`} className="flex items-center gap-3 rounded-2xl border border-slate-200 p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md">
+              <Link to={item.to} data-testid={`alert-${item.id}`} data-priority={item.priority ? "true" : undefined} className={`flex items-center gap-3 rounded-2xl border p-2.5 transition-all hover:-translate-y-0.5 hover:shadow-md ${item.priority ? "border-rose-300 bg-rose-50 font-semibold" : "border-slate-200"}`}>
                 <StatusBadge tone={item.tone} icon={item.icon}>{item.count}</StatusBadge>
                 <span className="text-sm text-slate-800">{item.label}</span>
               </Link>

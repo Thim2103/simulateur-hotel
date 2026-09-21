@@ -5,6 +5,7 @@ import { describeCalendar } from "../hotelEvents/hotelEventsEngine";
 import { listReviews, unansweredNegativeReviews } from "../clients/guestReviewEngine";
 import { describeVipGuests } from "../clients/vipServiceEngine";
 import { isMeetingRoom, pendingRequests } from "../mice/miceEngine";
+import { describeActiveCrisis } from "../mediaCrisis/mediaCrisisEngine";
 
 // What the top bar keeps in view at all times, and what the notification
 // centre lists, read straight off the career's hotel: treasury, the date and
@@ -36,6 +37,21 @@ export function urgentItems(careerState, { gmMessages = 0 } = {}) {
   const hotelState = safeObject(hotel.hotelState);
   const date = careerReferenceDate(careerState);
   const items = [];
+
+  // A media crisis comes first, and shouts until the player has answered it.
+  const crisis = describeActiveCrisis(hotelState, date);
+  if (crisis) {
+    items.push({
+      id: "crisis",
+      kind: "crisis",
+      tone: crisis.decided ? "vip" : "danger",
+      icon: "🚨",
+      count: 1,
+      priority: !crisis.decided,
+      label: crisis.decided ? `Crise médiatique en cours : ${crisis.title}` : `Crise médiatique : ${crisis.title}. Répondez !`,
+      to: "/dashboard#crisis",
+    });
+  }
 
   const breakdowns = safeArray(hotelState.activeIncidents).filter((incident) => incident.status === "active");
   const critical = breakdowns.filter((incident) => incident.severity === "critical").length;

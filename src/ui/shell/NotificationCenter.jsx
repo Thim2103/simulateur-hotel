@@ -10,6 +10,7 @@ export default function NotificationCenter({ items = [] }) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
   const total = items.reduce((sum, item) => sum + item.count, 0);
+  const urgent = items.some((item) => item.priority);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -29,11 +30,12 @@ export default function NotificationCenter({ items = [] }) {
         type="button"
         data-testid="notification-bell"
         data-count={total}
+        data-priority={urgent ? "true" : undefined}
         aria-expanded={open}
         aria-haspopup="true"
         aria-label={total > 0 ? `Notifications, ${total} en attente` : "Notifications, rien en attente"}
         onClick={() => setOpen((value) => !value)}
-        className="relative grid h-10 w-10 place-items-center rounded-xl bg-slate-50 text-lg transition-colors hover:bg-slate-100"
+        className={`relative grid h-10 w-10 place-items-center rounded-xl text-lg transition-colors ${urgent ? "crisis-blink bg-rose-50 hover:bg-rose-100" : "bg-slate-50 hover:bg-slate-100"}`}
       >
         <span aria-hidden="true">🔔</span>
         {total > 0 && (
@@ -51,7 +53,7 @@ export default function NotificationCenter({ items = [] }) {
             <ul className="flex flex-col gap-1">
               {items.map((item) => (
                 <li key={item.id}>
-                  <Link to={item.to} onClick={() => setOpen(false)} data-testid={`notification-${item.id}`} className="flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-slate-50">
+                  <Link to={item.to} onClick={() => setOpen(false)} data-testid={`notification-${item.id}`} data-priority={item.priority ? "true" : undefined} className={`flex items-center gap-3 rounded-xl p-2 transition-colors ${item.priority ? "border border-rose-300 bg-rose-50 font-semibold hover:bg-rose-100" : "hover:bg-slate-50"}`}>
                     <StatusBadge tone={item.tone} icon={item.icon}>{item.count}</StatusBadge>
                     <span className="text-sm text-slate-800">{item.label}</span>
                   </Link>
