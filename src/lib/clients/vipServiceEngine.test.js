@@ -33,9 +33,10 @@ import { isVip, mixedRandom, UNLUCKY_STAY_CHANCE } from "./guestProfiles";
 import { createEmployee } from "../staff/staffRoster";
 import { treasuryOf } from "../finance/investmentFunding";
 
-const DATE = new Date("2026-09-11T12:00:00Z");
+// A January stay: no roadworks can fall there (lib/seasonEvents/), so these tests read the gauge without the calendar.
+const DATE = new Date("2027-01-13T12:00:00Z");
 const ids = (count) => Array.from({ length: count }, (_, i) => i + 1);
-const stay = (id, extra = {}) => ({ id, room_id: 1, room: "101", room_type: "standard", client_name: `Client ${id}`, arrival: "2026-09-10", departure: "2026-09-13", status: "confirmée", segment: "leisure", price: 120, ...extra });
+const stay = (id, extra = {}) => ({ id, room_id: 1, room: "101", room_type: "standard", client_name: `Client ${id}`, arrival: "2027-01-12", departure: "2027-01-15", status: "confirmée", segment: "leisure", price: 120, ...extra });
 const room = (id, number, type, extra = {}) => ({ id, number, type, status: "libre", ...extra });
 const rooms = [room(1, "101", "standard", { status: "occupée" }), room(2, "301", "suite"), room(3, "302", "suite")];
 
@@ -234,7 +235,7 @@ describe("vipServiceEngine / the attentions on offer", () => {
   });
 
   it("a suite occupied only after the V.I.P. leaves is still free for the stay", () => {
-    const later = [stay(VIP), stay(9001, { room_id: 2, room: "301", room_type: "suite", arrival: "2026-09-13", departure: "2026-09-15" })];
+    const later = [stay(VIP), stay(9001, { room_id: 2, room: "301", room_type: "suite", arrival: "2027-01-15", departure: "2027-01-17" })];
     expect(findFreeSuite({ reservation: later[0], rooms, reservations: later }).id).toBe(2);
   });
 

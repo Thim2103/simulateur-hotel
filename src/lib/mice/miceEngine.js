@@ -34,6 +34,7 @@ import { safeArray, safeNumber, safeObject } from "../safe";
 import { createReservation, findReservationConflicts } from "../pmsModels";
 import { dayIndexOf, toIsoDate } from "../hotelEvents/hotelEventsEngine";
 import { mixedRandom } from "../clients/guestProfiles";
+import { miceRequestFactor } from "../seasonEvents/seasonEventEngine";
 
 const DAY_MS = 86400000;
 
@@ -127,7 +128,7 @@ export function generateRequest({ hotelState, rooms, date }) {
   const current = state(hotelState);
   const index = dayIndexOf(date);
   const cap = maxMeetingCapacity(rooms);
-  if (cap === 0 || mixedRandom(`mice:${index}`) >= REQUEST_CHANCE) return null;
+  if (cap === 0 || mixedRandom(`mice:${index}`) >= REQUEST_CHANCE * miceRequestFactor(date)) return null;
   if (current.requests.some((request) => request.receivedOn === toIsoDate(date))) return null;
 
   const biggest = Math.min(MAX_ATTENDEES, Math.max(MIN_ATTENDEES, Math.round((cap * 1.5) / 10) * 10));

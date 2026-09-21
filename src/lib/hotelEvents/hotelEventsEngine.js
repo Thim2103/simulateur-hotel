@@ -21,6 +21,10 @@
 // sense. All but the surprise audit are ANNOUNCED a few days ahead:
 //   festival local / salon professionnel -- 3 days of exceptional demand,
 //     favouring the high-end rooms (deluxe, suites)
+//   grand festival de musique / salon international -- rarer, bigger: 3 days of
+//     demand +80 %, guests who accept much higher prices (lib/seasonEvents/)
+//   travaux de voirie -- 5 days of noise and waiting at the door: the guests
+//     staying there are 5 points less satisfied (a "nuisance" event)
 //   canicule / vague de froid -- 4 days of extra energy cost and wear; a
 //     hotel on the Économique upkeep level risks wear breakdowns (domotics
 //     halve the risk and the bill)
@@ -136,6 +140,49 @@ export const EVENT_TYPES = {
     housekeepingPressure: 1.05,
     description: "Un salon amène des professionnels prêts à payer pour de belles chambres.",
   },
+  "music-festival": {
+    id: "music-festival",
+    name: "Grand Festival de Musique",
+    icon: "🎶",
+    kind: "demand",
+    windowDays: 75,
+    durationDays: 3,
+    noticeDays: 7,
+    months: [5, 6, 7],
+    demand: 1.8,
+    premiumFirst: true,
+    priceTolerance: 0.25,
+    housekeepingPressure: 1.2,
+    description: "Des milliers de festivaliers envahissent la ville : la demande explose et les clients acceptent de payer bien plus cher.",
+  },
+  "international-fair": {
+    id: "international-fair",
+    name: "Salon International",
+    icon: "🌐",
+    kind: "demand",
+    windowDays: 90,
+    durationDays: 3,
+    noticeDays: 7,
+    months: [2, 3, 4, 8, 9, 10],
+    demand: 1.8,
+    premiumFirst: true,
+    priceTolerance: 0.2,
+    housekeepingPressure: 1.1,
+    description: "Un salon international remplit toute la ville d'exposants et de visiteurs prêts à payer pour être bien logés.",
+  },
+  roadworks: {
+    id: "roadworks",
+    name: "Travaux de voirie",
+    icon: "🚧",
+    kind: "nuisance",
+    windowDays: 45,
+    durationDays: 5,
+    noticeDays: 3,
+    months: [2, 3, 4, 5, 8, 9, 10],
+    demand: 1,
+    satisfactionPenalty: 5,
+    description: "Des travaux devant l'hôtel : bruit et attente à l'arrivée gênent les clients hébergés.",
+  },
   heatwave: {
     id: "heatwave",
     name: "Canicule",
@@ -232,6 +279,16 @@ export function eventsOn(value) {
     .sort((a, b) => a.startDate.localeCompare(b.startDate) || a.id.localeCompare(b.id));
 }
 
+// Every event that is in progress or starts within `days` days after a date, in
+// the order it starts: the calendar as the city's agenda shows it, announcement
+// or not (lib/seasonEvents/ decides what the player gets to see).
+export function eventsBetween(value, days) {
+  const index = dayIndexOf(value);
+  return occurrencesBetween(index, index + Math.max(0, days))
+    .map((occurrence) => describeOccurrence(occurrence, index))
+    .sort((a, b) => a.startsInDays - b.startsInDays || a.id.localeCompare(b.id));
+}
+
 // Announced events that start within `horizon` days after a date (never the
 // surprise audit).
 export function upcomingEvents(value, horizon) {
@@ -279,6 +336,8 @@ export function calendarEffects(value, hotelState) {
     premiumFirst: types.some((type) => type.premiumFirst),
     housekeepingPressure: types.reduce((product, type) => product * safeNumber(type.housekeepingPressure, 1), season.housekeepingPressure),
     wearPressure: season.wearPressure + types.reduce((sum, type) => sum + safeNumber(type.wearPressure, 0), 0),
+    // Points of satisfaction the guests staying tonight lose (roadworks).
+    satisfactionPenalty: types.reduce((sum, type) => sum + safeNumber(type.satisfactionPenalty, 0), 0),
     energyExtra: hasDomotics(hotelState) ? Math.round(energy / 2) : energy,
   };
 }
@@ -292,6 +351,7 @@ export function describeEventEffects(type) {
   if (type.premiumFirst) lines.push("Clientèle haut de gamme : suites et deluxe réservées en priorité");
   if (type.priceTolerance) lines.push(`Clients plus tolérants sur les prix (+${Math.round(type.priceTolerance * 100)} %)`);
   if (type.housekeepingPressure && type.housekeepingPressure > 1) lines.push(`Ménage sous pression (${pct(type.housekeepingPressure)} de travail)`);
+  if (type.satisfactionPenalty) lines.push(`Satisfaction des clients hébergés −${type.satisfactionPenalty} points (bruit et attente)`);
   if (type.energyExtra) lines.push(`Énergie : +${type.energyExtra} €/jour`);
   if (type.wearPressure) lines.push("Usure accélérée du bâtiment (risque de pannes en entretien Économique)");
   if (type.kind === "audit") lines.push("Label de qualité ou avertissement selon l'état de l'hôtel");

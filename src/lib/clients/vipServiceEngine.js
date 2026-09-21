@@ -36,6 +36,7 @@ import { getRoster, hasRoster } from "../staff/staffRoster";
 import { hotelCondition } from "../maintenance/maintenanceCostEngine";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { PROFILES, UNLUCKY_STAY_CHANCE, followersOf, mixedRandom, vipGuestsInHouse } from "./guestProfiles";
+import { satisfactionPenaltyForStay } from "../seasonEvents/seasonEventEngine";
 
 export const TARGET_SATISFACTION = 85;
 export const BASE_MIN = 55;
@@ -129,6 +130,7 @@ export function vipSatisfaction({ reservation, hotelState }) {
   add("reputation", "Réputation fragile", reputation);
   add("waiting", "Attente à la réception", waiting);
   add("cleaning", "Ménage en retard", cleaning);
+  add("roadworks", "Travaux devant l'hôtel", -satisfactionPenaltyForStay(reservation));
   add("upgrade", "Surclassement en suite", record.upgrade ? safeNumber(record.upgrade.bonus, 0) : 0);
   add("gift", "Cadeau de bienvenue", record.gift ? safeNumber(record.gift.bonus, 0) : 0);
   add("personal", "Service personnalisé", personal ? safeNumber(record.personal.bonus, PERSONAL_BONUS) : 0);

@@ -32,11 +32,13 @@ import { computeCampaignEffects } from "../marketing/targetedCampaigns";
 import { pendingDemandShift } from "../clients/guestReviewEngine";
 import { isMeetingRoom } from "../mice/miceEngine";
 import { mediaDemandFactor, reputationHoldOn } from "../mediaCrisis/mediaCrisisEngine";
+import { proShareOn } from "../seasonEvents/seasonEventEngine";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
 export const NEUTRAL_REPUTATION = 60;
 export const MIN_MULTIPLIER = 0.3;
-export const MAX_MULTIPLIER = 1.8;
+// Raised from 1.8 so that a +80 % event (lib/seasonEvents/) is still felt in high season.
+export const MAX_MULTIPLIER = 2.2;
 
 // New stays requested per room per day at multiplier 1. With the pattern
 // average stay of ~2.25 nights, this settles around 65-70% occupancy.
@@ -158,7 +160,7 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const media = mediaDemandFactor(state, referenceDate);
   if (media !== 1) factors.media = media;
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
-  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
+  return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, proShare: proShareOn(referenceDate), priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
 }
 
 // Turns today's demand into concrete new reservations: each is assigned
@@ -177,7 +179,7 @@ function candidateRooms(bookableRooms, seq, premiumFirst) {
   return [...rotate(bookableRooms.filter(isPremium)), ...rotate(bookableRooms.filter((room) => !isPremium(room)))];
 }
 
-export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null } = {}) {
+export function generateBookings({ rooms, reservations, referenceDate = new Date(), multiplier = 1, priceIdx = 1, carry = 0, premiumFirst = false, priceAdjust = null, segmentBias = null, proShare = 0 } = {}) {
   // Meeting rooms are sold to companies (lib/mice/), not as ordinary bedrooms.
   const bookableRooms = safeArray(rooms).filter((room) => room.status !== "maintenance" && room.status !== "hors_service" && !isMeetingRoom(room));
   const existing = safeArray(reservations);
@@ -222,7 +224,9 @@ export function generateBookings({ rooms, reservations, referenceDate = new Date
         source: CHANNEL_PATTERN[seq % CHANNEL_PATTERN.length],
         // A targeted campaign (digital, corporate) tilts two bookings in three
         // toward the segment it aims at.
-        segment: segmentBias && i % 3 !== 2 ? segmentBias : SEGMENT_PATTERN[seq % SEGMENT_PATTERN.length],
+        // In spring and autumn (lib/seasonEvents/) a fixed share of the bookings
+        // are professional guests, whatever the campaigns.
+        segment: segmentBias && i % 3 !== 2 ? segmentBias : proShare > 0 && Math.floor((i + 1) * proShare) > Math.floor(i * proShare) ? "business" : SEGMENT_PATTERN[seq % SEGMENT_PATTERN.length],
         created_at: new Date(referenceDate).toISOString(),
       });
       if (findReservationConflicts(all, candidate).length === 0) {
@@ -260,6 +264,7 @@ export function applyDemand({ hotelState, rooms, reservations, referenceDate = n
     priceIdx: demand.priceIndex,
     premiumFirst: demand.premiumFirst,
     segmentBias: demand.segmentBias,
+    proShare: demand.proShare,
     priceAdjust: createYieldPricer({ hotelState: state, rooms, referenceDate }),
     carry: safeObject(state.demand).carry,
   });
