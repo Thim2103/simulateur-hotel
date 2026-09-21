@@ -25,6 +25,7 @@ import { unansweredNegativeReviews } from "../lib/clients/guestReviewEngine";
 import YieldMarketingModal from "../components/dashboard/YieldMarketingModal";
 import { MediaCrisisBanner, RehabBanner } from "../components/crisis/MediaCrisisBanner";
 import MediaCrisisModal from "../components/crisis/MediaCrisisModal";
+import EventCalendarWidget from "../components/dashboard/EventCalendarWidget";
 import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
 import { describeVipGuests, applyVipAction } from "../lib/clients/vipServiceEngine";
 import { respondToRequest } from "../lib/mice/miceEngine";
@@ -366,6 +367,11 @@ export default function Dashboard() {
         hotelState={careerState?.hotel?.hotelState}
         alerts={alerts}
       />
+
+      {/* The season and the events to come, to prepare for them (lib/seasonEvents/). */}
+      <div className="bento-grid">
+        <EventCalendarWidget hotelState={careerState?.hotel?.hotelState} date={careerReferenceDate(careerState)} onOpenGrowth={() => setGrowthOpen(true)} />
+      </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-slate-500">

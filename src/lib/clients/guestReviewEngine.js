@@ -40,6 +40,7 @@ import { hotelCondition } from "../maintenance/maintenanceCostEngine";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { PROFILES, UNLUCKY_STAY_CHANCE, mixedRandom, profileIdFor, stayNights, weightOf } from "./guestProfiles";
 import { pressHighlightFor, vipStayOutcome } from "./vipServiceEngine";
+import { satisfactionPenaltyForStay, POINTS_PER_STAR } from "../seasonEvents/seasonEventEngine";
 
 export const MAX_STORED_REVIEWS = 40;
 export const MAX_NEW_REVIEWS_PER_DAY = 5;
@@ -243,6 +244,8 @@ function ratingOf({ reservation, profileId, hotelState }) {
   const id = reservation.id;
   let score = 3 + mixedRandom(`rating:${id}`) * 2; // 3..5 for an ordinary stay
   if (mixedRandom(`unlucky:${id}`) < UNLUCKY_STAY_CHANCE) score -= 2;
+  // Noise and waiting during roadworks (lib/seasonEvents/): points out of 100, in stars.
+  score -= satisfactionPenaltyForStay(reservation) / POINTS_PER_STAR;
   if (openIncidents(hotelState).some((incident) => (incident.daysOpen || 0) >= 1)) score -= 1;
   const condition = hotelCondition(hotelState);
   if (condition < 60) score -= 1;

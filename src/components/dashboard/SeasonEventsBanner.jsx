@@ -8,6 +8,7 @@ const KIND_STYLES = {
   demand: "border-emerald-300 bg-emerald-50 text-emerald-900",
   climate: "border-orange-300 bg-orange-50 text-orange-900",
   audit: "border-violet-300 bg-violet-50 text-violet-900",
+  nuisance: "border-slate-300 bg-slate-100 text-slate-800",
 };
 
 const signed = (value) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value)} %`;
