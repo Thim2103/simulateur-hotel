@@ -7,6 +7,20 @@ import { safeArray, safeString } from "../safe";
 import { readKpi } from "../scenario/scenarioObjectives";
 
 export const MISSION_CATALOG = [
+  // Early Game intro mission (Game Balancing V1.0, Lot 2): the first
+  // financial milestone worth celebrating on a tight opening treasury --
+  // and a signpost toward the Mid Game palier (Club Hospitality, a first
+  // prêt bancaire, MICE) the player earns access to next.
+  {
+    id: "first-solid-day",
+    title: "Premiers résultats solides",
+    description: "Réaliser une journée avec plus de 300 € de profit : la base avant d'envisager le Club Hospitality, un emprunt ou un grand chantier.",
+    kpi: "profit",
+    comparator: "gte",
+    target: 300,
+    auto: true,
+    rewardId: "cash-500",
+  },
   {
     id: "occupancy-80",
     title: "Salle comble",
