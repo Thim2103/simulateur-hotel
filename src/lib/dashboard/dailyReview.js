@@ -20,6 +20,7 @@ import { describeMiceDay } from "../mice/miceReport";
 import { crisisNewsOn } from "../mediaCrisis/mediaCrisisEngine";
 import { loyaltyNewsOn } from "../loyalty/loyaltyProgramEngine";
 import { bankingNewsOn } from "../banking/bankingLoanEngine";
+import { projectNewsOn } from "../expansion/majorProjectsEngine";
 
 // A handful of rule-based causal links between today's own numbers --
 // deliberately simple (this is a game-loop explanation for a non-hotelier
@@ -161,6 +162,8 @@ export function buildDailyReview({ careerState, dashboardState } = {}) {
   if (playedDate) causalChain.push(...loyaltyNewsOn(hotelState, playedDate));
   // The bank: instalments, interest, missed payments, overdraft (lib/banking/).
   if (playedDate) causalChain.push(...bankingNewsOn(hotelState, playedDate));
+  // The major projects: what was delivered, what is still going up.
+  causalChain.push(...projectNewsOn(hotelState, careerState?.day));
   const maintenance = maintenanceOn(careerState?.hotel?.hotelState, careerState?.day);
   if (maintenance && maintenance.condition < WEAR_THRESHOLD) {
     causalChain.push(`L'hôtel est en mauvais état (${maintenance.condition}/100) : les clients le remarquent et des pannes d'usure menacent. Relevez le niveau d'entretien.`);

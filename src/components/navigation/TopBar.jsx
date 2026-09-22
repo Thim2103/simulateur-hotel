@@ -39,6 +39,7 @@ const PRIMARY_MENUS = [
     items: [
       { label: "Briefing du matin", to: "/briefing", icon: icons.briefing },
       { label: "Chambres", to: "/rooms", icon: icons.occupancy },
+      { label: "Chantiers & Extensions", to: "/dashboard#projects", icon: icons.development },
       { label: "Housekeeping", to: "/housekeeping", icon: icons.housekeeping },
       { label: "Clients", to: "/clients", icon: icons.clients },
       { label: "Segments", to: "/clients/segments", icon: icons.clients },
