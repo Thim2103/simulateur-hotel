@@ -34,6 +34,7 @@ import { toIsoDate } from "../hotelEvents/hotelEventsEngine";
 import { mixedRandom } from "../clients/guestProfiles";
 import { stayRating } from "../clients/guestReviewEngine";
 import { OTA_COMMISSION_RATE } from "../dailyCycle/calculateHotelRevenue";
+import { builtProjects } from "../expansion/majorProjectsEngine";
 
 export const CLUB_NAME = "Club Hospitality";
 export const LAUNCH_COST = 5000;
@@ -51,6 +52,13 @@ export const MAX_RETURN_BOOST = 0.2;
 export const DIRECT_PER_WEIGHT = 0.01;
 export const MAX_DIRECT_SHARE = 0.5;
 export const MAX_PRICE_RELIEF = 0.5;
+
+// Game Balancing V1.0, Lot 4: a soft cap on the Late Game snowball. Once the
+// spa AND the ecological renovation (majorProjectsEngine.js) are both built,
+// their own uplifts (+15% room rates, -20% upkeep) already stack; the club's
+// own boost is tempered so a third, compounding bonus doesn't stack on top.
+export const LATE_GAME_SOFT_CAP = 0.7;
+const SOFT_CAPPED_PROJECT_IDS = ["spa", "eco"];
 
 export const TIER_ORDER = ["silver", "gold", "platinum"];
 export const TIERS = {
@@ -137,12 +145,16 @@ export function programEffects(hotelState) {
   const engagement = memberSatisfaction(hotelState) / 100;
   const weight = source.members.reduce((sum, member) => sum + TIERS[member.tier].weight, 0);
   const relief = source.members.reduce((sum, member) => sum + TIERS[member.tier].priceRelief, 0);
+  // The soft cap only bites once the spa and the ecological renovation are
+  // both already stacking their own bonuses (see the constant above).
+  const softCap = SOFT_CAPPED_PROJECT_IDS.every((id) => builtProjects(hotelState).includes(id)) ? LATE_GAME_SOFT_CAP : 1;
   return {
     active: true,
     engagement,
-    returnBoost: Math.min(MAX_RETURN_BOOST, weight * RETURN_PER_WEIGHT * engagement),
-    directShare: Math.min(MAX_DIRECT_SHARE, weight * DIRECT_PER_WEIGHT * engagement),
-    priceRelief: Math.min(MAX_PRICE_RELIEF, relief * engagement),
+    softCapped: softCap < 1,
+    returnBoost: Math.min(MAX_RETURN_BOOST, weight * RETURN_PER_WEIGHT * engagement) * softCap,
+    directShare: Math.min(MAX_DIRECT_SHARE, weight * DIRECT_PER_WEIGHT * engagement) * softCap,
+    priceRelief: Math.min(MAX_PRICE_RELIEF, relief * engagement) * softCap,
     pool: source.members.map((member) => ({ id: member.id, name: member.name })),
   };
 }

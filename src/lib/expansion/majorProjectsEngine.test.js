@@ -11,6 +11,7 @@ import {
   STARS_PER_PROJECT,
   PROJECTS,
   PROJECT_IDS,
+  MIN_EQUITY_RATE,
   isBuilt,
   builtProjects,
   worksOf,
@@ -77,27 +78,27 @@ describe("majorProjectsEngine / inert without a project", () => {
 });
 
 describe("majorProjectsEngine / the three projects", () => {
-  it("a new wing: 10, 15 or 20 rooms at 6 000 EUR each, five days of works", () => {
+  it("a new wing: 10, 15 or 20 rooms at 7 500 EUR each, five days of works", () => {
     expect(PROJECTS.wing.days).toBe(5);
     expect(WING_SIZES).toEqual([10, 15, 20]);
-    expect(WING_COST_PER_ROOM).toBe(6000);
-    expect(WING_SIZES.map((size) => projectCost("wing", size))).toEqual([60000, 90000, 120000]);
+    expect(WING_COST_PER_ROOM).toBe(7500);
+    expect(WING_SIZES.map((size) => projectCost("wing", size))).toEqual([75000, 112500, 150000]);
   });
 
-  it("a spa: 90 000 EUR, seven days", () => {
-    expect(PROJECTS.spa).toMatchObject({ cost: 90000, days: 7 });
-    expect(projectCost("spa")).toBe(90000);
+  it("a spa: 120 000 EUR, seven days", () => {
+    expect(PROJECTS.spa).toMatchObject({ cost: 120000, days: 7 });
+    expect(projectCost("spa")).toBe(120000);
   });
 
-  it("an ecological renovation: 40 000 EUR, three days", () => {
-    expect(PROJECTS.eco).toMatchObject({ cost: 40000, days: 3 });
+  it("an ecological renovation: 50 000 EUR, three days", () => {
+    expect(PROJECTS.eco).toMatchObject({ cost: 50000, days: 3 });
   });
 
-  it("costs run from 30 000 to 120 000 EUR and works from 3 to 7 days", () => {
+  it("costs run from 50 000 to 150 000 EUR and works from 3 to 7 days", () => {
     const costs = [...WING_SIZES.map((size) => projectCost("wing", size)), projectCost("spa"), projectCost("eco")];
     costs.forEach((cost) => {
-      expect(cost).toBeGreaterThanOrEqual(30000);
-      expect(cost).toBeLessThanOrEqual(120000);
+      expect(cost).toBeGreaterThanOrEqual(50000);
+      expect(cost).toBeLessThanOrEqual(150000);
     });
     PROJECT_IDS.forEach((id) => {
       expect(PROJECTS[id].days).toBeGreaterThanOrEqual(3);
@@ -126,8 +127,21 @@ describe("majorProjectsEngine / when a project can be started", () => {
   });
 
   it("needs the money: capital and treasury together", () => {
-    expect(projectStatus(hotel({ finance: { revenue: [39999], costs: [0] } }), "eco")).toBe("no-funds");
-    expect(projectStatus(hotel({ finance: { revenue: [10000], costs: [0] }, expansion: { availableCapital: 30000 } }), "eco")).toBe("available");
+    expect(projectStatus(hotel({ finance: { revenue: [49999], costs: [0] } }), "eco")).toBe("no-funds");
+    expect(projectStatus(hotel({ finance: { revenue: [20000], costs: [0] }, expansion: { availableCapital: 30000 } }), "eco")).toBe("available");
+  });
+
+  it("needs a minimum of equity too: the capital pot alone can't carry the whole bill", () => {
+    expect(MIN_EQUITY_RATE).toBe(0.3);
+    // 60 000 covers the 50 000 EUR eco renovation in full, but only 5 000 of
+    // it sits in the treasury -- below the 15 000 EUR (30 %) equity floor.
+    const thin = hotel({ finance: { revenue: [5000], costs: [0] }, expansion: { availableCapital: 55000 } });
+    expect(projectStatus(thin, "eco")).toBe("no-equity");
+    const stuck = { hotelState: thin };
+    expect(startProject(stuck, "eco", { day: 1 })).toBe(stuck);
+    // 15 000 in the treasury clears the floor.
+    const enough = hotel({ finance: { revenue: [15000], costs: [0] }, expansion: { availableCapital: 35000 } });
+    expect(projectStatus(enough, "eco")).toBe("available");
   });
 
   it("the wing has three sizes only", () => {
@@ -137,7 +151,7 @@ describe("majorProjectsEngine / when a project can be started", () => {
   });
 
   it("a bigger wing costs more, so the treasury may not stretch to it", () => {
-    const state = hotel({ finance: { revenue: [70000], costs: [0] } });
+    const state = hotel({ finance: { revenue: [80000], costs: [0] } });
     expect(projectStatus(state, "wing", 10)).toBe("available");
     expect(projectStatus(state, "wing", 20)).toBe("no-funds");
   });
@@ -159,7 +173,7 @@ describe("majorProjectsEngine / starting the works", () => {
   it("pays from the treasury and starts the clock", () => {
     const before = hotel();
     const state = start("eco");
-    expect(treasuryOf(state)).toBe(treasuryOf(before) - 40000);
+    expect(treasuryOf(state)).toBe(treasuryOf(before) - 50000);
     expect(worksOf(state, "eco")).toEqual({ startedOnDay: 3, completesOnDay: 6 });
     expect(activeProject(state)).toEqual({ id: "eco", startedOnDay: 3, completesOnDay: 6 });
   });
@@ -167,18 +181,18 @@ describe("majorProjectsEngine / starting the works", () => {
   it("uses the growth capital first, then the treasury", () => {
     const state = start("eco", {}, { expansion: { availableCapital: 25000 } });
     expect(state.expansion.availableCapital).toBe(0);
-    expect(treasuryOf(state)).toBe(500000 - 15000);
+    expect(treasuryOf(state)).toBe(500000 - 25000);
   });
 
   it("a bank loan can pay for it", () => {
-    const lent = { finance: { revenue: [1000], costs: [0] }, banking: { cashAdjustment: 100000 }, structure: { starRating: 3 } };
+    const lent = { finance: { revenue: [1000], costs: [0] }, banking: { cashAdjustment: 130000 }, structure: { starRating: 3 } };
     expect(startProject({ hotelState: lent }, "spa", { day: 1 }).hotelState.majorProjects.works.spa).toBeTruthy();
   });
 
   it("a wing remembers its size and its price", () => {
     const state = start("wing", { size: 15 });
     expect(worksOf(state, "wing")).toEqual({ startedOnDay: 3, completesOnDay: 8, size: 15 });
-    expect(treasuryOf(state)).toBe(500000 - 90000);
+    expect(treasuryOf(state)).toBe(500000 - 112500);
   });
 
   it("a wing with no size asked is the smallest", () => {
@@ -395,8 +409,8 @@ describe("majorProjectsEngine / how the interface reads it", () => {
   });
 
   it("gives the wing's three sizes with their price and their own status", () => {
-    const { sizes } = byId(describeProjects(hotel({ finance: { revenue: [70000], costs: [0] } })), "wing");
-    expect(sizes.map((option) => [option.size, option.cost, option.status])).toEqual([[10, 60000, "available"], [15, 90000, "no-funds"], [20, 120000, "no-funds"]]);
+    const { sizes } = byId(describeProjects(hotel({ finance: { revenue: [80000], costs: [0] } })), "wing");
+    expect(sizes.map((option) => [option.size, option.cost, option.status])).toEqual([[10, 75000, "available"], [15, 112500, "no-funds"], [20, 150000, "no-funds"]]);
     expect(byId(describeProjects(hotel()), "spa").sizes).toBeNull();
   });
 

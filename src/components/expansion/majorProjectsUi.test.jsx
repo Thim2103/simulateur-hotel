@@ -46,8 +46,8 @@ describe("MajorProjectsPanel / the three projects", () => {
       expect(card).toHaveTextContent(`${PROJECTS[id].days} jours de travaux`);
       PROJECTS[id].effects.forEach((effect) => expect(card).toHaveTextContent(effect));
     });
-    expect(compact(screen.getByTestId("project-start-spa").textContent)).toContain("90000€");
-    expect(compact(screen.getByTestId("project-start-eco").textContent)).toContain("40000€");
+    expect(compact(screen.getByTestId("project-start-spa").textContent)).toContain("120000€");
+    expect(compact(screen.getByTestId("project-start-eco").textContent)).toContain("50000€");
   });
 
   it("tells what each does to the stars", () => {
@@ -58,10 +58,10 @@ describe("MajorProjectsPanel / the three projects", () => {
   it("lets the player choose the wing's size, and prices it", () => {
     panel();
     const select = screen.getByTestId("project-size-wing");
-    expect(within(select).getAllByRole("option").map((option) => option.textContent.replace(/\s| | /g, ""))).toEqual(["10chambres·60000€", "15chambres·90000€", "20chambres·120000€"]);
-    expect(compact(screen.getByTestId("project-start-wing").textContent)).toContain("60000€");
+    expect(within(select).getAllByRole("option").map((option) => option.textContent.replace(/\s| | /g, ""))).toEqual(["10chambres·75000€", "15chambres·112500€", "20chambres·150000€"]);
+    expect(compact(screen.getByTestId("project-start-wing").textContent)).toContain("75000€");
     fireEvent.change(select, { target: { value: "20" } });
-    expect(compact(screen.getByTestId("project-start-wing").textContent)).toContain("120000€");
+    expect(compact(screen.getByTestId("project-start-wing").textContent)).toContain("150000€");
   });
 
   it("starts the wing at the size chosen", () => {
@@ -86,16 +86,22 @@ describe("MajorProjectsPanel / the three projects", () => {
     expect(screen.getByTestId("project-start-spa")).toBeDisabled();
     expect(screen.getByTestId("project-reason-spa")).toHaveTextContent("Trésorerie insuffisante");
     expect(screen.getByTestId("project-start-eco")).toBeEnabled();
-    // The smallest wing costs 60 000.
+    // The smallest wing costs 75 000.
     expect(screen.getByTestId("project-start-wing")).toBeDisabled();
   });
 
   it("locks a wing too big for the treasury while a smaller one is still possible", () => {
-    panel(hotel({ finance: { revenue: [70000], costs: [0] } }));
+    panel(hotel({ finance: { revenue: [90000], costs: [0] } }));
     expect(screen.getByTestId("project-start-wing")).toBeEnabled();
     fireEvent.change(screen.getByTestId("project-size-wing"), { target: { value: "20" } });
     expect(screen.getByTestId("project-start-wing")).toBeDisabled();
     expect(screen.getByTestId("project-reason-wing")).toHaveTextContent("Trésorerie insuffisante");
+  });
+
+  it("locks a project the treasury alone doesn't cover 30 % of, even if the capital pot could pay it all", () => {
+    panel(hotel({ finance: { revenue: [5000], costs: [0] }, expansion: { availableCapital: 55000 } }));
+    expect(screen.getByTestId("project-start-eco")).toBeDisabled();
+    expect(screen.getByTestId("project-reason-eco")).toHaveTextContent("Apport personnel insuffisant");
   });
 });
 

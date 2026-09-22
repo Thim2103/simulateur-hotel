@@ -3,15 +3,15 @@
 // (hotelExpansionEngine.js, zoneUpgradesEngine.js).
 //
 //   - a NEW WING of 10, 15 or 20 upscale rooms (70 % Deluxe, 30 % Suites),
-//     6 000 EUR a room, 5 days of works. While it goes up the noise costs the
-//     guests a point of satisfaction. The rooms join the hotel's own list: the
-//     demand, housekeeping, staff and upkeep all see them.
-//   - a WELLNESS AREA with a luxury spa (sauna, hammam, covered pool), 90 000
+//     7 500 EUR a room (up to 150 000 EUR), 5 days of works. While it goes up
+//     the noise costs the guests a point of satisfaction. The rooms join the
+//     hotel's own list: the demand, housekeeping, staff and upkeep all see them.
+//   - a WELLNESS AREA with a luxury spa (sauna, hammam, covered pool), 120 000
 //     EUR, 7 days. When it opens the room rates go up by 15 %, the hotel is
 //     6 % more attractive to leisure guests and couples, and a V.I.P. is 6
 //     points happier with their stay.
 //   - an ECOLOGICAL RENOVATION with a rooftop CSR project (solar panels, high-
-//     performance insulation), 40 000 EUR, 3 days. The daily upkeep bill falls by
+//     performance insulation), 50 000 EUR, 3 days. The daily upkeep bill falls by
 //     20 %, guests rate the stay 0.15 star higher on average, and the hotel's
 //     sustainability score (which its reputation drifts towards) gains 8 points.
 //
@@ -21,15 +21,22 @@
 // `structure.starRating`, plus what it has built) can reach 4 or 5 stars, and
 // the bank reads it.
 //
+// Game Balancing V1.0, Lot 4: on top of being affordable in full, a project
+// asks for at least 30% of its cost (MIN_EQUITY_RATE) already sitting in the
+// treasury -- the same "own funds first" rule bankingLoanEngine.js's growth
+// loans follow, so the capital pot alone can't carry the whole bill.
+//
 // State: `hotelState.majorProjects` = { built: {id: {day, ...}}, works: {id:
 // {startedOnDay, completesOnDay, size}}, log }. Pure and deterministic; a hotel
 // that never built a project keeps no state, and every effect below is neutral.
 import { safeArray, safeNumber, safeObject } from "../safe";
-import { canAfford, payInvestment } from "../finance/investmentFunding";
+import { canAfford, payInvestment, treasuryOf } from "../finance/investmentFunding";
 import { createRoom } from "../pmsModels";
 
 export const WING_SIZES = [10, 15, 20];
-export const WING_COST_PER_ROOM = 6000;
+// Game Balancing V1.0, Lot 4: 7 500 EUR/room (150 000 EUR for the largest,
+// 20-room wing) -- a late-game investment sized for a 4/5-star hotel.
+export const WING_COST_PER_ROOM = 7500;
 export const WING_SUITE_SHARE = 0.3;
 export const WING_NOISE_PENALTY = 1; // points of guest satisfaction while the wing is built
 
@@ -43,6 +50,12 @@ export const ECO_SUSTAINABILITY_BONUS = 8;
 
 export const STARS_PER_PROJECT = 0.5;
 export const DEFAULT_STARS = 3;
+
+// Game Balancing V1.0, Lot 4: like a growth loan (bankingLoanEngine.js), a
+// major project asks for a minimum share of its cost already sitting in the
+// treasury -- the capital pot (expansion.availableCapital) can cover the
+// rest, but liquid cash alone must clear this bar first.
+export const MIN_EQUITY_RATE = 0.3;
 
 const ROOM_SPECS = { deluxe: { defaultPrice: 180, capacity: 3 }, suite: { defaultPrice: 320, capacity: 4 } };
 
@@ -59,7 +72,7 @@ export const PROJECTS = {
     id: "spa",
     icon: "🧖",
     label: "Espace bien-être & spa de luxe",
-    cost: 90000,
+    cost: 120000,
     days: 7,
     description: "Sauna, hammam, piscine couverte : un argument de poids pour les couples et les clients V.I.P.",
     effects: ["Tarifs des chambres +15 %", "Attractivité +6 % (couples, loisirs)", "Clients V.I.P. plus satisfaits (+6 points)"],
@@ -68,7 +81,7 @@ export const PROJECTS = {
     id: "eco",
     icon: "🌿",
     label: "Rénovation écologique & rooftop RSE",
-    cost: 40000,
+    cost: 50000,
     days: 3,
     description: "Panneaux solaires, isolation haute performance et toit végétalisé : des charges plus légères et des clients sensibles au geste.",
     effects: ["Charges d'entretien quotidiennes −20 %", "Avis clients +0,15★ en moyenne", "Score de durabilité +8"],
@@ -101,14 +114,17 @@ export function projectCost(id, size) {
 
 // Why a project can or cannot be started now: "available", "built",
 // "in-progress", "busy" (another one is under way), "invalid-size" (the wing),
-// "no-funds" or "unknown".
+// "no-funds", "no-equity" (the treasury alone doesn't clear the 30% minimum)
+// or "unknown".
 export function projectStatus(hotelState, id, size) {
   if (!PROJECTS[id]) return "unknown";
   if (isBuilt(hotelState, id)) return "built";
   if (worksOf(hotelState, id)) return "in-progress";
   if (activeProject(hotelState)) return "busy";
   if (id === "wing" && !WING_SIZES.includes(safeNumber(size, WING_SIZES[0]))) return "invalid-size";
-  if (!canAfford(hotelState, projectCost(id, size))) return "no-funds";
+  const cost = projectCost(id, size);
+  if (!canAfford(hotelState, cost)) return "no-funds";
+  if (treasuryOf(hotelState) < cost * MIN_EQUITY_RATE) return "no-equity";
   return "available";
 }
 

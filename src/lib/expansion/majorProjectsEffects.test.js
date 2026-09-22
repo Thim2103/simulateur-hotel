@@ -160,7 +160,7 @@ describe("majorProjects / through the career day", () => {
 
   it("the works are paid at once and go on in real time, day after day", async () => {
     const started = begin(career(), "eco");
-    expect(treasuryOf(started.hotel.hotelState)).toBe(900000 - 40000);
+    expect(treasuryOf(started.hotel.hotelState)).toBe(900000 - 50000);
     const mid = await play(started, 2);
     expect(isBuilt(mid.hotel.hotelState, "eco")).toBe(false);
     expect(buildReview(mid).causalChain.join("\n")).toMatch(/Chantier en cours : Rénovation écologique & rooftop RSE, \d+ jours? de travaux restants?/);
