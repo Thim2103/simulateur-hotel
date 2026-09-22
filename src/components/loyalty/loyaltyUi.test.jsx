@@ -5,7 +5,7 @@ import LoyaltyProgramModal from "./LoyaltyProgramModal";
 import { launchProgram, setBenefit, BENEFIT_IDS, BENEFITS, LAUNCH_COST, BASE_SATISFACTION } from "../../lib/loyalty/loyaltyProgramEngine";
 
 const DATE = new Date("2026-09-14T12:00:00Z");
-const hotel = (treasury = 50000) => ({ finance: { revenue: [treasury], costs: [0] } });
+const hotel = (treasury = 50000) => ({ finance: { revenue: [treasury], costs: [0] }, progression: { player: { reputation: 70 } } });
 const member = (n, stays) => ({ id: `member:${n}`, name: `Membre ${n}`, stays, joinedDay: 0, lastStayDay: 0, tier: stays >= 6 ? "platinum" : stays >= 3 ? "gold" : "silver" });
 function club(list = [], perks = [], ledger = {}) {
   const launched = launchProgram({ hotelState: hotel() }, { day: 1 }).hotelState;

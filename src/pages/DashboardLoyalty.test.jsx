@@ -19,7 +19,7 @@ jest.mock("../hooks/useProEngine");
 jest.mock("../ui/gmDesk/GmDeskProvider", () => ({ ...jest.requireActual("../ui/gmDesk/GmDeskProvider"), useGmDesk: jest.fn() }));
 
 const rooms = [{ id: 1, number: "101", type: "standard", status: "libre", housekeeping_status: "clean", price: 120, capacity: 2 }];
-const rich = { finance: { revenue: [50000], costs: [0] } };
+const rich = { finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 70 } } };
 const careerState = (hotelState) => ({
   status: "active",
   day: 3,

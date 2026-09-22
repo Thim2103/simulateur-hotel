@@ -41,6 +41,12 @@ export const OVERDRAFT_DAILY_FEE = 50;
 export const LATE_FEE_RATE = 0.05;
 export const CEILING_PER_POINT = 2000;
 export const MAX_ACTIVE_LOANS = 3;
+// Game Balancing V1.0, Lot 3: growth loans (investment, bond) follow the real
+// bank rule of a minimum equity contribution -- the hotel must already hold,
+// in its own funds (treasury + capital), at least this share of what it asks
+// to borrow. A crédit de trésorerie (an emergency cap, not a growth loan)
+// stays exempt.
+export const MIN_EQUITY_RATE = 0.3;
 
 export const LOAN_TYPES = {
   cash: {
@@ -65,7 +71,9 @@ export const LOAN_TYPES = {
     termDays: 90,
     dailyRate: 0.0018,
     rateLabel: "modéré",
-    description: "Pour financer rénovations, club de fidélité ou salle de séminaire : remboursé en 90 jours, à un taux modéré.",
+    minScore: 50,
+    requiresEquity: true,
+    description: "Pour financer rénovations, club de fidélité ou salle de séminaire : remboursé en 90 jours, à un taux modéré. Réservé aux hôtels au score de crédit correct, avec un apport personnel d'au moins 30 % du montant emprunté.",
   },
   bond: {
     id: "bond",
@@ -79,7 +87,8 @@ export const LOAN_TYPES = {
     rateLabel: "bas",
     minStars: 4,
     minScore: 70,
-    description: "Le grand financement d'une extension : 100 000 € sur 180 jours au taux le plus bas, réservé aux hôtels 4★/5★ avec un bon score de crédit.",
+    requiresEquity: true,
+    description: "Le grand financement d'une extension : 100 000 € sur 180 jours au taux le plus bas, réservé aux hôtels 4★/5★ avec un bon score de crédit et un apport personnel d'au moins 30 % du montant emprunté.",
   },
 };
 export const LOAN_TYPE_IDS = Object.keys(LOAN_TYPES);
@@ -117,6 +126,19 @@ export const isOverdrawn = (hotelState) => balanceOf(hotelState) < 0;
 // The hotel's stars, the ones its major projects have earned it included.
 export function starsOf(hotelState) {
   return starRating(hotelState);
+}
+
+// The hotel's own funds: what proves it can carry a growth loan (Lot 3's
+// 30 % equity rule), same figure the credit score's "cover" already reads.
+export function ownFundsOf(hotelState) {
+  return treasuryOf(hotelState) + capitalOf(hotelState);
+}
+
+// The most of `type` the equity rule alone would let the hotel borrow (its
+// own funds divided by the required share); Infinity for a loan that carries
+// no such requirement.
+function equityCapFor(type, hotelState) {
+  return type.requiresEquity ? Math.floor(ownFundsOf(hotelState) / MIN_EQUITY_RATE) : Infinity;
 }
 
 // ---- credit ------------------------------------------------------------------------------------
@@ -199,12 +221,14 @@ export function loanOptions(hotelState) {
   return LOAN_TYPE_IDS.map((id) => {
     const type = LOAN_TYPES[id];
     let reason = "";
+    const equityCap = equityCapFor(type, hotelState);
     if (loans.some((loan) => loan.type === id)) reason = "Un crédit de ce type est déjà en cours";
     else if (loans.length >= MAX_ACTIVE_LOANS) reason = "Trop de crédits en cours";
     else if (type.minStars && starsOf(hotelState) < type.minStars) reason = `Réservé aux hôtels ${type.minStars}★ et plus`;
     else if (type.minScore && score < type.minScore) reason = `Score de crédit insuffisant (${type.minScore} requis, vous avez ${score})`;
+    else if (type.requiresEquity && equityCap < type.min) reason = `Apport personnel insuffisant (${Math.round(MIN_EQUITY_RATE * 100)} % du montant emprunté requis, soit au moins ${Math.round(type.min * MIN_EQUITY_RATE).toLocaleString("fr-FR")} € de fonds propres)`;
     else if (capacity < type.min) reason = "Capacité d'emprunt insuffisante";
-    return { type: id, available: reason === "", reason, maxAmount: Math.min(type.max, Math.floor(capacity / type.step) * type.step) };
+    return { type: id, available: reason === "", reason, maxAmount: Math.min(type.max, Math.floor(capacity / type.step) * type.step, Math.floor(equityCap / type.step) * type.step) };
   });
 }
 
@@ -215,6 +239,7 @@ export function takeLoan(hotelBundle, typeId, amount, { day = 0, date } = {}) {
   const type = LOAN_TYPES[typeId];
   const option = loanOptions(hotelState).find((item) => item.type === typeId);
   if (!type || !option?.available || !isValidAmount(typeId, amount) || amount > borrowingCapacity(hotelState)) return bundle;
+  if (type.requiresEquity && ownFundsOf(hotelState) < amount * MIN_EQUITY_RATE) return bundle;
 
   const source = state(hotelState);
   const priced = quote(typeId, amount);

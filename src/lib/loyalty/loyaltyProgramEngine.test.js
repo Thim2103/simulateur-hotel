@@ -35,7 +35,7 @@ import { mixedRandom } from "../clients/guestProfiles";
 
 const DATE = "2026-09-14";
 const NEXT = "2026-09-15";
-const hotel = (extra = {}) => ({ finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 60 } }, ...extra });
+const hotel = (extra = {}) => ({ finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 70 } }, ...extra });
 const launched = (extra = {}) => launchProgram({ hotelState: hotel(extra) }, { day: 1, date: DATE }).hotelState;
 const member = (n, stays = 1, extra = {}) => ({ id: `member:${n}`, name: `Membre ${n}`, stays, joinedDay: 0, lastStayDay: 0, tier: tierOf(stays), ...extra });
 const withMembers = (list, extra = {}) => {

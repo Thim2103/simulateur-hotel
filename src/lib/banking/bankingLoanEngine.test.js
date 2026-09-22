@@ -417,7 +417,9 @@ describe("bankingLoanEngine / paying a loan back day by day", () => {
 });
 
 describe("bankingLoanEngine / an account that cannot pay", () => {
-  const poor = () => borrow("investment", 30000, { finance: { revenue: [1000], costs: [0] } });
+  // Enough treasury to clear the 30% equity rule at origination (Lot 3);
+  // drained() below then pins the account to whatever this test needs.
+  const poor = () => borrow("investment", 30000, { finance: { revenue: [10000], costs: [0] } });
   // The account is drained by the day's expenses.
   const drained = (state, to) => ({ ...state, banking: { ...state.banking, cashAdjustment: to - (sumOf(state.finance.revenue) - sumOf(state.finance.costs)) } });
   const sumOf = (list) => list.reduce((a, b) => a + b, 0);
@@ -530,8 +532,9 @@ describe("bankingLoanEngine / the day's news", () => {
   });
 
   it("warns of a missed payment and an overdrawn account", () => {
-    const state = borrow("investment", 30000, { finance: { revenue: [1000], costs: [0] } });
-    const drained = { ...state, banking: { ...state.banking, cashAdjustment: -900 } };
+    const state = borrow("investment", 30000, { finance: { revenue: [10000], costs: [0] } });
+    // 100 EUR left in the account (the 333 EUR instalment can't be covered).
+    const drained = { ...state, banking: { ...state.banking, cashAdjustment: 100 - 10000 } };
     const lines = bankingNewsOn(advanceBanking(drained, { date: at(1), day: 2 }), at(1)).join("\n");
     expect(lines).toMatch(/Échéance non couverte : pénalité de retard/);
     expect(lines).toMatch(/à découvert/);
