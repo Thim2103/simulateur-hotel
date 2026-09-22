@@ -5,6 +5,7 @@ import { incidentReputationPenalty } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 import { auditReputationBonus } from "../hotelEvents/hotelEventsEngine";
 import { pendingReputationDelta } from "../clients/guestReviewEngine";
+import { ecoSustainabilityBonus } from "../expansion/majorProjectsEngine";
 
 const DRIFT_RATE = 0.15; // how much of the gap to the target closes each day
 
@@ -31,7 +32,7 @@ function eventReputationImpact(events) {
 // target itself the first time this runs, so day 1 doesn't start from an
 // arbitrary baseline.
 export function calculateReputation({ hotelState = {}, restaurantState = {}, events = [], previousReputation } = {}) {
-  const sustainabilityScore = Number(hotelState.esg?.sustainabilityScore) || 50;
+  const sustainabilityScore = (Number(hotelState.esg?.sustainabilityScore) || 50) + ecoSustainabilityBonus(hotelState);
   const staffMorale = averageSatisfaction(restaurantState.staff);
   // Installed zone upgrades (lib/zones/) lift the reputation the hotel
   // converges to; 0 for a hotel that never upgraded.

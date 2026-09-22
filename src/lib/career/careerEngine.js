@@ -29,6 +29,7 @@ import { advanceMice } from "../mice/miceEngine";
 import { advanceMediaCrisis } from "../mediaCrisis/mediaCrisisEngine";
 import { advanceLoyalty } from "../loyalty/loyaltyProgramEngine";
 import { advanceBanking } from "../banking/bankingLoanEngine";
+import { advanceMajorProjects } from "../expansion/majorProjectsEngine";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
@@ -174,6 +175,25 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
     decisions,
   });
 
+  // Everything the day changed in the hotel's state (see the notes on each step
+  // below, in the order they run) ...
+  const hotelStateAfterDay = advanceBanking(advanceMediaCrisis(advanceLoyalty(advanceMice(advanceGuestReviews(
+      advanceTargetedCampaigns(
+        recordMaintenance(
+        // Today's season and events (lib/hotelEvents/), snapshotted before the
+        // upkeep is recorded: it reads their wear pressure.
+        advanceHotelEvents(advanceExpansion(advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day), day), referenceDate, day),
+        dailyReport.expenses?.maintenance,
+        day
+      ),
+        { date: referenceDate, demandReport: demand.demandReport }
+      ),
+      { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
+      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }), { date: referenceDate, day });
+  // ... and, last of all, the major projects whose works finish today: a new wing
+  // adds rooms, the spa raises the rates (lib/expansion/majorProjectsEngine.js).
+  const projects = advanceMajorProjects({ hotelState: hotelStateAfterDay, rooms: dailyReport.nextState.rooms }, { day });
+
   const nextState = {
     ...state,
     day,
@@ -203,21 +223,9 @@ export async function runCareerDay({ state, decisions = {}, referenceDate: refer
       // day's perks and savings (lib/loyalty/).
       // Last of all, the bank takes the day's instalments out of the account the
       // day left (lib/banking/).
-      hotelState: advanceBanking(advanceMediaCrisis(advanceLoyalty(advanceMice(advanceGuestReviews(
-      advanceTargetedCampaigns(
-        recordMaintenance(
-        // Today's season and events (lib/hotelEvents/), snapshotted before the
-        // upkeep is recorded: it reads their wear pressure.
-        advanceHotelEvents(advanceExpansion(advanceZoneUpgrades(runStaffEvents(advanceRoster(dailyReport.nextState.hotelState, { occupiedRooms: dailyReport.hotelRevenue?.occupiedRooms, day }), { day }), day), day), referenceDate, day),
-        dailyReport.expenses?.maintenance,
-        day
-      ),
-        { date: referenceDate, demandReport: demand.demandReport }
-      ),
-      { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }
-      ), { date: referenceDate, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day, reservations: dailyReport.nextState.reservations, rooms: dailyReport.nextState.rooms }), { date: referenceDate, day }), { date: referenceDate, day }),
+      hotelState: projects.hotelState,
       restaurantState: dailyReport.nextState.restaurantState,
-      rooms: dailyReport.nextState.rooms,
+      rooms: projects.rooms,
       reservations: dailyReport.nextState.reservations,
     },
     missions: missionsAfterEval,

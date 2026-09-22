@@ -28,6 +28,8 @@ import MediaCrisisModal from "../components/crisis/MediaCrisisModal";
 import EventCalendarWidget from "../components/dashboard/EventCalendarWidget";
 import LoyaltyProgramModal from "../components/loyalty/LoyaltyProgramModal";
 import BankingModal from "../components/banking/BankingModal";
+import HotelExpansionModal from "../components/expansion/HotelExpansionModal";
+import { startProject } from "../lib/expansion/majorProjectsEngine";
 import { takeLoan, repayLoan } from "../lib/banking/bankingLoanEngine";
 import { launchProgram, setBenefit } from "../lib/loyalty/loyaltyProgramEngine";
 import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
@@ -143,6 +145,8 @@ export default function Dashboard() {
   const [loyaltyOpen, setLoyaltyOpen] = useState(false);
   // Whether the bank's desk is open.
   const [bankingOpen, setBankingOpen] = useState(false);
+  // Whether the major projects desk is open.
+  const [projectsOpen, setProjectsOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -171,6 +175,7 @@ export default function Dashboard() {
     if (location.hash === "#crisis") setCrisisOpen(true);
     if (location.hash === "#loyalty") setLoyaltyOpen(true);
     if (location.hash === "#banking") setBankingOpen(true);
+    if (location.hash === "#projects") setProjectsOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -195,6 +200,11 @@ export default function Dashboard() {
   const closeBanking = () => {
     setBankingOpen(false);
     if (location.hash === "#banking") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeProjects = () => {
+    setProjectsOpen(false);
+    if (location.hash === "#projects") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -324,6 +334,11 @@ export default function Dashboard() {
   };
   const handleRepayLoan = (loanId) => {
     applyHotelAdjustment((hotel) => repayLoan(hotel, loanId, { day: careerState.day })).catch(() => undefined);
+  };
+
+  // The building site desk (components/expansion/): a new wing, a spa, an ecological renovation.
+  const handleStartProject = (projectId, size) => {
+    applyHotelAdjustment((hotel) => startProject(hotel, projectId, { size, day: careerState.day })).catch(() => undefined);
   };
 
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
@@ -469,6 +484,8 @@ export default function Dashboard() {
         </div>
       )}
 
+      {projectsOpen && <HotelExpansionModal hotelState={careerState?.hotel?.hotelState} rooms={careerState?.hotel?.rooms} day={careerState.day} onStart={handleStartProject} onClose={closeProjects} />}
+
       {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 
       {loyaltyOpen && (
@@ -558,6 +575,7 @@ export default function Dashboard() {
           date={careerReferenceDate(careerState)}
           onVipAction={handleVipAction}
           onMiceRespond={handleMiceRespond}
+          onStartProject={handleStartProject}
         />
       )}
       </div>

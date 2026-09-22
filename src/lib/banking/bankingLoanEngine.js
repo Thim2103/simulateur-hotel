@@ -32,6 +32,7 @@ import { safeArray, safeNumber, safeObject } from "../safe";
 import { balanceOf, capitalOf, treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { toIsoDate } from "../hotelEvents/hotelEventsEngine";
+import { starRating } from "../expansion/majorProjectsEngine";
 
 export const ORIGINATION_FEE_RATE = 0.01;
 export const EARLY_REPAY_FEE_RATE = 0.01;
@@ -113,8 +114,9 @@ export const lastOutcome = (hotelState) => state(hotelState).lastOutcome;
 export const outstandingDebt = (hotelState) => activeLoans(hotelState).reduce((sum, loan) => sum + loan.balance, 0);
 export const isOverdrawn = (hotelState) => balanceOf(hotelState) < 0;
 
+// The hotel's stars, the ones its major projects have earned it included.
 export function starsOf(hotelState) {
-  return safeNumber(safeObject(safeObject(hotelState).structure).starRating, 3);
+  return starRating(hotelState);
 }
 
 // ---- credit ------------------------------------------------------------------------------------

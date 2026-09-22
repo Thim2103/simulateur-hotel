@@ -34,6 +34,7 @@ import { isMeetingRoom } from "../mice/miceEngine";
 import { mediaDemandFactor, reputationHoldOn } from "../mediaCrisis/mediaCrisisEngine";
 import { proShareOn } from "../seasonEvents/seasonEventEngine";
 import { programEffects } from "../loyalty/loyaltyProgramEngine";
+import { spaDemandFactor } from "../expansion/majorProjectsEngine";
 import { mixedRandom } from "../clients/guestProfiles";
 import { createYieldPricer, summarizeYield, isYieldEnabled } from "../rm/yieldManagementEngine";
 
@@ -170,6 +171,9 @@ export function computeDemand({ hotelState, rooms, reservations, referenceDate =
   const media = mediaDemandFactor(state, referenceDate);
   if (media !== 1) factors.media = media;
   if (club.returnBoost > 0) factors.loyalty = 1 + club.returnBoost;
+  // A wellness area draws couples and leisure guests (lib/expansion/majorProjectsEngine.js).
+  const spa = spaDemandFactor(state);
+  if (spa !== 1) factors.spa = spa;
   const product = Object.values(factors).reduce((total, factor) => total * factor, 1);
   return { multiplier: clamp(product, MIN_MULTIPLIER, MAX_MULTIPLIER), factors, reputation, proShare: proShareOn(referenceDate), ...(club.active ? { loyalty: { share: club.directShare, members: club.pool } } : {}), priceIndex: index, premiumFirst: calendar.premiumFirst || campaigns.premiumFirst, segmentBias: campaigns.segmentBias, campaigns: campaigns.detail };
 }
@@ -320,6 +324,7 @@ const POSITIVE_DRIVER = {
   events: "des événements porteurs",
   marketing: "vos campagnes marketing",
   media: "votre campagne de réhabilitation",
+  spa: "votre espace bien-être",
 };
 const NEGATIVE_DRIVER = {
   reputation: "une réputation en retrait",
