@@ -67,6 +67,18 @@ afterEach(() => {
 });
 
 describe("Dashboard / major projects", () => {
+  it("offers the building site among the quick actions (Game Balancing V1.0, Lot 5)", () => {
+    mount();
+    expect(within(screen.getByTestId("quick-actions")).getByTestId("quick-projects")).toHaveTextContent("Grands chantiers");
+  });
+
+  it("opens the desk from there", () => {
+    mount();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("quick-projects"));
+    expect(screen.getByRole("dialog", { name: /chantiers & extensions/i })).toBeInTheDocument();
+  });
+
   it("opens the building site desk from a #projects link (the top-bar's Hôtel menu)", () => {
     mount(rich(), { hash: "#projects" });
     expect(screen.getByRole("dialog", { name: /chantiers & extensions/i })).toBeInTheDocument();
