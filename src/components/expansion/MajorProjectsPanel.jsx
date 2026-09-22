@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { BentoCard, SoftButton, StatusBadge } from "../../ui/bento";
-import { PROJECT_IDS, STARS_PER_PROJECT, WING_SIZES, describeProjects } from "../../lib/expansion/majorProjectsEngine";
+import { PROJECT_IDS, STARS_PER_PROJECT, WING_SIZES, MIN_EQUITY_RATE, describeProjects } from "../../lib/expansion/majorProjectsEngine";
 
 const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 const stars = (value) => `${value.toLocaleString("fr-FR", { minimumFractionDigits: Number.isInteger(value) ? 0 : 1 })}★`;
@@ -11,6 +11,7 @@ const REASONS = {
   "in-progress": "",
   busy: "Un autre chantier est en cours : un seul à la fois",
   "no-funds": "Trésorerie insuffisante",
+  "no-equity": `Apport personnel insuffisant (${Math.round(MIN_EQUITY_RATE * 100)} % du coût du chantier requis en trésorerie)`,
   "invalid-size": "Taille d'aile non proposée",
   unknown: "",
 };

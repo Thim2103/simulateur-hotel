@@ -41,6 +41,10 @@ const DAY_MS = 86400000;
 
 export const MIN_DAY = 7;
 export const RANDOM_CHANCE = 0.012;
+// Game Balancing V1.0, Lot 4: past this day, a random crisis is more likely --
+// a genuine Late Game challenge instead of a rare, easily-ignored event.
+export const LATE_GAME_DAY = 40;
+export const LATE_GAME_RANDOM_CHANCE = 0.02;
 export const COOLDOWN_DAYS = 15;
 export const ONE_STAR_TRIGGER = 3;
 
@@ -371,7 +375,8 @@ function trigger(hotelState, iso, day) {
     const kind = REVIEW_KINDS[Math.floor(mixedRandom(`crisis-kind:${iso}`) * REVIEW_KINDS.length) % REVIEW_KINDS.length];
     return { kind, cause: "reviews", sourceIds: oneStar.map((review) => `review:${review.id}`) };
   }
-  if (mixedRandom(`media-crisis:${iso}`) < RANDOM_CHANCE) {
+  const randomChance = day >= LATE_GAME_DAY ? LATE_GAME_RANDOM_CHANCE : RANDOM_CHANCE;
+  if (mixedRandom(`media-crisis:${iso}`) < randomChance) {
     const kind = RANDOM_KINDS[Math.floor(mixedRandom(`crisis-kind:${iso}`) * RANDOM_KINDS.length) % RANDOM_KINDS.length];
     return { kind, cause: "random", sourceIds: [] };
   }
