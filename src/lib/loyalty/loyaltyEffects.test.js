@@ -9,7 +9,7 @@ const D = (text) => new Date(`${text}T12:00:00Z`);
 const APR = D("2026-04-15"); // a shoulder-season Wednesday: neutral season
 const rooms = Array.from({ length: 60 }, (_, i) => ({ id: i + 1, number: String(100 + i), type: "standard", status: "libre", price: 120, capacity: 2, housekeeping_status: "clean" }));
 
-const hotel = (extra = {}) => ({ finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 60 } }, ...extra });
+const hotel = (extra = {}) => ({ finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 70 } }, ...extra });
 const member = (n, stays = 1) => ({ id: `member:${n}`, name: `Membre ${n}`, stays, joinedDay: 0, lastStayDay: 0, tier: stays >= 6 ? "platinum" : stays >= 3 ? "gold" : "silver" });
 function club(list, perks = [], extra = {}) {
   const launched = launchProgram({ hotelState: hotel(extra) }, { day: 0 }).hotelState;
