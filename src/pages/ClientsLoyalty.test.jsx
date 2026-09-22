@@ -7,7 +7,7 @@ import { launchProgram } from "../lib/loyalty/loyaltyProgramEngine";
 jest.mock("../context/CareerContext");
 
 const career = (hotelState) => ({ day: 4, startDate: "2026-09-14", hotel: { rooms: [], reservations: [], hotelState } });
-const rich = (treasury = 50000) => ({ finance: { revenue: [treasury], costs: [0] } });
+const rich = (treasury = 50000) => ({ finance: { revenue: [treasury], costs: [0] }, progression: { player: { reputation: 70 } } });
 const mount = (value) => {
   useCareerContext.mockReturnValue({ careerState: null, error: null, applyHotelAdjustment: jest.fn().mockResolvedValue(null), ...value });
   return render(<ClientsLoyalty />, { wrapper: MemoryRouter });

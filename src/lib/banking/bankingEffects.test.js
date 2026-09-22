@@ -39,7 +39,7 @@ const total = (list) => list.reduce((a, b) => a + b, 0);
 
 describe("banking / investing with borrowed money", () => {
   it("a loan makes an investment affordable that the treasury alone could not pay", () => {
-    const poor = { finance: { revenue: [3000], costs: [0] }, structure: { starRating: 4 }, progression: { player: { reputation: 60 } } };
+    const poor = { finance: { revenue: [3000], costs: [0] }, structure: { starRating: 4 }, progression: { player: { reputation: 70 } } };
     expect(launchProgram({ hotelState: poor }, { day: 1 }).hotelState.loyalty).toBeUndefined();
     const lent = takeLoan({ hotelState: poor }, "cash", 5000, { day: 1 }).hotelState;
     expect(treasuryOf(lent)).toBeGreaterThanOrEqual(5000);

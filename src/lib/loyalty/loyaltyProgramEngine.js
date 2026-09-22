@@ -37,6 +37,11 @@ import { OTA_COMMISSION_RATE } from "../dailyCycle/calculateHotelRevenue";
 
 export const CLUB_NAME = "Club Hospitality";
 export const LAUNCH_COST = 5000;
+// Game Balancing V1.0, Lot 3: launching the club is gated on reputation, so it
+// reads as a Mid Game palier the player earns rather than a Day-1 option --
+// same 0-100 scale/state path (hotelState.progression.player.reputation,
+// default 60) lib/banking/bankingLoanEngine.js's creditScore() already reads.
+export const LAUNCH_MIN_REPUTATION = 65;
 export const MAX_MEMBERS = 1000;
 export const BASE_SATISFACTION = 55;
 export const JOIN_CHANCE = { 4: 0.25, 5: 0.45 };
@@ -85,6 +90,12 @@ function write(hotelState, next) {
 }
 
 export const isLaunched = (hotelState) => state(hotelState).launched;
+
+// The player/establishment reputation (0-100), the same figure and state path
+// bankingLoanEngine.js's creditScore() reads.
+export function reputationOf(hotelState) {
+  return safeNumber(safeObject(safeObject(safeObject(hotelState).progression).player).reputation, 60);
+}
 export const members = (hotelState) => state(hotelState).members;
 export const lastOutcome = (hotelState) => state(hotelState).lastOutcome;
 
@@ -174,6 +185,7 @@ export function loyaltyCostOn(hotelState, reservations, date) {
 
 export function launchOptions(hotelState) {
   if (isLaunched(hotelState)) return { available: false, reason: "Le club est déjà lancé", cost: LAUNCH_COST };
+  if (reputationOf(hotelState) < LAUNCH_MIN_REPUTATION) return { available: false, reason: `Réputation insuffisante (${LAUNCH_MIN_REPUTATION} requis, vous avez ${reputationOf(hotelState)})`, cost: LAUNCH_COST };
   if (treasuryOf(hotelState) < LAUNCH_COST) return { available: false, reason: "Trésorerie insuffisante", cost: LAUNCH_COST };
   return { available: true, reason: "", cost: LAUNCH_COST };
 }
