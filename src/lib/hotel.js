@@ -8,26 +8,31 @@ export const hotelStructure = {
   amenities: ["Spa", "Piscine", "Salle de conférence", "Voiturier", "Bar rooftop"],
 };
 
+// A new career/guest starts a lean 6-room boutique hotel (guestPmsSeed.js's
+// seedRooms()), not the 120-room Luxury Palace above -- so its starting
+// economy is sized for that: a tight opening treasury (Game Balancing V1.0,
+// Lot 2) and fixed costs/payroll a small hotel can actually carry, so a
+// well-run early game (roughly 65% occupancy) clears them.
 export const hotelFinancials = {
-  months: ["Jan", "Fév", "Mars", "Avr", "Mai", "Juin"],
-  revenue: [95000, 102000, 110500, 118000, 126500, 134800],
-  costs: [58000, 61500, 64200, 67800, 71400, 75300],
-  fixedCosts: 21000,
-  payroll: 38000,
+  months: ["Ouverture"],
+  revenue: [35000],
+  costs: [0],
+  fixedCosts: 4000,
+  payroll: 9000,
   taxes: 18,
 };
 
 export const hotelMarketing = {
-  budget: 6500,
+  budget: 500,
   positioning: "Hôtellerie premium & expérience client",
   channels: [
-    { id: 1, name: "OTA premium", enabled: true, budget: 2200, reach: 68 },
-    { id: 2, name: "Agences corporate", enabled: true, budget: 1600, reach: 54 },
-    { id: 3, name: "Réseaux sociaux", enabled: true, budget: 1200, reach: 60 },
-    { id: 4, name: "Programme fidélité", enabled: true, budget: 900, reach: 47 },
+    { id: 1, name: "OTA premium", enabled: true, budget: 170, reach: 68 },
+    { id: 2, name: "Agences corporate", enabled: true, budget: 120, reach: 54 },
+    { id: 3, name: "Réseaux sociaux", enabled: true, budget: 100, reach: 60 },
+    { id: 4, name: "Programme fidélité", enabled: true, budget: 110, reach: 47 },
   ],
   campaigns: [
-    { id: 1, name: "Séjour signature", objective: "Acquisition", status: "active", budget: 3000, conversion: 7, roi: 2.1, demandUplift: 6 },
+    { id: 1, name: "Séjour signature", objective: "Acquisition", status: "active", budget: 300, conversion: 7, roi: 2.1, demandUplift: 6 },
   ],
 };
 
@@ -37,14 +42,14 @@ export const hotelEsg = {
   wasteReduction: 40,
   sustainabilityScore: 58,
   certifications: [],
-  monthlyInvestment: 2400,
+  monthlyInvestment: 300,
 };
 
 export const hotelExpansion = {
   establishments: [
     { id: 1, name: "Luxury Palace Paris", city: "Paris", roomCount: 120, status: "active", manager: "Isabelle Roy", sharedStaffPool: true },
   ],
-  availableCapital: 450000,
+  availableCapital: 0,
 };
 
 export const defaultHotelState = {
