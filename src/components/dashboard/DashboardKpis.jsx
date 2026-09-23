@@ -14,11 +14,19 @@ import { pricingKpiForMode } from "../../lib/dashboard/dashboardViewMode";
 // useProEngine.js respectively -- pages/Dashboard.jsx merges them into
 // the `kpis` object here, so this component stays agnostic to where
 // each figure came from.
-export default function DashboardKpis({ kpis, viewMode }) {
+// Mode Normal (see context/AppModeContext.jsx -- distinct from the
+// casual/expert `viewMode` prop above, which only ever swaps a KPI
+// label/value) shows just the 4 headline figures the redesign's "Premier
+// Aperçu" spec calls for: Trésorerie, Occupation, Satisfaction,
+// Réputation. Every other KPI stays computed in dashboardEngine.js and
+// is simply not rendered here -- Mode Expert (the default) still shows
+// all 14.
+export default function DashboardKpis({ kpis, viewMode, appMode = "expert" }) {
+  const cardCount = appMode === "normal" ? 4 : 14;
   if (!kpis) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12">
-        {Array.from({ length: 14 }, (_, i) => (
+        {Array.from({ length: cardCount }, (_, i) => (
           <KpiCard key={i} label="—" value="—" loading />
         ))}
       </div>
@@ -26,6 +34,17 @@ export default function DashboardKpis({ kpis, viewMode }) {
   }
 
   const pricing = pricingKpiForMode(viewMode, kpis);
+
+  if (appMode === "normal") {
+    return (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard label="Trésorerie" value={kpis.cash === null || kpis.cash === undefined ? "—" : `${kpis.cash.toLocaleString()} €`} trend={kpis.cash >= 0 ? undefined : -1} />
+        <KpiCard label="Occupation" value={`${kpis.occupancyRate}%`} />
+        <KpiCard label="Satisfaction" value={kpis.satisfaction === null ? "—" : `${kpis.satisfaction.toFixed(1)}/5`} />
+        <KpiCard label="Réputation" value={kpis.reputation === null || kpis.reputation === undefined ? "—" : `${kpis.reputation}/100`} trend={kpis.reputation >= 55 ? undefined : -1} />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-6 lg:grid-cols-12">

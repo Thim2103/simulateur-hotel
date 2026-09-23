@@ -28,6 +28,7 @@ jest.mock("../lib/calculs/rm", () => ({
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.localStorage.setItem("hospitalityLab.appMode", "expert");
   // "/" now always redirects to the Menu Principal (/menu, see App.js) --
   // the in-game Dashboard this test starts from lives at /dashboard.
   window.history.pushState({}, "", "/dashboard");

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Layout from "./layout/Layout";
 import { ChainProvider } from "./context/ChainContext";
+import { AppModeProvider } from "./context/AppModeContext";
 import { AcademyProvider } from "./context/AcademyContext";
 import { CompetitionProvider } from "./context/CompetitionContext";
 import { CareerProvider } from "./context/CareerContext";
@@ -103,6 +104,7 @@ import GmDesk from "./ui/gmDesk/GmDesk";
 function App() {
   return (
     <GameThemeProvider className="min-h-screen">
+    <AppModeProvider>
     <BrowserRouter>
       <ChainProvider>
         <AcademyProvider>
@@ -218,6 +220,7 @@ function App() {
         </AcademyProvider>
       </ChainProvider>
     </BrowserRouter>
+    </AppModeProvider>
     </GameThemeProvider>
   );
 }

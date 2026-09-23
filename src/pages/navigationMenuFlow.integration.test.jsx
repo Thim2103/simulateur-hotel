@@ -34,6 +34,7 @@ jest.mock("../lib/calculs/rm", () => ({
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.localStorage.setItem("hospitalityLab.appMode", "expert");
   window.history.pushState({}, "", "/menu");
 });
 

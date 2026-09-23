@@ -2,10 +2,26 @@ import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import RadialNavigation from "./RadialNavigation";
 import { openRadialNav } from "./radialNavBus";
+import { AppModeProvider } from "../../context/AppModeContext";
 
 function renderNav() {
   return render(<RadialNavigation />, { wrapper: MemoryRouter });
 }
+
+// Mode Normal (Étape 2, see context/AppModeContext.jsx): its own 5
+// simplified spaces already live in TopBar, so this floating launcher
+// -- the coarser, second way to reach the same modules -- doesn't render.
+test("renders nothing in Mode Normal", () => {
+  window.localStorage.clear();
+  render(
+    <MemoryRouter>
+      <AppModeProvider>
+        <RadialNavigation />
+      </AppModeProvider>
+    </MemoryRouter>
+  );
+  expect(screen.queryByRole("button", { name: /ouvrir la navigation radiale/i })).not.toBeInTheDocument();
+});
 
 test("starts closed, showing only the floating trigger", () => {
   renderNav();

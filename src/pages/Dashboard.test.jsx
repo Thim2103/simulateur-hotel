@@ -8,6 +8,7 @@ import { useClientsEngine } from "../hooks/useClientsEngine";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 import { useProEngine } from "../hooks/useProEngine";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
+import { AppModeProvider } from "../context/AppModeContext";
 
 jest.mock("../context/CareerContext");
 jest.mock("../hooks/useDashboard");
@@ -172,6 +173,27 @@ test("shows the schematic hotel view by default, with a toggle to the 2D view", 
 
   fireEvent.click(screen.getByRole("button", { name: /plan schématique/i }));
   expect(screen.getByTestId("schematic-hotel-view")).toBeInTheDocument();
+});
+
+// Mode Normal (Étape 2, see context/AppModeContext.jsx): the condensed
+// "Premier Aperçu" -- 4 KPIs, a "À faire aujourd'hui" card, and the
+// Expert-only panels (QuickActions, DashboardInsights, DashboardReplaySummary)
+// gone.
+test("Mode Normal shows the condensed KPIs and the 'À faire aujourd'hui' card instead of the Expert panels", () => {
+  window.localStorage.clear();
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(
+    <AppModeProvider>
+      <Dashboard />
+    </AppModeProvider>,
+    { wrapper: MemoryRouter }
+  );
+
+  expect(screen.getByText("À faire aujourd'hui")).toBeInTheDocument();
+  expect(screen.getAllByText("Augmenter les prix de 5 %").length).toBeGreaterThan(0);
+  expect(screen.queryByTestId("open-growth")).not.toBeInTheDocument();
+  expect(screen.getByText("📖 Journal")).toBeInTheDocument();
 });
 
 test("clicking the laundry alert badge opens the real IncidentQuickModal, and 'Appeler un technicien' calls applyHotelAdjustment with a real repair transform", () => {

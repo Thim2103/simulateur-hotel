@@ -9,6 +9,7 @@ import App from "../../App";
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.localStorage.setItem("hospitalityLab.appMode", "expert");
   window.history.pushState({}, "", "/play");
 });
 
