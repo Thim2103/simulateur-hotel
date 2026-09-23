@@ -1,0 +1,42 @@
+{
+  "project_name": "Hospitality Lab - Board Game",
+  "current_sprint": 1,
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "domain": "mechanics",
+      "title": "Turn Manager Agent",
+      "description": "Créer le moteur de gestion des tours (Planification, Placement, Clients, Fin de tour).",
+      "status": "TODO",
+      "target_file": "src/mechanics/turnManager.js",
+      "test_file": "src/mechanics/turnManager.test.js"
+    },
+    {
+      "id": "TASK-002",
+      "domain": "customers",
+      "title": "Guest Spawner Agent",
+      "description": "Générer les flux de clients selon la saisonnalité et les profils (Business, Touriste).",
+      "status": "TODO",
+      "target_file": "src/customers/guestSpawner.js",
+      "test_file": "src/customers/guestSpawner.test.js"
+    },
+    {
+      "id": "TASK-003",
+      "domain": "economy",
+      "title": "Economy & Pricing Agent",
+      "description": "Calculer les revenus par nuitée, les coûts fixes et la gestion de trésorerie.",
+      "status": "TODO",
+      "target_file": "src/economy/economyEngine.js",
+      "test_file": "src/economy/economyEngine.test.js"
+    },
+    {
+      "id": "TASK-004",
+      "domain": "ui",
+      "title": "Hotel Schematic View",
+      "description": "Créer la vue schématique interactive du plateau d'hôtel en React/Tailwind.",
+      "status": "TODO",
+      "target_file": "src/ui/HotelSchematicView.jsx",
+      "test_file": "src/ui/HotelSchematicView.test.js"
+    }
+  ]
+}
