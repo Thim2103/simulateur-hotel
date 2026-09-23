@@ -17,7 +17,7 @@ import { getHotelState } from "../lib/hotelRepository";
 import { getRestaurantState } from "../lib/restaurantRepository";
 import { listRooms, listReservations } from "../lib/pmsRepository";
 import { useSupabaseSession } from "./useSupabaseSession";
-import { createGuestHotelBundle, createGuestRepository } from "../lib/guest";
+import { createStarterInnBundle, createGuestRepository } from "../lib/guest";
 
 // One localStorage slot for the whole career -- stateless factory, safe
 // to build once at module scope (see lib/guest/guestAdapter.js).
@@ -34,8 +34,9 @@ const guestCareerRepository = createGuestRepository("career", { defaultState: nu
 // In guest mode (see hooks/useSupabaseSession.js -- no Supabase session,
 // no anonymous auth available) this bypasses careerRepository.js and the
 // hotel/restaurant/PMS repositories entirely: the starting hotel comes
-// from a locally-seeded bundle (lib/guest/guestAdapter.js's
-// createGuestHotelBundle(), ready to play immediately) and every save
+// from "Ma Première Auberge" (lib/guest/guestAdapter.js's
+// createStarterInnBundle(), Étape 3 of the "board game numérique"
+// redesign -- 4 simple rooms, ready to play immediately) and every save
 // goes to localStorage instead of Supabase. runCareerDay() already runs
 // runDailyCycle() sandboxed (persist: false) regardless of mode, so guest
 // mode needed no changes there. A real Supabase session keeps the
@@ -102,7 +103,7 @@ export function useCareer() {
       runWithErrorHandling(async () => {
         const guestNow = (await resolveSession())?.mode === "guest";
         const bundle = guestNow
-          ? createGuestHotelBundle()
+          ? createStarterInnBundle()
           : await Promise.all([getHotelState(), getRestaurantState(), listRooms(), listReservations()]).then(
               ([hotelState, restaurantState, rooms, reservations]) => ({ hotelState, restaurantState, rooms, reservations })
             );

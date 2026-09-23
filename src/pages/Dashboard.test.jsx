@@ -196,6 +196,25 @@ test("Mode Normal shows the condensed KPIs and the 'À faire aujourd'hui' card i
   expect(screen.getByText("📖 Journal")).toBeInTheDocument();
 });
 
+// Étape 3 (see components/hotel/HotelSchematicView.jsx): Mode Normal shows
+// the board-game-style schematic instead of the displayMode-driven
+// schematic/2D/experimental switch, regardless of what displayMode holds.
+test("Mode Normal shows the board-game HotelSchematicView, not the displayMode toggle", () => {
+  window.localStorage.clear();
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState({ hotel: { rooms: [{ id: 1, number: "101", status: "libre", housekeeping_status: "clean" }], reservations: [], hotelState: {} } }) }));
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(
+    <AppModeProvider>
+      <Dashboard />
+    </AppModeProvider>,
+    { wrapper: MemoryRouter }
+  );
+
+  expect(screen.getByTestId("hotel-schematic-view")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "📐 Plan schématique" })).not.toBeInTheDocument();
+  expect(screen.queryByTestId("schematic-hotel-view")).not.toBeInTheDocument();
+});
+
 test("clicking the laundry alert badge opens the real IncidentQuickModal, and 'Appeler un technicien' calls applyHotelAdjustment with a real repair transform", () => {
   const applyHotelAdjustment = jest.fn().mockResolvedValue(careerState());
   useCareerContext.mockReturnValue(
