@@ -57,6 +57,8 @@ import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
 import TodayTodoCard from "../components/dashboard/TodayTodoCard";
 import JournalPanel from "../components/dashboard/JournalPanel";
+import { buildCausalLinks } from "../lib/journal/causalityEngine";
+import { explainReview, featuredReviewOf } from "../lib/journal/guestReviewsEngine";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
@@ -442,6 +444,16 @@ export default function Dashboard() {
   const alerts = urgentItems(careerState, { gmMessages: gmMessages.length });
   const reviewsToAnswer = unansweredNegativeReviews(careerState?.hotel?.hotelState).length;
 
+  // Étape 4's "Cause à effet" Journal (see lib/journal/): the cause-to-
+  // effect chains a non-hotelier player wouldn't otherwise connect
+  // (price/occupancy, housekeeping/reviews, reputation/demand -- only the
+  // ones whose real trigger held today), and the one review most worth
+  // explaining today, if any posted.
+  const causalLinks = buildCausalLinks({ kpis: dashboardState?.kpis, hotelState: careerState?.hotel?.hotelState, demand: review?.demand });
+  const featuredReview = featuredReviewOf(review?.guestReviews?.posted);
+  const featuredReservation = featuredReview ? careerState?.hotel?.reservations?.find((reservation) => reservation.id === featuredReview.reservationId) : null;
+  const featuredExplanation = featuredReview ? explainReview(featuredReview, { hotelState: careerState?.hotel?.hotelState, reservation: featuredReservation }) : null;
+
   return (
     <div className="flex flex-col gap-6">
       <DashboardHeader day={careerState.day} date={dashboardState?.kpis?.date} isGuest={isGuest} onNextDay={handleNextDay} isRunning={isRunning} />
@@ -701,7 +713,15 @@ export default function Dashboard() {
       </div>
 
       <div id="journal" className="scroll-mt-32">
-        <JournalPanel causalChain={review?.causalChain ?? []} reviewsToAnswer={reviewsToAnswer} gmMessageCount={gmMessages.length} />
+        <JournalPanel
+          causalChain={review?.causalChain ?? []}
+          reviewsToAnswer={reviewsToAnswer}
+          gmMessageCount={gmMessages.length}
+          financialSummary={review?.summary ?? null}
+          causalLinks={causalLinks}
+          featuredReview={featuredReview}
+          featuredExplanation={featuredExplanation}
+        />
       </div>
 
       {gmNotification && <GameNotification tone="info" message={gmNotification} onDismiss={() => setGmNotification(null)} />}
