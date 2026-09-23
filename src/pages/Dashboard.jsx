@@ -59,6 +59,8 @@ import TodayTodoCard from "../components/dashboard/TodayTodoCard";
 import JournalPanel from "../components/dashboard/JournalPanel";
 import { buildCausalLinks } from "../lib/journal/causalityEngine";
 import { explainReview, featuredReviewOf } from "../lib/journal/guestReviewsEngine";
+import { buildMarketContext } from "../lib/data/marketContextEngine";
+import MarketContextCard from "../components/dashboard/MarketContextCard";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
@@ -454,6 +456,17 @@ export default function Dashboard() {
   const featuredReservation = featuredReview ? careerState?.hotel?.reservations?.find((reservation) => reservation.id === featuredReview.reservationId) : null;
   const featuredExplanation = featuredReview ? explainReview(featuredReview, { hotelState: careerState?.hotel?.hotelState, reservation: featuredReservation }) : null;
 
+  // Étape 5's market context (see lib/data/marketContextEngine.js): the
+  // destination, the real season, today's dominant segment and the local
+  // competitive pressure -- shown right where the player makes today's
+  // decisions.
+  const marketContext = buildMarketContext({
+    hotelState: careerState?.hotel?.hotelState,
+    date: careerReferenceDate(careerState),
+    day: careerState.day,
+    hotelAveragePrice: dashboardState?.kpis?.averagePrice,
+  });
+
   return (
     <div className="flex flex-col gap-6">
       <DashboardHeader day={careerState.day} date={dashboardState?.kpis?.date} isGuest={isGuest} onNextDay={handleNextDay} isRunning={isRunning} />
@@ -708,7 +721,8 @@ export default function Dashboard() {
 
       {appMode === "expert" && <DashboardInsights insights={dashboardState?.insights} />}
 
-      <div id="decisions" className="scroll-mt-32">
+      <div id="decisions" className="scroll-mt-32 flex flex-col gap-4">
+        <MarketContextCard context={marketContext} />
         <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
       </div>
 
