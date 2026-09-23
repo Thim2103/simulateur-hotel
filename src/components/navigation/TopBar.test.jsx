@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route, useLocation } from "react-router-dom";
 import TopBar from "./TopBar";
 import { AppModeProvider } from "../../context/AppModeContext";
 
@@ -89,6 +89,48 @@ test("the Mode Expert/Mode Normal toggle switches the navigation", () => {
 
   fireEvent.click(screen.getByRole("button", { name: /mode normal/i }));
   expect(screen.getByRole("link", { name: "🎯 Décisions" })).toBeInTheDocument();
+});
+
+// Étape 7: switching into Mode Expert also opens its own "Cockpit
+// Directeur" (/dashboard#expert, see components/dashboard/ExpertCockpit.jsx).
+test("switching into Mode Expert navigates to /dashboard#expert", () => {
+  window.localStorage.clear();
+  function Where() {
+    const location = useLocation();
+    return <p data-testid="where">{location.pathname + location.hash}</p>;
+  }
+  render(
+    <AppModeProvider>
+      <MemoryRouter initialEntries={["/staff"]}>
+        <Routes>
+          <Route path="*" element={<><TopBar /><Where /></>} />
+        </Routes>
+      </MemoryRouter>
+    </AppModeProvider>
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Mode Expert" }));
+  expect(screen.getByTestId("where")).toHaveTextContent("/dashboard#expert");
+});
+
+test("switching back to Mode Normal does not force any navigation", () => {
+  window.localStorage.setItem("hospitalityLab.appMode", "expert");
+  function Where() {
+    const location = useLocation();
+    return <p data-testid="where">{location.pathname + location.hash}</p>;
+  }
+  render(
+    <AppModeProvider>
+      <MemoryRouter initialEntries={["/staff"]}>
+        <Routes>
+          <Route path="*" element={<><TopBar /><Where /></>} />
+        </Routes>
+      </MemoryRouter>
+    </AppModeProvider>
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: /mode normal/i }));
+  expect(screen.getByTestId("where")).toHaveTextContent("/staff");
 });
 
 // Part B of the navigation fixes: opening every desktop dropdown (even

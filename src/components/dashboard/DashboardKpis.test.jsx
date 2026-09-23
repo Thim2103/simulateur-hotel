@@ -6,11 +6,12 @@ const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 250
 // Mode Normal (Étape 2) -- see context/AppModeContext.jsx: only the 4
 // headline KPIs the redesign's "Premier Aperçu" calls for, the other 10
 // stay hidden (still computed upstream, just not rendered here).
-test("Mode Normal shows only Trésorerie, Occupation, Satisfaction and Réputation", () => {
+test("Mode Normal shows only Trésorerie, Fréquentation (plain language, not 'Taux d'occupation'), Satisfaction and Réputation", () => {
   render(<DashboardKpis kpis={kpis} viewMode="casual" appMode="normal" />);
   expect(screen.getByText("Trésorerie")).toBeInTheDocument();
   expect(screen.getByText("42 000 €")).toBeInTheDocument();
-  expect(screen.getByText("Occupation")).toBeInTheDocument();
+  expect(screen.getByText("Fréquentation")).toBeInTheDocument();
+  expect(screen.queryByText("Taux d'occupation")).not.toBeInTheDocument();
   expect(screen.getByText("75%")).toBeInTheDocument();
   expect(screen.getByText("Satisfaction")).toBeInTheDocument();
   expect(screen.getByText("Réputation")).toBeInTheDocument();

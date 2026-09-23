@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import TopBarDropdown from "./TopBarDropdown";
 import { icons } from "../../ui/designSystem/icons";
 import { useAppMode } from "../../context/AppModeContext";
@@ -185,7 +185,17 @@ const MORE_MENU_ITEMS = [
 export default function TopBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { appMode, toggleAppMode } = useAppMode();
+  const navigate = useNavigate();
   const isNormalMode = appMode === "normal";
+
+  // Switching into Mode Expert (Étape 7) also opens its own "Cockpit
+  // Directeur" (see components/dashboard/ExpertCockpit.jsx,
+  // /dashboard#expert) -- switching back to Mode Normal is a quiet
+  // toggle, no navigation.
+  const handleToggleAppMode = () => {
+    if (isNormalMode) navigate("/dashboard#expert");
+    toggleAppMode();
+  };
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950 text-white">
@@ -228,7 +238,7 @@ export default function TopBar() {
 
         <button
           type="button"
-          onClick={toggleAppMode}
+          onClick={handleToggleAppMode}
           className="hidden shrink-0 rounded-md border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 md:block"
         >
           {isNormalMode ? "Mode Expert" : "↩️ Mode Normal"}
@@ -255,7 +265,7 @@ export default function TopBar() {
         <nav aria-label="Navigation principale (mobile)" className="flex flex-col gap-1 border-t border-slate-800 bg-slate-950 px-3 py-2 md:hidden">
           <button
             type="button"
-            onClick={toggleAppMode}
+            onClick={handleToggleAppMode}
             className="mb-1 rounded-md border border-slate-700 px-3 py-2 text-left text-sm font-semibold text-slate-200 hover:bg-slate-800"
           >
             {isNormalMode ? "Passer en Mode Expert" : "↩️ Revenir au Mode Normal"}
