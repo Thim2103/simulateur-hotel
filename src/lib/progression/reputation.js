@@ -3,6 +3,7 @@
 // today's events (see lib/events/, whose impact.reputation this reads).
 import { incidentReputationPenalty } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
+import { computePositioningEffects } from "./positioningEngine";
 import { auditReputationBonus } from "../hotelEvents/hotelEventsEngine";
 import { pendingReputationDelta } from "../clients/guestReviewEngine";
 import { ecoSustainabilityBonus } from "../expansion/majorProjectsEngine";
@@ -35,10 +36,15 @@ function eventReputationImpact(events) {
 export function calculateReputation({ hotelState = {}, restaurantState = {}, events = [], previousReputation } = {}) {
   const sustainabilityScore = (Number(hotelState.esg?.sustainabilityScore) || 50) + ecoSustainabilityBonus(hotelState) + supplierSustainabilityBonus(hotelState);
   const staffMorale = averageSatisfaction(restaurantState.staff);
-  // Installed zone upgrades (lib/zones/) and owned supplier equipment
+  // Installed zone upgrades (lib/zones/), positioning tiers (lib/progression/
+  // positioningEngine.js, Étape 6) and owned supplier equipment
   // (lib/suppliers/) lift the reputation the hotel converges to; 0 for a
-  // hotel that never upgraded or bought anything.
-  const target = clamp(sustainabilityScore * 0.4 + staffMorale * 0.6 + computeZoneEffects(hotelState).reputationBonus + supplierReputationBonus(hotelState), 0, 100);
+  // hotel that never upgraded, invested or bought anything.
+  const target = clamp(
+    sustainabilityScore * 0.4 + staffMorale * 0.6 + computeZoneEffects(hotelState).reputationBonus + computePositioningEffects(hotelState).reputationBonus + supplierReputationBonus(hotelState),
+    0,
+    100
+  );
 
   const base = Number.isFinite(previousReputation) ? previousReputation : target;
   const drifted = base + (target - base) * DRIFT_RATE;
