@@ -86,6 +86,13 @@ export function isInstalled(hotelState, upgradeId) {
   return Object.prototype.hasOwnProperty.call(state(hotelState).installed, upgradeId);
 }
 
+// The day an installed upgrade was finished, or null (not installed) --
+// lib/accounting/accountingEngine.js reads this to age the asset for
+// depreciation.
+export function installedOn(hotelState, upgradeId) {
+  return state(hotelState).installed[upgradeId]?.day ?? null;
+}
+
 export function worksFor(hotelState, upgradeId) {
   return state(hotelState).works[upgradeId] || null;
 }

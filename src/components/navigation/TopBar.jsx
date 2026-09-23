@@ -98,6 +98,7 @@ const PRIMARY_MENUS = [
       { label: "Bilan", to: "/finance/report", icon: icons.business },
       { label: "Cash-flow", to: "/finance/forecast", icon: icons.cash },
       { label: "Emprunts", to: "/finance/banking", icon: icons.cash },
+      { label: "Bilan Comptable & Résultat", to: "/dashboard#accounting", icon: icons.business },
     ],
   },
   {

@@ -30,6 +30,7 @@ import LoyaltyProgramModal from "../components/loyalty/LoyaltyProgramModal";
 import BankingModal from "../components/banking/BankingModal";
 import HotelExpansionModal from "../components/expansion/HotelExpansionModal";
 import SuppliersModal from "../components/suppliers/SuppliersModal";
+import AccountingModal from "../components/accounting/AccountingModal";
 import { startProject } from "../lib/expansion/majorProjectsEngine";
 import { purchaseItems } from "../lib/suppliers/suppliersEngine";
 import { takeLoan, repayLoan } from "../lib/banking/bankingLoanEngine";
@@ -151,6 +152,8 @@ export default function Dashboard() {
   const [projectsOpen, setProjectsOpen] = useState(false);
   // Whether the suppliers & equipment catalogue desk is open.
   const [suppliersOpen, setSuppliersOpen] = useState(false);
+  // Whether the accounting desk (balance sheet & income statement) is open.
+  const [accountingOpen, setAccountingOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -181,6 +184,7 @@ export default function Dashboard() {
     if (location.hash === "#banking") setBankingOpen(true);
     if (location.hash === "#projects") setProjectsOpen(true);
     if (location.hash === "#suppliers") setSuppliersOpen(true);
+    if (location.hash === "#accounting") setAccountingOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -215,6 +219,11 @@ export default function Dashboard() {
   const closeSuppliers = () => {
     setSuppliersOpen(false);
     if (location.hash === "#suppliers") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeAccounting = () => {
+    setAccountingOpen(false);
+    if (location.hash === "#accounting") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -423,7 +432,7 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} />
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} />
 
       <DashboardBento
         review={review}
@@ -502,6 +511,8 @@ export default function Dashboard() {
       {projectsOpen && <HotelExpansionModal hotelState={careerState?.hotel?.hotelState} rooms={careerState?.hotel?.rooms} day={careerState.day} onStart={handleStartProject} onClose={closeProjects} />}
 
       {suppliersOpen && <SuppliersModal hotelState={careerState?.hotel?.hotelState} onPurchase={handlePurchaseItems} onClose={closeSuppliers} />}
+
+      {accountingOpen && <AccountingModal hotelState={careerState?.hotel?.hotelState} restaurantState={careerState?.hotel?.restaurantState} day={careerState.day} onClose={closeAccounting} />}
 
       {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 
