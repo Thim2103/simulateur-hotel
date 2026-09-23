@@ -523,7 +523,16 @@ export default function Dashboard() {
 
       {accountingOpen && <AccountingModal hotelState={careerState?.hotel?.hotelState} restaurantState={careerState?.hotel?.restaurantState} day={careerState.day} onClose={closeAccounting} />}
 
-      {tfeFeasibilityOpen && <TfeFeasibilityModal hotelState={careerState?.hotel?.hotelState} day={careerState.day} onClose={closeTfeFeasibility} />}
+      {tfeFeasibilityOpen && (
+        <TfeFeasibilityModal
+          hotelState={careerState?.hotel?.hotelState}
+          restaurantState={careerState?.hotel?.restaurantState}
+          rooms={careerState?.hotel?.rooms}
+          day={careerState.day}
+          dailyReport={careerState?.lastDayReport}
+          onClose={closeTfeFeasibility}
+        />
+      )}
 
       {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 

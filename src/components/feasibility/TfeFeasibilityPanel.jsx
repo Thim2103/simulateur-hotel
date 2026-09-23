@@ -2,6 +2,7 @@ import { useState } from "react";
 import { BentoCard, StatusBadge } from "../../ui/bento";
 import { describeInitialBalance } from "../../lib/feasibility/financingEngine";
 import { describeDepreciationPlan } from "../../lib/feasibility/depreciationEngine";
+import TfeProjectionsPanel from "./TfeProjectionsPanel";
 
 const euro = (value) => `${Math.round(value).toLocaleString("fr-FR")} €`;
 const percent = (value) => `${Math.round(value * 100)} %`;
@@ -115,39 +116,48 @@ function DepreciationTab({ hotelState, day }) {
   );
 }
 
-// The TFE feasibility desk (see lib/feasibility/): the initial investment &
-// financing plan, and the depreciation schedule behind it -- two tabs
-// reading the exact same figures as the Bilan Comptable
+const TABS = [
+  { id: "financing", icon: "🧱", label: "Plan d'investissement & financement", tone: "action" },
+  { id: "depreciation", icon: "📉", label: "Tableau des amortissements", tone: "vip" },
+  { id: "chaffs", icon: "📈", label: "Projections & CHAFFs", tone: "success" },
+  { id: "cashflow", icon: "💵", label: "Plan de trésorerie", tone: "action" },
+  { id: "ratios", icon: "📐", label: "Ratios financiers & KPIs", tone: "mice" },
+];
+
+// The TFE feasibility desk: the initial investment & financing plan and its
+// depreciation schedule (Partie 1, see lib/feasibility/financingEngine.js/
+// depreciationEngine.js), then the CHAFFs, the cash-flow plan and the
+// financial ratios/hotel KPIs (Partie 2, see
+// lib/feasibility/financialProjectionsEngine.js/financialRatiosEngine.js) --
+// five tabs, all reading the exact same live figures as the Bilan Comptable
 // (components/accounting/), just regrouped under the TFE's own classes.
-// `day` is the career's day.
-export default function TfeFeasibilityPanel({ hotelState, day = 0 }) {
+// `day` is the career's day; `dailyReport` (careerState.lastDayReport) feeds
+// today's TrevPAR/CPOR/GOPPAR, when there is one.
+export default function TfeFeasibilityPanel({ hotelState, restaurantState, rooms, day = 0, dailyReport }) {
   const [tab, setTab] = useState("financing");
   return (
     <div data-testid="tfe-feasibility-panel" className="flex flex-col gap-4">
-      <div className="flex gap-1.5" role="tablist" aria-label="Volets du plan de faisabilité">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "financing"}
-          data-testid="tfe-tab-financing"
-          onClick={() => setTab("financing")}
-          className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${tab === "financing" ? "border-[var(--ds-action)] bg-[var(--ds-action)]/10 text-[var(--ds-action)]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-        >
-          🧱 Plan d'investissement & financement
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "depreciation"}
-          data-testid="tfe-tab-depreciation"
-          onClick={() => setTab("depreciation")}
-          className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${tab === "depreciation" ? "border-[var(--ds-vip)] bg-[var(--ds-vip)]/10 text-[var(--ds-vip)]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-        >
-          📉 Tableau des amortissements
-        </button>
+      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Volets du plan de faisabilité">
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.id}
+            data-testid={`tfe-tab-${item.id}`}
+            onClick={() => setTab(item.id)}
+            className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors ${tab === item.id ? "border-[var(--ds-action)] bg-[var(--ds-action)]/10 text-[var(--ds-action)]" : "border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+          >
+            {item.icon} {item.label}
+          </button>
+        ))}
       </div>
 
-      {tab === "financing" ? <FinancingTab hotelState={hotelState} day={day} /> : <DepreciationTab hotelState={hotelState} day={day} />}
+      {tab === "financing" && <FinancingTab hotelState={hotelState} day={day} />}
+      {tab === "depreciation" && <DepreciationTab hotelState={hotelState} day={day} />}
+      {(tab === "chaffs" || tab === "cashflow" || tab === "ratios") && (
+        <TfeProjectionsPanel section={tab} hotelState={hotelState} restaurantState={restaurantState} rooms={rooms} day={day} dailyReport={dailyReport} />
+      )}
     </div>
   );
 }

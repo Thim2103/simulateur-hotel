@@ -5,7 +5,9 @@ import { purchaseItems } from "../../lib/suppliers/suppliersEngine";
 import { itemById } from "../../lib/suppliers/suppliersData";
 
 const hotel = (extra = {}) => ({ finance: { revenue: [35000], costs: [0], payroll: 9000, fixedCosts: 4000 }, expansion: { availableCapital: 0 }, ...extra });
-const panel = (hotelState = hotel(), day = 0) => render(<TfeFeasibilityPanel hotelState={hotelState} day={day} />);
+const restaurant = (extra = {}) => ({ finance: { revenue: [0], costs: [0] }, staff: [], ...extra });
+const rooms = [{ id: 1, number: "101", type: "standard", price: 120, status: "libre" }];
+const panel = (hotelState = hotel(), day = 0) => render(<TfeFeasibilityPanel hotelState={hotelState} restaurantState={restaurant()} rooms={rooms} day={day} />);
 
 describe("TfeFeasibilityPanel / the tabs", () => {
   it("opens on the financing plan", () => {
@@ -21,6 +23,16 @@ describe("TfeFeasibilityPanel / the tabs", () => {
     expect(screen.getByTestId("tfe-tab-depreciation")).toHaveAttribute("aria-selected", "true");
     expect(screen.getByTestId("tfe-depreciation-summary")).toBeInTheDocument();
     expect(screen.queryByTestId("tfe-needs-card")).not.toBeInTheDocument();
+  });
+
+  it("switches to the Partie 2 tabs: CHAFFs, cash-flow, ratios & KPIs", () => {
+    panel();
+    fireEvent.click(screen.getByTestId("tfe-tab-chaffs"));
+    expect(screen.getByTestId("tfe-chaffs-card")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("tfe-tab-cashflow"));
+    expect(screen.getByTestId("tfe-cashflow-card")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("tfe-tab-ratios"));
+    expect(screen.getByTestId("tfe-ratios-card")).toBeInTheDocument();
   });
 });
 
