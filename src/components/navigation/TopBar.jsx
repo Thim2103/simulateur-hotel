@@ -99,6 +99,7 @@ const PRIMARY_MENUS = [
       { label: "Cash-flow", to: "/finance/forecast", icon: icons.cash },
       { label: "Emprunts", to: "/finance/banking", icon: icons.cash },
       { label: "Bilan Comptable & Résultat", to: "/dashboard#accounting", icon: icons.business },
+      { label: "Plan de Faisabilité TFE", to: "/dashboard#tfe-feasibility", icon: icons.tfe },
     ],
   },
   {
