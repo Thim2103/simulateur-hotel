@@ -1,9 +1,25 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import TopBar from "./TopBar";
+import { AppModeProvider } from "../../context/AppModeContext";
 
 function renderTopBar() {
   return render(<TopBar />, { wrapper: MemoryRouter });
+}
+
+// Mode Normal (Étape 2, see context/AppModeContext.jsx): a fresh
+// AppModeProvider with nothing in localStorage defaults to "normal" --
+// every other test in this file renders TopBar with no provider at all,
+// which falls back to the context's own "expert" default and keeps
+// exercising the classic full navigation untouched.
+function renderTopBarInNormalMode() {
+  window.localStorage.clear();
+  return render(
+    <AppModeProvider>
+      <TopBar />
+    </AppModeProvider>,
+    { wrapper: MemoryRouter }
+  );
 }
 
 test("renders the game's name linking home", () => {
@@ -54,6 +70,25 @@ test("the mobile menu toggle shows every menu stacked", () => {
   fireEvent.click(screen.getByRole("button", { name: /ouvrir la navigation/i }));
   expect(screen.getByRole("navigation", { name: /mobile/i })).toBeInTheDocument();
   expect(screen.getAllByText("Chambres").length).toBeGreaterThan(0);
+});
+
+test("Mode Normal shows the 5 simplified spaces instead of the 9 hub menus", () => {
+  renderTopBarInNormalMode();
+  ["🏨 Mon Hôtel", "🎯 Décisions", "📈 Développement", "💰 Mon Entreprise", "📖 Journal"].forEach((label) => {
+    expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
+  });
+  expect(screen.queryByRole("button", { name: "Finance" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Plus" })).not.toBeInTheDocument();
+});
+
+test("the Mode Expert/Mode Normal toggle switches the navigation", () => {
+  renderTopBarInNormalMode();
+  fireEvent.click(screen.getByRole("button", { name: "Mode Expert" }));
+  expect(screen.getByRole("button", { name: "Finance" })).toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "🎯 Décisions" })).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /mode normal/i }));
+  expect(screen.getByRole("link", { name: "🎯 Décisions" })).toBeInTheDocument();
 });
 
 // Part B of the navigation fixes: opening every desktop dropdown (even

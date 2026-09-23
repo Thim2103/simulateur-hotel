@@ -4,6 +4,7 @@ import RadialBranch from "./RadialBranch";
 import { RADIAL_BRANCHES, branchPosition } from "./radialConfig";
 import { subscribeRadialNavOpen } from "./radialNavBus";
 import { fadeIn } from "../animations";
+import { useAppMode } from "../../context/AppModeContext";
 
 const RADIUS = 150;
 
@@ -28,6 +29,7 @@ const RADIUS = 150;
 // this is the fast, iconic "jump to a domain" launcher over it.
 export default function RadialNavigation() {
   const [open, setOpen] = useState(false);
+  const { appMode } = useAppMode();
 
   // Lets any other page open this same instance (see radialNavBus.js) --
   // pages/Dashboard.jsx's "Radial Navigation" button and
@@ -45,6 +47,13 @@ export default function RadialNavigation() {
   }, [open]);
 
   const close = () => setOpen(false);
+
+  // Mode Normal (see context/AppModeContext.jsx) already puts the 5
+  // simplified spaces directly in TopBar -- this floating launcher would
+  // just be a second, coarser way to reach the same "SaaS overdose" of
+  // modules Mode Normal exists to hide. Mode Expert (the default outside
+  // AppModeProvider, so every existing test keeps rendering it) keeps it.
+  if (appMode === "normal") return null;
 
   return (
     <>

@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAppMode } from "../../context/AppModeContext";
 
 const startsWith = (pathname, prefixes) => prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
@@ -52,8 +53,17 @@ export const SIDEBAR_ITEMS = [
 // The main navigation rail: a vertical sidebar on wide screens, a scrolling
 // strip of the same links above the page on narrow ones (one DOM either way).
 // The top bar's hub menus stay for everything else.
+// Mode Normal (see context/AppModeContext.jsx) already carries these same
+// five modules as TopBar's own simplified space links -- this rail would
+// just be the exact same navigation twice ("l'effet Dashboard SaaS /
+// Overdose de modules" the redesign is explicitly trying to shed), so it
+// renders nothing while Mode Normal is on. Mode Expert (the default
+// outside AppModeProvider, so every existing test keeps rendering it)
+// shows it exactly as before.
 export default function AppSidebar() {
   const location = useLocation();
+  const { appMode } = useAppMode();
+  if (appMode === "normal") return null;
 
   return (
     <nav

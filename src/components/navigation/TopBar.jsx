@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import TopBarDropdown from "./TopBarDropdown";
 import { icons } from "../../ui/designSystem/icons";
+import { useAppMode } from "../../context/AppModeContext";
 
 // The 9 primary menus asked for, in order, each with the sub-menu items
 // specified. A plain link (no `items`) renders without a dropdown (see
@@ -154,6 +155,19 @@ const PRIMARY_MENUS = [
 // Competition/Replay/Analytics routes already got (see Sidebar.jsx's own
 // former header comment). Every route it points to stays mounted in
 // App.js.
+// Étape 2 of the "board game numérique" redesign: Mode Normal shows only
+// these 5 spaces instead of the 9 hub dropdowns above -- each one a real
+// existing destination (Dashboard.jsx's own hash anchors, see its own
+// docstring), never a new page. Mode Expert (the toggle button below)
+// switches back to PRIMARY_MENUS/MORE_MENU_ITEMS unchanged.
+const NORMAL_MODE_SPACES = [
+  { label: "🏨 Mon Hôtel", to: "/dashboard#hotel-plan" },
+  { label: "🎯 Décisions", to: "/dashboard#decisions" },
+  { label: "📈 Développement", to: "/dashboard#development" },
+  { label: "💰 Mon Entreprise", to: "/dashboard#finance" },
+  { label: "📖 Journal", to: "/dashboard#journal" },
+];
+
 const MORE_MENU_ITEMS = [
   { label: "Mode Carrière", to: "/career" },
   { label: "Mode Invité", to: "/guest" },
@@ -170,6 +184,8 @@ const MORE_MENU_ITEMS = [
 // never overflows its own frame on a narrow viewport.
 export default function TopBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { appMode, toggleAppMode } = useAppMode();
+  const isNormalMode = appMode === "normal";
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-800 bg-slate-950 text-white">
@@ -189,14 +205,34 @@ export default function TopBar() {
         </Link>
 
         <nav aria-label="Navigation principale" className="hidden flex-1 items-center gap-1 md:flex">
-          {PRIMARY_MENUS.map((menu) => (
-            <TopBarDropdown key={menu.label} label={menu.label} to={menu.to} items={menu.items} align={menu.align} icon={menu.icon} />
-          ))}
+          {isNormalMode
+            ? NORMAL_MODE_SPACES.map((space) => (
+                <NavLink
+                  key={space.label}
+                  to={space.to}
+                  className={({ isActive }) => `rounded-md px-3 py-2 text-sm font-medium ${isActive ? "bg-cyan-700 text-white" : "text-slate-200 hover:bg-slate-800"}`}
+                >
+                  {space.label}
+                </NavLink>
+              ))
+            : PRIMARY_MENUS.map((menu) => (
+                <TopBarDropdown key={menu.label} label={menu.label} to={menu.to} items={menu.items} align={menu.align} icon={menu.icon} />
+              ))}
         </nav>
 
-        <div className="hidden md:block">
-          <TopBarDropdown label="Plus" items={MORE_MENU_ITEMS} align="right" />
-        </div>
+        {!isNormalMode && (
+          <div className="hidden md:block">
+            <TopBarDropdown label="Plus" items={MORE_MENU_ITEMS} align="right" />
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={toggleAppMode}
+          className="hidden shrink-0 rounded-md border border-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 md:block"
+        >
+          {isNormalMode ? "Mode Expert" : "↩️ Mode Normal"}
+        </button>
 
         <button
           type="button"
@@ -217,7 +253,14 @@ export default function TopBar() {
 
       {mobileOpen && (
         <nav aria-label="Navigation principale (mobile)" className="flex flex-col gap-1 border-t border-slate-800 bg-slate-950 px-3 py-2 md:hidden">
-          {[...PRIMARY_MENUS, { label: "Plus", items: MORE_MENU_ITEMS }].map((menu) =>
+          <button
+            type="button"
+            onClick={toggleAppMode}
+            className="mb-1 rounded-md border border-slate-700 px-3 py-2 text-left text-sm font-semibold text-slate-200 hover:bg-slate-800"
+          >
+            {isNormalMode ? "Passer en Mode Expert" : "↩️ Revenir au Mode Normal"}
+          </button>
+          {(isNormalMode ? NORMAL_MODE_SPACES : [...PRIMARY_MENUS, { label: "Plus", items: MORE_MENU_ITEMS }]).map((menu) =>
             menu.items ? (
               <div key={menu.label} className="flex flex-col gap-1">
                 <p className="px-3 pt-2 text-[11px] font-semibold uppercase tracking-widest text-slate-500">{menu.label}</p>

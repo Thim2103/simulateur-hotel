@@ -5,6 +5,7 @@ import StatusBar from "./StatusBar";
 import NotificationCenter from "./NotificationCenter";
 import { useOptionalCareerContext } from "../../context/CareerContext";
 import { useOptionalGmDesk } from "../gmDesk/GmDeskProvider";
+import { AppModeProvider } from "../../context/AppModeContext";
 
 jest.mock("../../context/CareerContext");
 jest.mock("../gmDesk/GmDeskProvider", () => ({ ...jest.requireActual("../gmDesk/GmDeskProvider"), useOptionalGmDesk: jest.fn() }));
@@ -25,6 +26,21 @@ function Where() {
 const at = (path, ui) => render(<MemoryRouter initialEntries={[path]}>{ui}<Where /></MemoryRouter>);
 
 describe("AppSidebar", () => {
+  // Mode Normal (Étape 2, see context/AppModeContext.jsx) already puts
+  // its own 5 simplified spaces in TopBar -- this rail would just
+  // duplicate them, so it renders nothing while Mode Normal is on.
+  it("renders nothing in Mode Normal", () => {
+    window.localStorage.clear();
+    render(
+      <MemoryRouter initialEntries={["/dashboard"]}>
+        <AppModeProvider>
+          <AppSidebar />
+        </AppModeProvider>
+      </MemoryRouter>
+    );
+    expect(screen.queryByTestId("app-sidebar")).not.toBeInTheDocument();
+  });
+
   it("lists the five modules with their labels", () => {
     at("/dashboard", <AppSidebar />);
     const nav = screen.getByRole("navigation", { name: /modules de l'hôtel/i });

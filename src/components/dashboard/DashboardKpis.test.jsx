@@ -1,7 +1,23 @@
 import { render, screen } from "@testing-library/react";
 import DashboardKpis from "./DashboardKpis";
 
-const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82, clientsSatisfaction: 76, rmAdvancedMix: 55, proScore: 71 };
+const kpis = { occupancyRate: 75, averagePrice: 120, adr: 135, revenueToday: 2500, profit: 300, satisfaction: 4.2, staffCount: 5, ebitda: 54000, staffMorale: 72, marketingRoi: 2.4, esgScore: 68, housekeepingQuality: 74, tfeScore: 82, clientsSatisfaction: 76, rmAdvancedMix: 55, proScore: 71, cash: 42000, reputation: 88 };
+
+// Mode Normal (Étape 2) -- see context/AppModeContext.jsx: only the 4
+// headline KPIs the redesign's "Premier Aperçu" calls for, the other 10
+// stay hidden (still computed upstream, just not rendered here).
+test("Mode Normal shows only Trésorerie, Occupation, Satisfaction and Réputation", () => {
+  render(<DashboardKpis kpis={kpis} viewMode="casual" appMode="normal" />);
+  expect(screen.getByText("Trésorerie")).toBeInTheDocument();
+  expect(screen.getByText("42 000 €")).toBeInTheDocument();
+  expect(screen.getByText("Occupation")).toBeInTheDocument();
+  expect(screen.getByText("75%")).toBeInTheDocument();
+  expect(screen.getByText("Satisfaction")).toBeInTheDocument();
+  expect(screen.getByText("Réputation")).toBeInTheDocument();
+  expect(screen.getByText("88/100")).toBeInTheDocument();
+  expect(screen.queryByText("EBITDA")).not.toBeInTheDocument();
+  expect(screen.queryByText("Score TFE")).not.toBeInTheDocument();
+});
 
 test("shows loading placeholders when kpis is not ready yet", () => {
   render(<DashboardKpis kpis={null} viewMode="casual" />);

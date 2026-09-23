@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { useCareerContext } from "../context/CareerContext";
+import { useAppMode } from "../context/AppModeContext";
 import { useDashboard } from "../hooks/useDashboard";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
@@ -53,6 +54,8 @@ import SchematicHotelView from "../ui/hotelView/schematic/SchematicHotelView";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
+import TodayTodoCard from "../components/dashboard/TodayTodoCard";
+import JournalPanel from "../components/dashboard/JournalPanel";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
@@ -79,6 +82,7 @@ const VIEW_DISPLAY_MODES = [
 export default function Dashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { appMode } = useAppMode();
   const { careerState, isRunning: isCareerRunning, error: careerError, startCareer, nextDay, applyHotelAdjustment } = useCareerContext();
   const {
     dashboardState,
@@ -188,13 +192,14 @@ export default function Dashboard() {
     if (location.hash === "#crisis") setCrisisOpen(true);
     if (location.hash === "#loyalty") setLoyaltyOpen(true);
     if (location.hash === "#banking") setBankingOpen(true);
-    if (location.hash === "#projects") setProjectsOpen(true);
+    if (location.hash === "#projects" || location.hash === "#development") setProjectsOpen(true);
     if (location.hash === "#suppliers") setSuppliersOpen(true);
-    if (location.hash === "#accounting") setAccountingOpen(true);
+    if (location.hash === "#accounting" || location.hash === "#finance") setAccountingOpen(true);
     if (location.hash === "#tfe-feasibility") setTfeFeasibilityOpen(true);
-    if (location.hash === "#hotel-plan") {
+    if (location.hash === "#hotel-plan" || location.hash === "#decisions" || location.hash === "#journal") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-      document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      const targetId = location.hash === "#hotel-plan" ? "hotel-plan" : location.hash.slice(1);
+      document.getElementById(targetId)?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
     }
   }, [location.key, location.hash, hasCareer]);
 
@@ -220,7 +225,7 @@ export default function Dashboard() {
 
   const closeProjects = () => {
     setProjectsOpen(false);
-    if (location.hash === "#projects") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+    if (location.hash === "#projects" || location.hash === "#development") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const closeSuppliers = () => {
@@ -230,7 +235,7 @@ export default function Dashboard() {
 
   const closeAccounting = () => {
     setAccountingOpen(false);
-    if (location.hash === "#accounting") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+    if (location.hash === "#accounting" || location.hash === "#finance") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const closeTfeFeasibility = () => {
@@ -444,7 +449,13 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
+      {appMode === "normal" && (
+        <TodayTodoCard alert={alerts[0]} suggestions={dashboardState?.quickActions ?? []} onRunAction={handleQuickAction} />
+      )}
+
+      {appMode === "expert" && (
+        <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
+      )}
 
       <DashboardBento
         review={review}
@@ -475,13 +486,15 @@ export default function Dashboard() {
               </span>
             )}
           </Link>
-          <button
-            type="button"
-            onClick={openRadialNav}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline"
-          >
-            🎯 Radial Navigation
-          </button>
+          {appMode === "expert" && (
+            <button
+              type="button"
+              onClick={openRadialNav}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-700 hover:underline"
+            >
+              🎯 Radial Navigation
+            </button>
+          )}
           {VIEW_DISPLAY_MODES.map((mode) => (
             <button
               key={mode.id}
@@ -493,22 +506,26 @@ export default function Dashboard() {
               {mode.label}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => setDisplayMode((mode) => (mode === "experimental" ? "schematic" : "experimental"))}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline"
-          >
-            {displayMode === "experimental" ? "↩️ Ancienne vue" : "🧪 Nouvelle scène (bêta)"}
-          </button>
-          <button
-            type="button"
-            data-testid="open-growth"
-            onClick={() => setGrowthOpen(true)}
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-700 hover:underline"
-          >
-            📈 Yield & marketing
-          </button>
-          <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
+          {appMode === "expert" && (
+            <>
+              <button
+                type="button"
+                onClick={() => setDisplayMode((mode) => (mode === "experimental" ? "schematic" : "experimental"))}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-700 hover:underline"
+              >
+                {displayMode === "experimental" ? "↩️ Ancienne vue" : "🧪 Nouvelle scène (bêta)"}
+              </button>
+              <button
+                type="button"
+                data-testid="open-growth"
+                onClick={() => setGrowthOpen(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-violet-700 hover:underline"
+              >
+                📈 Yield & marketing
+              </button>
+              <DashboardViewModeToggle viewMode={viewMode} onChange={(mode) => setViewMode(mode).catch(() => undefined)} />
+            </>
+          )}
         </div>
       </div>
 
@@ -574,6 +591,7 @@ export default function Dashboard() {
           proScore: proState?.score?.total ?? null,
         } : null}
         viewMode={viewMode}
+        appMode={appMode}
       />
 
       <div id="hotel-plan" className="scroll-mt-32">
@@ -663,11 +681,17 @@ export default function Dashboard() {
         </section>
       )}
 
-      <DashboardReplaySummary replaySummary={dashboardState?.replaySummary} />
+      {appMode === "expert" && <DashboardReplaySummary replaySummary={dashboardState?.replaySummary} />}
 
-      <DashboardInsights insights={dashboardState?.insights} />
+      {appMode === "expert" && <DashboardInsights insights={dashboardState?.insights} />}
 
-      <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
+      <div id="decisions" className="scroll-mt-32">
+        <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
+      </div>
+
+      <div id="journal" className="scroll-mt-32">
+        <JournalPanel causalChain={review?.causalChain ?? []} reviewsToAnswer={reviewsToAnswer} gmMessageCount={gmMessages.length} />
+      </div>
 
       {gmNotification && <GameNotification tone="info" message={gmNotification} onDismiss={() => setGmNotification(null)} />}
     </div>
