@@ -38,6 +38,7 @@ export const icons = {
   backOffice: "🗂️",
   guest: "🧳",
   incident: "❗",
+  suppliers: "📦",
 };
 
 export function getIcon(name) {

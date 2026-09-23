@@ -30,6 +30,7 @@ import { safeArray, safeNumber, safeObject } from "../safe";
 import { UPGRADES } from "../zones/zoneUpgradesEngine";
 import { builtFloors } from "../expansion/hotelExpansionEngine";
 import { ecoUpkeepFactor } from "../expansion/majorProjectsEngine";
+import { supplierMaintenanceFactor } from "../suppliers/suppliersEngine";
 import { pseudoRandom } from "../staff/staffEventsEngine";
 
 export const LEVELS = {
@@ -111,9 +112,11 @@ export function maintenanceByCategory(hotelState) {
 // always adds up.
 export function computeDailyMaintenance({ hotelState, rooms } = {}) {
   const level = maintenanceLevel(hotelState);
-  // An ecological renovation (lib/expansion/majorProjectsEngine.js) trims the whole bill.
+  // An ecological renovation (lib/expansion/majorProjectsEngine.js) and
+  // durable equipment bought from suppliers (lib/suppliers/) both trim the bill.
   const eco = ecoUpkeepFactor(hotelState);
-  const multiplier = LEVELS[level].costMultiplier * eco;
+  const supplierFactor = supplierMaintenanceFactor(hotelState);
+  const multiplier = LEVELS[level].costMultiplier * eco * supplierFactor;
   const installed = Object.keys(safeObject(safeObject(safeObject(hotelState).zoneUpgrades).installed));
 
   const roomsCost = Math.round(safeArray(rooms).reduce((sum, room) => sum + (ROOM_DAILY_COST[room?.type] ?? DEFAULT_ROOM_DAILY_COST), 0) * multiplier);

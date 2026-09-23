@@ -29,7 +29,9 @@ import EventCalendarWidget from "../components/dashboard/EventCalendarWidget";
 import LoyaltyProgramModal from "../components/loyalty/LoyaltyProgramModal";
 import BankingModal from "../components/banking/BankingModal";
 import HotelExpansionModal from "../components/expansion/HotelExpansionModal";
+import SuppliersModal from "../components/suppliers/SuppliersModal";
 import { startProject } from "../lib/expansion/majorProjectsEngine";
+import { purchaseItems } from "../lib/suppliers/suppliersEngine";
 import { takeLoan, repayLoan } from "../lib/banking/bankingLoanEngine";
 import { launchProgram, setBenefit } from "../lib/loyalty/loyaltyProgramEngine";
 import { describeActiveCrisis, describeRehab, respondToCrisis } from "../lib/mediaCrisis/mediaCrisisEngine";
@@ -147,6 +149,8 @@ export default function Dashboard() {
   const [bankingOpen, setBankingOpen] = useState(false);
   // Whether the major projects desk is open.
   const [projectsOpen, setProjectsOpen] = useState(false);
+  // Whether the suppliers & equipment catalogue desk is open.
+  const [suppliersOpen, setSuppliersOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -176,6 +180,7 @@ export default function Dashboard() {
     if (location.hash === "#loyalty") setLoyaltyOpen(true);
     if (location.hash === "#banking") setBankingOpen(true);
     if (location.hash === "#projects") setProjectsOpen(true);
+    if (location.hash === "#suppliers") setSuppliersOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -205,6 +210,11 @@ export default function Dashboard() {
   const closeProjects = () => {
     setProjectsOpen(false);
     if (location.hash === "#projects") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeSuppliers = () => {
+    setSuppliersOpen(false);
+    if (location.hash === "#suppliers") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -341,6 +351,11 @@ export default function Dashboard() {
     applyHotelAdjustment((hotel) => startProject(hotel, projectId, { size, day: careerState.day })).catch(() => undefined);
   };
 
+  // The suppliers & equipment catalogue (components/suppliers/): places the cart's order.
+  const handlePurchaseItems = (cart) => {
+    applyHotelAdjustment((hotel) => purchaseItems(hotel, cart, { day: careerState.day, date: careerReferenceDate(careerState) })).catch(() => undefined);
+  };
+
   // The upkeep budget (schematic/MaintenanceLevelSelector.jsx).
   const handleSetMaintenanceLevel = (level) => {
     applyHotelAdjustment((hotel) => setMaintenanceLevel(hotel, level)).catch(() => undefined);
@@ -408,7 +423,7 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} />
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} />
 
       <DashboardBento
         review={review}
@@ -485,6 +500,8 @@ export default function Dashboard() {
       )}
 
       {projectsOpen && <HotelExpansionModal hotelState={careerState?.hotel?.hotelState} rooms={careerState?.hotel?.rooms} day={careerState.day} onStart={handleStartProject} onClose={closeProjects} />}
+
+      {suppliersOpen && <SuppliersModal hotelState={careerState?.hotel?.hotelState} onPurchase={handlePurchaseItems} onClose={closeSuppliers} />}
 
       {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 
