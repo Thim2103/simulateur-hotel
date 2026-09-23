@@ -51,6 +51,7 @@ import DashboardInsights from "../components/dashboard/DashboardInsights";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
 import HotelScene from "../ui/hotelView/scene/HotelScene";
 import SchematicHotelView from "../ui/hotelView/schematic/SchematicHotelView";
+import HotelSchematicView from "../components/hotel/HotelSchematicView";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
 import AttentionPanel from "../components/dashboard/AttentionPanel";
 import DecisionsPanel from "../components/dashboard/DecisionsPanel";
@@ -495,17 +496,18 @@ export default function Dashboard() {
               🎯 Radial Navigation
             </button>
           )}
-          {VIEW_DISPLAY_MODES.map((mode) => (
-            <button
-              key={mode.id}
-              type="button"
-              onClick={() => setDisplayMode(mode.id)}
-              aria-pressed={displayMode === mode.id}
-              className={`inline-flex items-center gap-1.5 text-sm font-medium hover:underline ${displayMode === mode.id ? "text-cyan-900" : "text-cyan-700"}`}
-            >
-              {mode.label}
-            </button>
-          ))}
+          {appMode === "expert" &&
+            VIEW_DISPLAY_MODES.map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setDisplayMode(mode.id)}
+                aria-pressed={displayMode === mode.id}
+                className={`inline-flex items-center gap-1.5 text-sm font-medium hover:underline ${displayMode === mode.id ? "text-cyan-900" : "text-cyan-700"}`}
+              >
+                {mode.label}
+              </button>
+            ))}
           {appMode === "expert" && (
             <>
               <button
@@ -595,7 +597,16 @@ export default function Dashboard() {
       />
 
       <div id="hotel-plan" className="scroll-mt-32">
-      {displayMode === "experimental" ? (
+      {appMode === "normal" ? (
+        <HotelSchematicView
+          rooms={careerState?.hotel?.rooms ?? []}
+          reservations={careerState?.hotel?.reservations ?? []}
+          date={careerReferenceDate(careerState)}
+          cleaningRoomIds={cleaningRoomIds}
+          onPriorityClean={(roomId) => handlePriorityClean({ metadata: { roomId } })}
+          onOpenYield={() => setGrowthOpen(true)}
+        />
+      ) : displayMode === "experimental" ? (
         <HotelScene />
       ) : displayMode === "2d" ? (
         <HotelView2DAnimated
