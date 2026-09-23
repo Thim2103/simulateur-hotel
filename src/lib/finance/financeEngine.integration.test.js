@@ -45,10 +45,14 @@ test("RM + Finance: both engines derive real, positive figures from the same roo
 });
 
 test("Restaurant + Finance: restaurant revenue/expenses feed straight into the income statement", () => {
-  const hotelBundle = bundle();
+  const base = bundle();
+  // A guest's restaurant opens with no revenue history of its own
+  // (guestAdapter.js) -- give "withRestaurant" its own explicit, non-zero
+  // figures rather than leaning on that default.
+  const hotelBundle = { ...base, restaurantState: { ...base.restaurantState, finance: { ...base.restaurantState.finance, revenue: Array(12).fill(30000), costs: Array(12).fill(20000) } } };
   const withoutRestaurantRevenue = {
-    ...hotelBundle,
-    restaurantState: { ...hotelBundle.restaurantState, finance: { ...hotelBundle.restaurantState.finance, revenue: Array(12).fill(0), costs: Array(12).fill(0) } },
+    ...base,
+    restaurantState: { ...base.restaurantState, finance: { ...base.restaurantState.finance, revenue: Array(12).fill(0), costs: Array(12).fill(0) } },
   };
 
   const withRestaurant = runFinanceCycle({ hotelBundle, referenceDate: REFERENCE_DATE });

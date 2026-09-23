@@ -24,7 +24,24 @@ export { ensureGuestAuthSession, requireGuestUserId, createGuestRepository };
 export function createGuestHotelBundle({ referenceDate = new Date() } = {}) {
   return {
     hotelState: { ...defaultHotelState, progression: { ...defaultHotelState.progression } },
-    restaurantState: markRestaurantReady({ ...defaultRestaurantState, pmsContext: { ...defaultRestaurantState.pmsContext } }),
+    restaurantState: markRestaurantReady({
+      ...defaultRestaurantState,
+      pmsContext: { ...defaultRestaurantState.pmsContext },
+      // A new guest's restaurant opens with no history of its own: unlike
+      // hotelFinancials (lib/hotel.js), whose revenue/costs arrays are a
+      // deliberate device to set the hotel's starting treasury,
+      // restaurantState.finance never feeds investmentFunding.js's
+      // balanceOf() (only hotelState.finance does), so there is no
+      // starting-cash reason to pre-fill it -- doing so only left six
+      // months of legacyRestaurantSimulator.js's freestanding 92-seat
+      // bistro's revenue sitting in a brand-new hotel's Jour 0 P&L (Game
+      // Balancing V1.0, Lot 7's accounting engine surfaced it). Only
+      // revenue/costs/months are reset: payroll/fixedCosts/rent stay --
+      // they drive the ongoing daily cost, not a Jour 0 figure, and
+      // legacyRestaurantSimulator.js's own defaults (used elsewhere as a
+      // generic normalization fallback) are untouched.
+      finance: { ...defaultRestaurantState.finance, months: {}, revenue: [], costs: [] },
+    }),
     rooms: seedRooms(),
     reservations: seedReservations(referenceDate),
   };
