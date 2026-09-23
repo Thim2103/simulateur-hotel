@@ -61,6 +61,8 @@ import { buildCausalLinks } from "../lib/journal/causalityEngine";
 import { explainReview, featuredReviewOf } from "../lib/journal/guestReviewsEngine";
 import { buildMarketContext } from "../lib/data/marketContextEngine";
 import MarketContextCard from "../components/dashboard/MarketContextCard";
+import DevelopmentPanel from "../components/dashboard/DevelopmentPanel";
+import { invest as investPositioning } from "../lib/progression/positioningEngine";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
@@ -197,11 +199,11 @@ export default function Dashboard() {
     if (location.hash === "#crisis") setCrisisOpen(true);
     if (location.hash === "#loyalty") setLoyaltyOpen(true);
     if (location.hash === "#banking") setBankingOpen(true);
-    if (location.hash === "#projects" || location.hash === "#development") setProjectsOpen(true);
+    if (location.hash === "#projects") setProjectsOpen(true);
     if (location.hash === "#suppliers") setSuppliersOpen(true);
     if (location.hash === "#accounting" || location.hash === "#finance") setAccountingOpen(true);
     if (location.hash === "#tfe-feasibility") setTfeFeasibilityOpen(true);
-    if (location.hash === "#hotel-plan" || location.hash === "#decisions" || location.hash === "#journal") {
+    if (location.hash === "#hotel-plan" || location.hash === "#decisions" || location.hash === "#journal" || location.hash === "#development") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       const targetId = location.hash === "#hotel-plan" ? "hotel-plan" : location.hash.slice(1);
       document.getElementById(targetId)?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -230,7 +232,7 @@ export default function Dashboard() {
 
   const closeProjects = () => {
     setProjectsOpen(false);
-    if (location.hash === "#projects" || location.hash === "#development") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+    if (location.hash === "#projects") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const closeSuppliers = () => {
@@ -331,6 +333,13 @@ export default function Dashboard() {
   };
   const handleFitOut = (level, kind) => {
     applyHotelAdjustment((hotel) => fitOutRooms(hotel, level, kind, 1)).catch(() => undefined);
+  };
+
+  // The Développement space's own positioning tiers (lib/progression/
+  // positioningEngine.js, Étape 6): same real capital/treasury-funded
+  // primitive as every other investment here.
+  const handleInvestPositioning = (tierId) => {
+    applyHotelAdjustment((hotel) => investPositioning(hotel, tierId, { day: careerState.day })).catch(() => undefined);
   };
 
   // The commercial levers (components/dashboard/YieldMarketingModal.jsx):
@@ -724,6 +733,10 @@ export default function Dashboard() {
       <div id="decisions" className="scroll-mt-32 flex flex-col gap-4">
         <MarketContextCard context={marketContext} />
         <DecisionsPanel groups={decisionGroups} onRunAction={handleQuickAction} isRunning={isRunning} />
+      </div>
+
+      <div id="development" className="scroll-mt-32">
+        <DevelopmentPanel hotelState={careerState?.hotel?.hotelState} onInvest={handleInvestPositioning} onOpenExpansion={() => setProjectsOpen(true)} />
       </div>
 
       <div id="journal" className="scroll-mt-32">
