@@ -63,6 +63,7 @@ import { buildMarketContext } from "../lib/data/marketContextEngine";
 import MarketContextCard from "../components/dashboard/MarketContextCard";
 import DevelopmentPanel from "../components/dashboard/DevelopmentPanel";
 import { invest as investPositioning } from "../lib/progression/positioningEngine";
+import ExpertCockpit from "../components/dashboard/ExpertCockpit";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
@@ -203,7 +204,7 @@ export default function Dashboard() {
     if (location.hash === "#suppliers") setSuppliersOpen(true);
     if (location.hash === "#accounting" || location.hash === "#finance") setAccountingOpen(true);
     if (location.hash === "#tfe-feasibility") setTfeFeasibilityOpen(true);
-    if (location.hash === "#hotel-plan" || location.hash === "#decisions" || location.hash === "#journal" || location.hash === "#development") {
+    if (location.hash === "#hotel-plan" || location.hash === "#decisions" || location.hash === "#journal" || location.hash === "#development" || location.hash === "#expert") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       const targetId = location.hash === "#hotel-plan" ? "hotel-plan" : location.hash.slice(1);
       document.getElementById(targetId)?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -489,7 +490,12 @@ export default function Dashboard() {
       )}
 
       {appMode === "expert" && (
-        <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
+        <>
+          <div id="expert" className="scroll-mt-32">
+            <ExpertCockpit onOpenYield={() => setGrowthOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
+          </div>
+          <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
+        </>
       )}
 
       <DashboardBento

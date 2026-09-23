@@ -17,10 +17,13 @@ import { pricingKpiForMode } from "../../lib/dashboard/dashboardViewMode";
 // Mode Normal (see context/AppModeContext.jsx -- distinct from the
 // casual/expert `viewMode` prop above, which only ever swaps a KPI
 // label/value) shows just the 4 headline figures the redesign's "Premier
-// Aperçu" spec calls for: Trésorerie, Occupation, Satisfaction,
-// Réputation. Every other KPI stays computed in dashboardEngine.js and
-// is simply not rendered here -- Mode Expert (the default) still shows
-// all 14.
+// Aperçu" spec calls for: Trésorerie, Fréquentation, Satisfaction,
+// Réputation -- "Fréquentation" rather than the technical "Taux
+// d'occupation" (Étape 7's vocabulary consolidation: Mode Normal never
+// shows hotel-industry jargon, Mode Expert always does). Every other KPI
+// stays computed in dashboardEngine.js and is simply not rendered here
+// -- Mode Expert (the default) still shows all 14, in their technical
+// vocabulary.
 export default function DashboardKpis({ kpis, viewMode, appMode = "expert" }) {
   const cardCount = appMode === "normal" ? 4 : 14;
   if (!kpis) {
@@ -39,7 +42,7 @@ export default function DashboardKpis({ kpis, viewMode, appMode = "expert" }) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Trésorerie" value={kpis.cash === null || kpis.cash === undefined ? "—" : `${kpis.cash.toLocaleString()} €`} trend={kpis.cash >= 0 ? undefined : -1} />
-        <KpiCard label="Occupation" value={`${kpis.occupancyRate}%`} />
+        <KpiCard label="Fréquentation" value={`${kpis.occupancyRate}%`} />
         <KpiCard label="Satisfaction" value={kpis.satisfaction === null ? "—" : `${kpis.satisfaction.toFixed(1)}/5`} />
         <KpiCard label="Réputation" value={kpis.reputation === null || kpis.reputation === undefined ? "—" : `${kpis.reputation}/100`} trend={kpis.reputation >= 55 ? undefined : -1} />
       </div>
