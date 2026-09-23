@@ -68,10 +68,14 @@ test("Finance + Marketing: the marketing budget from both modules agrees for the
 });
 
 test("Restaurant + Marketing: cross-selling reflects the restaurant's share of total revenue", () => {
-  const hotelBundle = bundle();
+  const base = bundle();
+  // A guest's restaurant opens with no revenue history of its own
+  // (guestAdapter.js) -- give "withRestaurant" its own explicit, non-zero
+  // figure rather than leaning on that default.
+  const hotelBundle = { ...base, restaurantState: { ...base.restaurantState, finance: { ...base.restaurantState.finance, revenue: Array(12).fill(30000) } } };
   const noRestaurantRevenue = {
-    ...hotelBundle,
-    restaurantState: { ...hotelBundle.restaurantState, finance: { ...hotelBundle.restaurantState.finance, revenue: Array(12).fill(0) } },
+    ...base,
+    restaurantState: { ...base.restaurantState, finance: { ...base.restaurantState.finance, revenue: Array(12).fill(0) } },
   };
 
   const withRestaurant = runMarketingCycle({ hotelBundle, referenceDate: REFERENCE_DATE });
