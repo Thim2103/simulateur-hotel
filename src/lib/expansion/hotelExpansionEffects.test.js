@@ -63,7 +63,7 @@ describe("expansion / the scene entities", () => {
   const expansionRoom = { id: 900, number: "501", type: "standard", status: "libre", housekeeping_status: "clean", floor: 5, metadata: { expansionFloor: 5 } };
   const roomEntities = (props) => buildHotelSceneEntities({ rooms: [...rooms, expansionRoom], staffCount: 0, diagnostics: [], ...props }).filter((entity) => entity.type === "room");
 
-  it("by default only the base building is drawn, exactly as before (isometric views are unaffected)", () => {
+  it("by default only the base building is drawn, exactly as before (the schematic and scene views are unaffected)", () => {
     const entities = roomEntities();
     expect(entities).toHaveLength(rooms.length);
     expect(entities.some((entity) => entity.metadata.number === "501")).toBe(false);

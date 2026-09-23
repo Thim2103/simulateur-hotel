@@ -48,7 +48,6 @@ import DashboardNotifications from "../components/dashboard/DashboardNotificatio
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
-import IsoFinalView from "../ui/hotelView/isometricFinal/IsoFinalView";
 import HotelScene from "../ui/hotelView/scene/HotelScene";
 import SchematicHotelView from "../ui/hotelView/schematic/SchematicHotelView";
 import { feedbackForAction } from "../ui/hotelView/v2/decisionFeedback";
@@ -59,12 +58,13 @@ import GameNotification from "../ui/components/GameNotification";
 import { openRadialNav } from "../ui/radialNav/radialNavBus";
 import { fadeIn } from "../ui/animations";
 
-// The three ordinary (non-experimental) ways to visualize the hotel --
-// see the `displayMode` state below for how "experimental" layers on top
-// of these. Module-scope: static, never depends on props/state.
+// The two ordinary (non-experimental) ways to visualize the hotel -- see
+// the `displayMode` state below for how "experimental" layers on top of
+// these. Module-scope: static, never depends on props/state. The
+// isometric view (isometricFinal/) was retired: this board-game-style
+// schematic plan is the default and main reading of the hotel now.
 const VIEW_DISPLAY_MODES = [
   { id: "schematic", label: "📐 Plan schématique" },
-  { id: "isometric", label: "🏙️ Vue isométrique" },
   { id: "2d", label: "🗺️ Vue 2D" },
 ];
 
@@ -125,11 +125,14 @@ export default function Dashboard() {
 
   // Which hotel visualization is currently shown. The schematic 2D section
   // view (SchematicHotelView.jsx -- an architectural elevation-style plan,
-  // one row per floor) is now the default: the isometric renderers stay
-  // fully in the codebase and reachable, but are opt-in rather than shown
-  // first (per the "masquer/mettre de côté la vue isométrique actuelle,
-  // sans la supprimer" request). All four modes read from the exact same
-  // hotel props -- this is a pure presentation switch, nothing about the
+  // one row per floor) is the default and main reading of the hotel: the
+  // board-game-style, ultra-readable view the product is built around. The
+  // isometric renderers (isometricFinal/ and the earlier isometric/,
+  // isometricRetro/) were retired and removed outright -- not hidden -- to
+  // shed their visual/technical debt; "2d" (HotelView2DAnimated) and
+  // "experimental" (HotelScene, the newer 2.5D scene engine) remain as
+  // opt-in alternate readings. Every mode reads from the exact same hotel
+  // props -- this is a pure presentation switch, nothing about the
   // underlying data changes. Never persisted -- always starts back on the
   // schematic view.
   const [displayMode, setDisplayMode] = useState("schematic");
@@ -576,18 +579,6 @@ export default function Dashboard() {
       <div id="hotel-plan" className="scroll-mt-32">
       {displayMode === "experimental" ? (
         <HotelScene />
-      ) : displayMode === "isometric" ? (
-        <IsoFinalView
-          day={careerState.day}
-          rooms={careerState?.hotel?.rooms ?? []}
-          staffCount={dashboardState?.kpis?.staffCount ?? 0}
-          todaysEvents={dashboardState?.replaySummary?.events ?? []}
-          diagnostics={dashboardState?.insights?.diagnostics ?? []}
-          decisionFeedback={decisionFeedback}
-          cleaningRoomIds={cleaningRoomIds}
-          onNextDay={handleNextDay}
-          isRunning={isRunning}
-        />
       ) : displayMode === "2d" ? (
         <HotelView2DAnimated
           day={careerState.day}

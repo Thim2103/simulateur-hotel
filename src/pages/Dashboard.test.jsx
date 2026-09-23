@@ -159,15 +159,13 @@ test("shows a banner linking to the story page when a narrative event is pending
   expect(screen.getByRole("link", { name: /le consulter/i })).toHaveAttribute("href", "/career/story");
 });
 
-test("shows the schematic hotel view by default, with toggles to the isometric and 2D views", () => {
+test("shows the schematic hotel view by default, with a toggle to the 2D view", () => {
   useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
   useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
   render(<Dashboard />, { wrapper: MemoryRouter });
 
   expect(screen.getByTestId("schematic-hotel-view")).toBeInTheDocument();
-
-  fireEvent.click(screen.getByRole("button", { name: /vue isométrique/i }));
-  expect(screen.getByText(/vue isométrique premium de l'hôtel/i)).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /vue isométrique/i })).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: /vue 2d/i }));
   expect(screen.getByText(/vue de l'hôtel/i)).toBeInTheDocument();
