@@ -31,6 +31,7 @@ import BankingModal from "../components/banking/BankingModal";
 import HotelExpansionModal from "../components/expansion/HotelExpansionModal";
 import SuppliersModal from "../components/suppliers/SuppliersModal";
 import AccountingModal from "../components/accounting/AccountingModal";
+import TfeFeasibilityModal from "../components/feasibility/TfeFeasibilityModal";
 import { startProject } from "../lib/expansion/majorProjectsEngine";
 import { purchaseItems } from "../lib/suppliers/suppliersEngine";
 import { takeLoan, repayLoan } from "../lib/banking/bankingLoanEngine";
@@ -154,6 +155,8 @@ export default function Dashboard() {
   const [suppliersOpen, setSuppliersOpen] = useState(false);
   // Whether the accounting desk (balance sheet & income statement) is open.
   const [accountingOpen, setAccountingOpen] = useState(false);
+  // Whether the TFE feasibility desk (investment/financing plan & depreciation) is open.
+  const [tfeFeasibilityOpen, setTfeFeasibilityOpen] = useState(false);
   const previousGmMessageCount = useRef(null);
 
   useEffect(() => {
@@ -185,6 +188,7 @@ export default function Dashboard() {
     if (location.hash === "#projects") setProjectsOpen(true);
     if (location.hash === "#suppliers") setSuppliersOpen(true);
     if (location.hash === "#accounting") setAccountingOpen(true);
+    if (location.hash === "#tfe-feasibility") setTfeFeasibilityOpen(true);
     if (location.hash === "#hotel-plan") {
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
       document.getElementById("hotel-plan")?.scrollIntoView?.({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
@@ -224,6 +228,11 @@ export default function Dashboard() {
   const closeAccounting = () => {
     setAccountingOpen(false);
     if (location.hash === "#accounting") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
+  };
+
+  const closeTfeFeasibility = () => {
+    setTfeFeasibilityOpen(false);
+    if (location.hash === "#tfe-feasibility") navigate({ pathname: location.pathname, hash: "" }, { replace: true });
   };
 
   const isRunning = isCareerRunning || isDashboardRunning;
@@ -432,7 +441,7 @@ export default function Dashboard() {
       <MediaCrisisBanner crisis={crisis} onOpen={() => setCrisisOpen(true)} />
       <RehabBanner rehab={rehab} />
 
-      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} />
+      <QuickActions onOpenGrowth={() => setGrowthOpen(true)} reviewsToAnswer={reviewsToAnswer} onOpenLoyalty={() => setLoyaltyOpen(true)} onOpenBanking={() => setBankingOpen(true)} onOpenProjects={() => setProjectsOpen(true)} onOpenSuppliers={() => setSuppliersOpen(true)} onOpenAccounting={() => setAccountingOpen(true)} onOpenTfeFeasibility={() => setTfeFeasibilityOpen(true)} />
 
       <DashboardBento
         review={review}
@@ -513,6 +522,8 @@ export default function Dashboard() {
       {suppliersOpen && <SuppliersModal hotelState={careerState?.hotel?.hotelState} onPurchase={handlePurchaseItems} onClose={closeSuppliers} />}
 
       {accountingOpen && <AccountingModal hotelState={careerState?.hotel?.hotelState} restaurantState={careerState?.hotel?.restaurantState} day={careerState.day} onClose={closeAccounting} />}
+
+      {tfeFeasibilityOpen && <TfeFeasibilityModal hotelState={careerState?.hotel?.hotelState} day={careerState.day} onClose={closeTfeFeasibility} />}
 
       {bankingOpen && <BankingModal hotelState={careerState?.hotel?.hotelState} onTake={handleTakeLoan} onRepay={handleRepayLoan} onClose={closeBanking} />}
 

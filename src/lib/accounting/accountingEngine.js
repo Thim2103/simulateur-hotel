@@ -132,7 +132,7 @@ export function immobilisationLots(hotelState) {
 // Straight-line, capped at cost; a lot with no known acquisition day (should
 // not happen, but hotelState can be adjusted by hand in tests) depreciates
 // nothing rather than throw.
-function depreciationOf(lot, day) {
+export function depreciationOf(lot, day) {
   if (!Number.isFinite(lot.acquiredOnDay) || !Number.isFinite(day)) return 0;
   const age = Math.max(0, day - lot.acquiredOnDay);
   return Math.min(lot.cost, (lot.cost * age) / lot.usefulLifeDays);
