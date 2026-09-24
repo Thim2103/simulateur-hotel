@@ -201,7 +201,8 @@ export class GuestSpawner {
   }
 
   /**
-   * Transmet un avis au ReputationEngine et synchronise hotel.reputation.
+   * Transmet un avis au ReputationEngine et synchronise sur l'hôtel la réputation,
+   * la note moyenne des avis et l'attractivité.
    * @param {Object} review
    * @param {Object} [hotel]
    * @returns {number|null} La nouvelle réputation, ou null sans ReputationEngine.
@@ -210,7 +211,11 @@ export class GuestSpawner {
     if (!this.reputation) return null;
     this.reputation.addReview(review);
     const reputation = this.reputation.getReputation();
-    if (hotel) hotel.reputation = reputation;
+    if (hotel) {
+      hotel.reputation = reputation;
+      hotel.averageRating = this.reputation.getAverageRating();
+      hotel.attractiveness = this.reputation.getAttractiveness();
+    }
     return reputation;
   }
 

@@ -220,7 +220,7 @@ describe('GuestSpawner', () => {
       expect(guest.id).toMatch(/^customer-\d+$/);
       expect(guest.type).toBe('customer');
       const state = guest.getState();
-      expect(['business', 'tourist']).toContain(state.profile);
+      expect(['vip', 'business', 'family', 'tourist', 'budget']).toContain(state.profile);
       expect(state.season).toBe('high');
       expect(state.budget).toBeGreaterThan(0);
       expect(state.nights).toBeGreaterThanOrEqual(1);
@@ -611,6 +611,26 @@ describe('GuestSpawner', () => {
       // La réputation est à jour quand onReview est appelé
       expect(seen).toEqual([100, 50]);
       expect(hotel.reputation).toBe(50);
+    });
+
+    it("devrait reporter la note moyenne et l'attractivité sur l'hôtel", () => {
+      const spawner = new GuestSpawner({ reputation });
+
+      checkoutWithSatisfaction(spawner, [95, 70]); // 5 et 4 étoiles
+
+      expect(hotel.averageRating).toBe(4.5);
+      expect(hotel.reputation).toBe(88);
+      expect(hotel.attractiveness).toBeCloseTo(1.76, 10);
+    });
+
+    it("devrait faire chuter l'attractivité de l'hôtel après de mauvais avis", () => {
+      const spawner = new GuestSpawner({ reputation });
+
+      checkoutWithSatisfaction(spawner, [5, 5]); // 1 étoile
+
+      expect(hotel.averageRating).toBe(1);
+      expect(hotel.reputation).toBe(0);
+      expect(hotel.attractiveness).toBe(0.1); // plancher du ReputationEngine
     });
 
     it("ne devrait pas échouer sans hôtel dans le contexte", () => {
