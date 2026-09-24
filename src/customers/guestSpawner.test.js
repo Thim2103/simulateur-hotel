@@ -3,6 +3,7 @@ import { GuestSpawner } from './guestSpawner.js';
 import { generateCustomer } from './customerGenerator.js';
 import { Agent } from '../agents/Agent.js';
 import { EconomyEngine } from '../economy/economyEngine.js';
+import { ReputationEngine } from '../reputation/reputationEngine.js';
 
 // Mock de la dépendance externe : ids uniques pour pouvoir suivre plusieurs clients
 let mockId = 0;
@@ -51,6 +52,7 @@ describe('GuestSpawner', () => {
       expect(typeof spawner.onSpawn).toBe('function');
       expect(spawner.economy).toBeNull();
       expect(spawner.costPerGuest).toBe(20);
+      expect(spawner.reputation).toBeNull();
       expect(typeof spawner.onReview).toBe('function');
       expect(spawner.reviews).toEqual([]);
     });
@@ -453,6 +455,127 @@ describe('GuestSpawner', () => {
 
       expect(revenues).toEqual([100, 100, 100, 0]);
       expect(spawner.reviews).toHaveLength(1);
+    });
+  });
+
+  describe('intégration avec ReputationEngine', () => {
+    let reputation;
+
+    beforeEach(() => {
+      // Note de départ 3 (réputation 50), sans lissage pour des calculs lisibles
+      reputation = new ReputationEngine({ priorWeight: 0 });
+    });
+
+    const checkoutWithSatisfaction = (spawner, satisfactions, context = { hotel }) => {
+      satisfactions.forEach((satisfaction) => {
+        const guest = spawner.trySpawn(hotel, world);
+        guest.setState({ nights: 1, satisfaction });
+      });
+      return spawner.update(context);
+    };
+
+    it('recordReview ne devrait rien faire sans ReputationEngine', () => {
+      const spawner = new GuestSpawner();
+      checkoutWithSatisfaction(spawner, [100]);
+
+      expect(spawner.recordReview({ rating: 5 }, hotel)).toBeNull();
+      expect(hotel.reputation).toBe(50);
+    });
+
+    it('devrait transmettre les avis du check-out au ReputationEngine', () => {
+      const spawner = new GuestSpawner({ reputation });
+      checkoutWithSatisfaction(spawner, [95, 70]); // 5 et 4 étoiles
+
+      expect(reputation.getReviewCount()).toBe(2);
+      expect(reputation.reviews).toEqual(spawner.reviews);
+      expect(reputation.getAverageRating()).toBe(4.5);
+    });
+
+    it('devrait mettre à jour hotel.reputation après chaque avis', () => {
+      const spawner = new GuestSpawner({ reputation });
+      const seen = [];
+      const onReview = vi.fn(() => seen.push(hotel.reputation));
+      spawner.onReview = onReview;
+
+      checkoutWithSatisfaction(spawner, [95, 10]); // 5 puis 1 étoile
+
+      // La réputation est à jour quand onReview est appelé
+      expect(seen).toEqual([100, 50]);
+      expect(hotel.reputation).toBe(50);
+    });
+
+    it("ne devrait pas échouer sans hôtel dans le contexte", () => {
+      const spawner = new GuestSpawner({ reputation });
+
+      expect(() => checkoutWithSatisfaction(spawner, [95], {})).not.toThrow();
+      expect(reputation.getReputation()).toBe(100);
+    });
+
+    it("les bons avis devraient accélérer l'arrivée des clients", () => {
+      const spawner = new GuestSpawner({ reputation });
+      const before = spawner.calculateInterval(hotel, world);
+
+      checkoutWithSatisfaction(spawner, [95, 95]);
+
+      expect(before).toBe(10000);
+      expect(spawner.calculateInterval(hotel, world)).toBe(5000);
+    });
+
+    it("les mauvais avis devraient ralentir l'arrivée des clients", () => {
+      const spawner = new GuestSpawner({ reputation, baseSpawnRate: 10000 });
+
+      checkoutWithSatisfaction(spawner, [30, 30]); // 2 étoiles -> réputation 25
+
+      expect(hotel.reputation).toBe(25);
+      expect(spawner.calculateInterval(hotel, world)).toBe(20000);
+    });
+
+    it("la réputation du ReputationEngine devrait primer sur celle de l'hôtel", () => {
+      const spawner = new GuestSpawner({ reputation });
+      hotel.reputation = 100;
+
+      expect(spawner.getReputation(hotel)).toBe(50);
+      expect(spawner.calculateInterval(hotel, world)).toBe(10000);
+    });
+
+    it('devrait générer les nouveaux clients avec la réputation à jour', () => {
+      const spawner = new GuestSpawner({ reputation });
+      checkoutWithSatisfaction(spawner, [95]);
+      generateCustomer.mockClear();
+
+      spawner.trySpawn({ hasAvailableRooms: () => true }, world);
+
+      expect(generateCustomer).toHaveBeenCalledWith({ reputation: 100, season: 'normal' });
+    });
+
+    it('le prochain spawn planifié devrait tenir compte de la nouvelle réputation', () => {
+      const spawner = new GuestSpawner({ reputation, onSpawn: onSpawnMock });
+      spawner.start(hotel, world); // premier délai : 10000 ms
+
+      checkoutWithSatisfaction(spawner, [95]); // réputation 100
+      onSpawnMock.mockClear();
+
+      vi.advanceTimersByTime(10000); // spawn, puis prochain délai : 5000 ms
+      expect(onSpawnMock).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(5000);
+      expect(onSpawnMock).toHaveBeenCalledTimes(2);
+
+      spawner.stop();
+    });
+
+    it('un séjour complet devrait être facturé puis noté', () => {
+      const economy = new EconomyEngine();
+      const spawner = new GuestSpawner({ economy, reputation, costPerGuest: 0 });
+      const guest = spawner.trySpawn(hotel, world); // 3 nuits
+      guest.setState({ satisfaction: 90 });
+
+      [1, 2, 3].forEach(() => spawner.update({ hotel }));
+
+      expect(economy.history.map((r) => r.roomRevenue)).toEqual([100, 100, 100]);
+      expect(reputation.getAverageRating()).toBe(5);
+      expect(hotel.reputation).toBe(100);
+      expect(spawner.getGuests()).toEqual([]);
     });
   });
 

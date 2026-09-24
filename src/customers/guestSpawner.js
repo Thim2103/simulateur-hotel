@@ -10,6 +10,7 @@ export class GuestSpawner {
     this.guests = new Map(); // id -> Agent client actif
     this.economy = options.economy || null; // EconomyEngine (optionnel)
     this.costPerGuest = options.costPerGuest ?? 20; // Coût d'exploitation par chambre occupée et par cycle
+    this.reputation = options.reputation || null; // ReputationEngine (optionnel)
     this.onReview = options.onReview || (() => {});
     this.reviews = []; // Avis laissés par les clients au check-out
   }
@@ -35,14 +36,27 @@ export class GuestSpawner {
   }
 
   /**
+   * Réputation courante de l'hôtel (0 à 100) : celle du ReputationEngine s'il est
+   * configuré, sinon hotel.reputation (50 par défaut).
+   * @param {Object} [hotel]
+   * @returns {number}
+   */
+  getReputation(hotel) {
+    if (this.reputation) return this.reputation.getReputation();
+    return hotel?.reputation || 50;
+  }
+
+  /**
    * Calcule le délai avant la prochaine tentative d'apparition basé sur la réputation et la saison.
    */
   calculateInterval(hotel, world) {
-    const reputation = hotel?.reputation || 50; // 0 à 100
     const seasonalityModifier = world?.getSeasonalityMultiplier() || 1.0; // Ex: 0.5 (hiver/basse) à 2.0 (été/haute)
+    const attractiveness = this.reputation
+      ? this.reputation.getAttractiveness()
+      : this.getReputation(hotel) / 50;
 
     // Plus la réputation est haute et la saison favorable, plus l'intervalle est court
-    const effectiveRate = (reputation / 50) * seasonalityModifier;
+    const effectiveRate = attractiveness * seasonalityModifier;
     const interval = this.baseSpawnRate / Math.max(0.1, effectiveRate);
 
     return Math.max(this.minSpawnRate, interval);
@@ -69,7 +83,7 @@ export class GuestSpawner {
     }
 
     const customer = generateCustomer({
-      reputation: hotel?.reputation || 50,
+      reputation: this.getReputation(hotel),
       season: world?.currentSeason || 'normal'
     });
 
@@ -140,7 +154,9 @@ export class GuestSpawner {
 
   /**
    * Fait partir un client : libère sa chambre, calcule sa satisfaction finale,
-   * émet son avis puis le retire des clients actifs.
+   * émet son avis puis le retire des clients actifs. L'avis est transmis au
+   * ReputationEngine s'il est configuré, et la nouvelle réputation est reportée
+   * sur hotel.reputation.
    * @param {Agent} guest
    * @param {Object} [context={}]
    * @returns {{guestId: string, profile: string, satisfaction: number, rating: number, tick: *}} L'avis du client.
@@ -163,9 +179,24 @@ export class GuestSpawner {
     guest.setState({ status: 'checked-out', satisfaction });
     guest.emit('checkout', review);
     this.reviews.push(review);
+    this.recordReview(review, hotel);
     this.onReview(review, guest);
     this.removeGuest(guest.id);
     return review;
+  }
+
+  /**
+   * Transmet un avis au ReputationEngine et synchronise hotel.reputation.
+   * @param {Object} review
+   * @param {Object} [hotel]
+   * @returns {number|null} La nouvelle réputation, ou null sans ReputationEngine.
+   */
+  recordReview(review, hotel) {
+    if (!this.reputation) return null;
+    this.reputation.addReview(review);
+    const reputation = this.reputation.getReputation();
+    if (hotel) hotel.reputation = reputation;
+    return reputation;
   }
 
   /**
