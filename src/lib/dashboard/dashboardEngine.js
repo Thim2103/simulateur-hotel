@@ -4,7 +4,7 @@
 // Dashboard.jsx needs in one call. Nothing here talks to Supabase or
 // re-simulates anything; it only reads and reshapes state that other
 // engines already computed.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { buildReplayRunFromCareerRun, getCycleForRun } from "../replay/replayEngine";
 import { kpisForCycle } from "../replay/replayKpis";
 import { eventsForCycle } from "../replay/replayEvents";

@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import ProgressionDashboard from "./ProgressionDashboard";
 import { useProgression } from "../hooks/useProgression";
 
-jest.mock("../hooks/useProgression");
+vi.mock("../hooks/useProgression");
 
 function sampleReport(overrides = {}) {
   return {

@@ -7,8 +7,8 @@ import { useOptionalCareerContext } from "../../context/CareerContext";
 import { useOptionalGmDesk } from "../gmDesk/GmDeskProvider";
 import { AppModeProvider } from "../../context/AppModeContext";
 
-jest.mock("../../context/CareerContext");
-jest.mock("../gmDesk/GmDeskProvider", () => ({ ...jest.requireActual("../gmDesk/GmDeskProvider"), useOptionalGmDesk: jest.fn() }));
+vi.mock("../../context/CareerContext");
+vi.mock("../gmDesk/GmDeskProvider", async (importOriginal) => ({ ...(await importOriginal()), useOptionalGmDesk: jest.fn() }));
 
 const rooms = [
   { id: 1, number: "101", type: "standard", status: "occupée" },

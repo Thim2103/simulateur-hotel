@@ -4,8 +4,8 @@ import ClientsSegments from "./ClientsSegments";
 import { useCareerContext } from "../context/CareerContext";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useClientsEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useClientsEngine");
 
 function careerState(overrides = {}) {
   return { day: 3, status: "active", hotel: {}, missions: [], objectives: [], ...overrides };

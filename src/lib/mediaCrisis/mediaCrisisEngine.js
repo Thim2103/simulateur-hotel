@@ -30,7 +30,7 @@
 //
 // State: `hotelState.mediaCrisis` = { crises, nextId, rehab, lastOutcome }. Pure
 // and deterministic; a hotel that never had a crisis keeps no such state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { dayIndexOf, toIsoDate, auditOn } from "../hotelEvents/hotelEventsEngine";
 import { mixedRandom } from "../clients/guestProfiles";
 import { listReviews } from "../clients/guestReviewEngine";

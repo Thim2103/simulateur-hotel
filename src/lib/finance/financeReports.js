@@ -8,7 +8,7 @@
 // shape analyzeRun()'s own diagnostics already have, so a caller (e.g.
 // Dashboard.jsx, or a future pass over Analytics) can concat the two
 // lists and treat them identically.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function generateFinancialReport(financeState) {
   const state = safeObject(financeState);

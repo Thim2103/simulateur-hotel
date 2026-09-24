@@ -4,8 +4,8 @@ import RestaurantMenuEngineering from "./RestaurantMenuEngineering";
 import { useCareerContext } from "../context/CareerContext";
 import { useRestaurantAdvanced } from "../hooks/useRestaurantAdvanced";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useRestaurantAdvanced");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useRestaurantAdvanced");
 
 function careerState(overrides = {}) {
   return { day: 5, status: "active", hotel: { hotelState: {}, restaurantState: {} }, missions: [], objectives: [], rewardsInbox: [], ...overrides };

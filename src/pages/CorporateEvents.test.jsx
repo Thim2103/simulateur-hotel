@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import CorporateEvents from "./CorporateEvents";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 const DAY = 86400000;
 const START = "2026-09-14";

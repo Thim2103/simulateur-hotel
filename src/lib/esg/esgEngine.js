@@ -6,7 +6,7 @@
 // certifications -> diagnostics -> forecast), records it into the ESG
 // replay log, and exposes the ESG_ACTION_CATALOG a player can apply to
 // their own hotel bundle -- see esgActions.js.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { computeCO2Emissions, computeEnergyConsumption, computeEsgCosts, computeEsgScore, computeWasteGenerated, computeWaterConsumption, averageMenuSales } from "./esgCalculations";
 import { computeAllCertificationsProgress, nextEligibleCertification } from "./esgCertifications";
 import { generateEsgDiagnostics } from "./esgDiagnostics";

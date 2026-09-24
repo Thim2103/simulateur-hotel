@@ -5,7 +5,7 @@
 // the regular Solo/Carrière mode uses) so a Pro run never mixes with, or
 // gets mixed up with, the player's regular career -- same isolation
 // lib/tfe/tfeState.js already established for the TFE Solo mode.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function createProState(overrides = {}) {
   const source = safeObject(overrides);

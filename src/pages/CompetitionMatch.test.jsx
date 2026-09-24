@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import CompetitionMatch from "./CompetitionMatch";
 import { useCompetitionContext } from "../context/CompetitionContext";
 
-jest.mock("../context/CompetitionContext");
+vi.mock("../context/CompetitionContext");
 
 function renderAtMatch(matchId = "m1") {
   return render(

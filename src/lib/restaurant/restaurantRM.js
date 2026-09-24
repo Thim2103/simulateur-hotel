@@ -1,7 +1,7 @@
 // Lets the hotel's own revenue-management signal (lib/rm/rmEngine.js) shape
 // restaurant demand: a full hotel drives breakfast/room-service covers, an
 // empty one means the restaurant needs to court outside customers.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 export function deriveDemandFromRM({ rmReport, hotelOccupancyPercent = 0 } = {}) {
   const forecastNext7 = safeNumber(safeObject(safeObject(rmReport).forecast).next7, 0);

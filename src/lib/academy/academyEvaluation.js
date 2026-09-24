@@ -1,7 +1,7 @@
 // Generates the final, class-wide report a teacher reads once every group
 // has finished a scenario: an overview of the class's performance plus
 // each group's own graded verdict (see lib/scenario/scenarioEvaluation.js).
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { evaluateFinal } from "../scenario/scenarioEvaluation";
 import { compareGroups } from "./academyComparison";
 

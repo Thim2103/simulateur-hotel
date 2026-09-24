@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import HousekeepingReport from "./HousekeepingReport";
 import { useHousekeepingEngine } from "../hooks/useHousekeepingEngine";
 
-jest.mock("../hooks/useHousekeepingEngine");
+vi.mock("../hooks/useHousekeepingEngine");
 
 function housekeepingState(overrides = {}) {
   return {

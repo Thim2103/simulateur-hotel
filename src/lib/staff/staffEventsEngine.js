@@ -17,7 +17,7 @@
 // staffRoster.advanceRoster() (so it sees the day's fresh fatigue). Its
 // log lives at `hotelState.staffEventLog`, newest last, capped; DailyReview
 // shows today's entries.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { getRoster, hasRoster, removeFromRoster } from "./staffRoster";
 

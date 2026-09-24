@@ -26,7 +26,7 @@
 // Pure and deterministic (no rng; wear breakdowns use the FNV hash of the
 // day). A hotel that never chose anything and has nothing beyond the
 // default condition simply has no `maintenance` state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { UPGRADES } from "../zones/zoneUpgradesEngine";
 import { builtFloors } from "../expansion/hotelExpansionEngine";
 import { ecoUpkeepFactor } from "../expansion/majorProjectsEngine";

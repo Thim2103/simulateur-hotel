@@ -4,8 +4,8 @@ import EsgDashboard from "./EsgDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useEsgEngine } from "../hooks/useEsgEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useEsgEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useEsgEngine");
 
 function careerState(overrides = {}) {
   return {

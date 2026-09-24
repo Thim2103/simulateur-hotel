@@ -7,7 +7,7 @@
 //   Plowhorses  high popularity, low profitability  -- re-cost or re-price.
 //   Puzzles     low popularity, high profitability  -- reposition/promote.
 //   Dogs        low popularity, low profitability   -- candidates to cut.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export function classifyMenuItem({ popularityIndex, profitabilityIndex }) {
   const highPopularity = popularityIndex >= 1;

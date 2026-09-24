@@ -26,7 +26,7 @@
 //
 // State: `hotelState.targetedCampaigns` = { active: [...], history: [...],
 // nextId }. Pure, deterministic, inert when nothing was ever launched.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { seasonIdOn, dayIndexOf, toIsoDate } from "../hotelEvents/hotelEventsEngine";

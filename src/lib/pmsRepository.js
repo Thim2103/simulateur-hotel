@@ -1,4 +1,4 @@
-import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase.js";
 import {
   normalizeClient,
   normalizeReservation,
@@ -16,7 +16,7 @@ import { resolveSession } from "./sessionResolver";
 // files with no such dependency.
 import { createGuestRepository } from "./guest/guestRepository";
 import { seedReservations, seedRooms } from "./guest/guestPmsSeed";
-import { safeArray } from "./safe";
+import { safeArray } from "./safe.js";
 
 // One-time-per-table set of tables this browser session has already tried to
 // claim legacy (pre-auth, user_id IS NULL) rows for, so repeated loads don't

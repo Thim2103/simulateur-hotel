@@ -7,7 +7,7 @@
 // the exact same formulas staffCalculations.js uses for the current
 // cycle, so the forecast stays internally consistent with "today"'s
 // figures rather than being a separate, disconnected model.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 import { computeAbsenteeism, computeProductivity, computeTurnover } from "./staffCalculations";
 
 const HORIZON_DAYS = 30;

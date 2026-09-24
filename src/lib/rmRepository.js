@@ -1,4 +1,4 @@
-import { assertSupabaseConfigured } from "./supabase";
+import { assertSupabaseConfigured } from "./supabase.js";
 
 async function list(table, configure) {
   const client = assertSupabaseConfigured();

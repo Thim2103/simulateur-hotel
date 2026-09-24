@@ -4,7 +4,7 @@
 // certification" is a genuine milestone, not a checkbox (contrast with
 // the old ESG.jsx page, where certifications were a free-text checklist
 // with no gameplay effect).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export const CERTIFICATION_CATALOG = [
   {

@@ -7,7 +7,7 @@
 // passes them in here, and this file only adds TFE-scoped, cross-module
 // diagnostics (chapter pacing, bankruptcy risk, overall trajectory) that
 // no single business module could produce on its own.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

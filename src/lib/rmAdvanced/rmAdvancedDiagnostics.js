@@ -3,7 +3,7 @@
 // other module's own diagnostics generator already uses (see
 // lib/clients/clientsDiagnostics.js / lib/restaurantAdvanced/
 // restaurantDiagnostics.js).
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 export function generateRmAdvancedDiagnostics({
   compression = {},

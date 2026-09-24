@@ -2,7 +2,7 @@
 // own restaurant_finance's persisted revenue/costs history -- that stays
 // with lib/dailyCycle/updateFinance.js -- this only derives a same-cycle
 // snapshot (menu margin, payroll, estimated profit) from the current state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 export function computeRestaurantFinanceSummary(state) {
   const menu = safeArray(state?.menu, []);

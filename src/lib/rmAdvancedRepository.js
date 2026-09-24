@@ -3,7 +3,7 @@
 // as lib/restaurantAdvancedRepository.js / lib/clientsRepository.js:
 // resolveSession() decides Supabase vs guest before anything else runs,
 // so a mount-time load can't race ahead of the guest fallback.
-import { assertSupabaseConfigured, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, requireUserId } from "./supabase.js";
 import { resolveSession } from "./sessionResolver";
 import { createGuestRepository } from "./guest/guestRepository";
 import { safeLoad } from "./safeLoad";

@@ -5,7 +5,7 @@
 // diagnostics vocabulary, but classified into one of the 13
 // GM_MESSAGE_TYPES and given a matching action list, since a GM Desk
 // message needs an actual decision, not just a link).
-import { safeArray } from "../../lib/safe";
+import { safeArray } from "../../lib/safe.js";
 import { staffFromCareerState } from "../../lib/staff/staffEngine";
 import { housekeepingFromCareerState } from "../../lib/housekeeping/housekeepingEngine";
 import { financeFromCareerState } from "../../lib/finance/financeEngine";

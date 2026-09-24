@@ -13,7 +13,7 @@
 // Never throws, and its guest branch never surfaces a Supabase error:
 // see hooks/useSupabaseSession.test.js's "the guest fallback never
 // surfaces a Supabase error to the UI" test for the contract this keeps.
-import { ensureAuthSession } from "./supabase";
+import { ensureAuthSession } from "./supabase.js";
 import { ensureGuestSession, loadGuestSession } from "./guest/guestSession";
 
 export async function resolveSession() {

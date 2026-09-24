@@ -4,7 +4,7 @@
 // a single bad cycle dents it but doesn't erase it. Same "run-rate
 // extrapolation" approach lib/marketing/marketingReputation.js uses for
 // the hotel's overall reputation score.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const LOYALTY_FLOOR = 0;
 const LOYALTY_CEILING = 100;

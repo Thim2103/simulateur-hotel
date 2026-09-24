@@ -4,8 +4,8 @@ import StaffDashboard from "./StaffDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useStaffEngine } from "../hooks/useStaffEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useStaffEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useStaffEngine");
 
 function careerState(overrides = {}) {
   return {

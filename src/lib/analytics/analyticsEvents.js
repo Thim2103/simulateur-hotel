@@ -1,6 +1,6 @@
 // Event-impact analysis on top of a run's replay: which events actually
 // hurt the score, and how often each category showed up.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { eventFrequency, eventTimeline } from "../replay/replayEvents";
 
 export function analyzeEventFrequency(cycles) {

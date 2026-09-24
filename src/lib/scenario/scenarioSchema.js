@@ -3,7 +3,7 @@
 // Deliberately smaller than the blueprint's UI-authoring surface: this
 // implementation covers what the engine and Academy module need to load,
 // run and score a scenario, not a full drafting workflow.
-import { safeArray, safeNumber, safeObject, safeString } from "../safe";
+import { safeArray, safeNumber, safeObject, safeString } from "../safe.js";
 
 export const SCENARIO_MODES = ["solo", "academie", "competition", "professionnel"];
 export const SCENARIO_STATUS = ["draft", "published", "archived"];

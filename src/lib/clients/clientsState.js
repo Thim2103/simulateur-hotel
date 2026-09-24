@@ -5,7 +5,7 @@
 // modules' outputs and layers segments/satisfaction/reviews/loyalty/
 // complaints/behaviors/diagnostics/forecast on top, then persists that
 // layer (via lib/clientsRepository.js) plus its own replay log.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createClientsState(overrides = {}) {

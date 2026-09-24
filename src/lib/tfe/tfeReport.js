@@ -4,7 +4,7 @@
 // "plain enough to open in any browser or print-to-PDF" approach
 // lib/finance/financeReports.js's exportFinancialReportHtml() already
 // uses.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { scoreGrade } from "./tfeScore";
 
 export function generateTfeReport(tfeState) {

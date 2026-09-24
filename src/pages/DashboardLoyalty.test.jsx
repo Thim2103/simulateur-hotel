@@ -10,13 +10,13 @@ import { useProEngine } from "../hooks/useProEngine";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 import { launchProgram } from "../lib/loyalty/loyaltyProgramEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useDashboard");
-jest.mock("../hooks/useTfeEngine");
-jest.mock("../hooks/useClientsEngine");
-jest.mock("../hooks/useRmAdvancedEngine");
-jest.mock("../hooks/useProEngine");
-jest.mock("../ui/gmDesk/GmDeskProvider", () => ({ ...jest.requireActual("../ui/gmDesk/GmDeskProvider"), useGmDesk: jest.fn() }));
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useDashboard");
+vi.mock("../hooks/useTfeEngine");
+vi.mock("../hooks/useClientsEngine");
+vi.mock("../hooks/useRmAdvancedEngine");
+vi.mock("../hooks/useProEngine");
+vi.mock("../ui/gmDesk/GmDeskProvider", async (importOriginal) => ({ ...(await importOriginal()), useGmDesk: jest.fn() }));
 
 const rooms = [{ id: 1, number: "101", type: "standard", status: "libre", housekeeping_status: "clean", price: 120, capacity: 2 }];
 const rich = { finance: { revenue: [50000], costs: [0] }, progression: { player: { reputation: 70 } } };

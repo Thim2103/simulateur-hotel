@@ -2,11 +2,11 @@ import { render, screen } from "@testing-library/react";
 import RMDashboard from "./RMDashboard";
 import { useRM } from "../hooks/useRM";
 
-jest.mock("../hooks/useRM");
+vi.mock("../hooks/useRM");
 
 // Chart.js needs a real canvas context, which jsdom doesn't provide; these
 // tests only care about the surrounding text/DOM, not the rendered canvas.
-jest.mock("react-chartjs-2", () => ({
+vi.mock("react-chartjs-2", () => ({
   Line: () => <div data-testid="line-chart" />,
   Bar: () => <div data-testid="bar-chart" />,
   Pie: () => <div data-testid="pie-chart" />,

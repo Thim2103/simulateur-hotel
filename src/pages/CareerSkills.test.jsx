@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import CareerSkills from "./CareerSkills";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 test("shows a prompt to start a career when none exists", () => {
   useCareerContext.mockReturnValue({ careerState: null });

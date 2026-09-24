@@ -6,7 +6,7 @@
 // opportunités" framing of a TFE playthrough rather than the
 // day-to-day operational actions each business dashboard already
 // exposes on its own.
-import { safeObject } from "../safe";
+import { safeObject } from "../safe.js";
 import { applyFinancialDecision } from "../finance/financeEngine";
 import { applyStaffDecision } from "../staff/staffEngine";
 import { applyMarketingDecision } from "../marketing/marketingEngine";

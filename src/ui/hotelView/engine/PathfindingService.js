@@ -17,7 +17,7 @@
 // keeps the result reproducible for the same grid/start/target, which the
 // step's own "chemin déterministe" demo scenario and this file's tests
 // both rely on.
-import { safeNumber, safeObject } from "../../../lib/safe";
+import { safeNumber, safeObject } from "../../../lib/safe.js";
 
 const NEIGHBOR_OFFSETS = [
   { dCol: 0, dRow: -1 }, // north

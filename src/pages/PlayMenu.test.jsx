@@ -6,12 +6,12 @@ import { useSupabaseSession } from "../hooks/useSupabaseSession";
 import { signInWithPassword, signUpWithPassword } from "../lib/auth";
 import * as envModule from "../lib/env";
 
-jest.mock("../hooks/useGuest");
-jest.mock("../hooks/useSupabaseSession");
-jest.mock("../lib/auth");
+vi.mock("../hooks/useGuest");
+vi.mock("../hooks/useSupabaseSession");
+vi.mock("../lib/auth");
 const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: () => mockNavigate,
 }));
 

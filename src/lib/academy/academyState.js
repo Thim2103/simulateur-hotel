@@ -2,7 +2,7 @@
 // serialization boundary a ScenarioRunState needs before it can be
 // persisted as jsonb (see academyRepository.js): scenarioEngine's runState
 // carries a `triggeredEventIds` Set, which JSON.stringify silently drops.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function createAcademyState(overrides = {}) {
   return {

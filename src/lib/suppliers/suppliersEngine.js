@@ -31,7 +31,7 @@
 // firstPurchasedDay}}, ledger: {2, 3, 6}, today, lastOutcome }. Pure and
 // deterministic (no rng); a hotel that never bought anything keeps no state,
 // and every effect below is neutral.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { fundingPlan, payInvestment, treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { CATALOGUE, CATEGORIES, CATEGORY_IDS, TIERS, TIER_IDS, accountClassOf, itemById } from "./suppliersData";

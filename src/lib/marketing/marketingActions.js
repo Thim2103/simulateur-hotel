@@ -5,7 +5,7 @@
 // () and lib/staff/staffEngine.js's applyStaffDecision() use, so
 // useMarketingEngine.js can drive it through useCareer.js's
 // applyHotelAdjustment() exactly the way Finance/Staff already do.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { launchCampaign as launchCampaignPure } from "./marketingCampaigns";
 import { rebalanceChannels } from "./marketingChannels";
 import { nextPositioningTier, resolvePositioningTier } from "./marketingCalculations";

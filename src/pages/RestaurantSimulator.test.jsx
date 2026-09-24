@@ -4,8 +4,8 @@ import RestaurantSimulator from "./RestaurantSimulator";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 import { useRestaurant } from "../hooks/useRestaurant";
 
-jest.mock("../hooks/useRestaurantSimulator");
-jest.mock("../hooks/useRestaurant");
+vi.mock("../hooks/useRestaurantSimulator");
+vi.mock("../hooks/useRestaurant");
 
 function baseProgression(overrides = {}) {
   return { ready: false, playerLevel: 1, xp: 0, tutorials: [], achievements: [], difficulty: "easy", currentLevel: 0, modules: [], nextUnlock: "", ...overrides };

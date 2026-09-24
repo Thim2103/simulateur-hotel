@@ -5,7 +5,7 @@ const mockSignUp = jest.fn();
 const mockSignInWithPassword = jest.fn();
 const mockSignOut = jest.fn();
 
-jest.mock("@supabase/supabase-js", () => ({
+vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({ auth: { signUp: mockSignUp, signInWithPassword: mockSignInWithPassword, signOut: mockSignOut } }),
 }));
 
@@ -29,7 +29,7 @@ describe("auth.js", () => {
 
   test("signUpWithPassword returns the new session when email confirmation is disabled", async () => {
     mockSignUp.mockResolvedValue({ data: { session: { access_token: "t" }, user: { id: "u1" } }, error: null });
-    const { signUpWithPassword } = require("./auth");
+    const { signUpWithPassword } = await import("./auth");
 
     const result = await signUpWithPassword("a@b.com", "hunter22");
     expect(mockSignUp).toHaveBeenCalledWith({ email: "a@b.com", password: "hunter22" });
@@ -39,7 +39,7 @@ describe("auth.js", () => {
 
   test("signUpWithPassword returns a null session when email confirmation is required", async () => {
     mockSignUp.mockResolvedValue({ data: { session: null, user: { id: "u1" } }, error: null });
-    const { signUpWithPassword } = require("./auth");
+    const { signUpWithPassword } = await import("./auth");
 
     const result = await signUpWithPassword("a@b.com", "hunter22");
     expect(result.session).toBeNull();
@@ -47,14 +47,14 @@ describe("auth.js", () => {
 
   test("signUpWithPassword throws Supabase's own error", async () => {
     mockSignUp.mockResolvedValue({ data: null, error: new Error("Email already registered") });
-    const { signUpWithPassword } = require("./auth");
+    const { signUpWithPassword } = await import("./auth");
 
     await expect(signUpWithPassword("a@b.com", "hunter22")).rejects.toThrow("Email already registered");
   });
 
   test("signInWithPassword returns the session on success", async () => {
     mockSignInWithPassword.mockResolvedValue({ data: { session: { access_token: "t" }, user: { id: "u1" } }, error: null });
-    const { signInWithPassword } = require("./auth");
+    const { signInWithPassword } = await import("./auth");
 
     const result = await signInWithPassword("a@b.com", "hunter22");
     expect(mockSignInWithPassword).toHaveBeenCalledWith({ email: "a@b.com", password: "hunter22" });
@@ -63,14 +63,14 @@ describe("auth.js", () => {
 
   test("signInWithPassword throws on invalid credentials", async () => {
     mockSignInWithPassword.mockResolvedValue({ data: null, error: new Error("Invalid login credentials") });
-    const { signInWithPassword } = require("./auth");
+    const { signInWithPassword } = await import("./auth");
 
     await expect(signInWithPassword("a@b.com", "wrong")).rejects.toThrow("Invalid login credentials");
   });
 
   test("signOut resolves on success and throws on failure", async () => {
     mockSignOut.mockResolvedValue({ error: null });
-    const { signOut } = require("./auth");
+    const { signOut } = await import("./auth");
     await expect(signOut()).resolves.toBeUndefined();
 
     mockSignOut.mockResolvedValue({ error: new Error("network error") });
@@ -81,7 +81,7 @@ describe("auth.js", () => {
     delete process.env.REACT_APP_SUPABASE_URL;
     delete process.env.REACT_APP_SUPABASE_ANON_KEY;
     jest.resetModules();
-    const { signInWithPassword } = require("./auth");
+    const { signInWithPassword } = await import("./auth");
 
     await expect(signInWithPassword("a@b.com", "hunter22")).rejects.toThrow(/pas configure/i);
   });

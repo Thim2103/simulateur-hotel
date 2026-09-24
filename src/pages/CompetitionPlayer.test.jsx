@@ -4,7 +4,7 @@ import CompetitionPlayer from "./CompetitionPlayer";
 import { useCompetitionContext } from "../context/CompetitionContext";
 import { createReplayLog, recordCycle } from "../lib/scenario/scenarioReplay";
 
-jest.mock("../context/CompetitionContext");
+vi.mock("../context/CompetitionContext");
 
 function renderAtPlayer() {
   return render(

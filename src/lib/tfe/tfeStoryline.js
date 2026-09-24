@@ -11,7 +11,7 @@
 // choice (see tfeScenario.js's "taille"), so an absolute EBITDA target
 // would be trivial for a large hotel and unreachable for a small one --
 // ratios stay fair regardless of size.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { evaluateObjectives, readKpi } from "../scenario/scenarioObjectives";
 
 export const TFE_CHAPTER_CATALOG = [

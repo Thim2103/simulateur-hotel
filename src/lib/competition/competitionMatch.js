@@ -1,6 +1,6 @@
 // Pure, immutable helpers for managing an organizer's matches (a match =
 // one global scenario, played simultaneously by every registered player).
-import { safeArray, safeString } from "../safe";
+import { safeArray, safeString } from "../safe.js";
 import { playersForMatch } from "./competitionState";
 
 export function createMatch({ id, name, organizerId }) {

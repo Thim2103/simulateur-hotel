@@ -3,15 +3,21 @@ import { useAnalytics } from "./useAnalytics";
 import replayRepository from "../lib/replay/replayRepository";
 import analyticsRepository from "../lib/analytics/analyticsRepository";
 
-jest.mock("../lib/replay/replayRepository", () => ({
-  loadReplayRun: jest.fn(),
-}));
+vi.mock("../lib/replay/replayRepository", () => {
+  const mod = {
+    loadReplayRun: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
-jest.mock("../lib/analytics/analyticsRepository", () => ({
-  saveAnalysis: jest.fn(),
-  saveReport: jest.fn(),
-  listAnalyses: jest.fn(),
-}));
+vi.mock("../lib/analytics/analyticsRepository", () => {
+  const mod = {
+    saveAnalysis: jest.fn(),
+    saveReport: jest.fn(),
+    listAnalyses: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function replayRun(overrides = {}) {
   return {

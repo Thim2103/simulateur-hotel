@@ -5,13 +5,16 @@ import { useSupabaseSession } from "./useSupabaseSession";
 import staffRepository from "../lib/staffRepository";
 import { createGuestHotelBundle } from "../lib/guest";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/staffRepository", () => ({
-  getStaffState: jest.fn(),
-  saveStaffState: jest.fn(),
-  saveStaffForecast: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/staffRepository", () => {
+  const mod = {
+    getStaffState: jest.fn(),
+    saveStaffState: jest.fn(),
+    saveStaffForecast: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function careerFixture(overrides = {}) {
   return {

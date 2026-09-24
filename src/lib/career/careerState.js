@@ -3,7 +3,7 @@
 // missions/objectives/storyline/skills/rewards, and the running replay
 // log for the whole career (see lib/replay/replayEngine.js's
 // buildReplayRunFromCareerRun()).
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { defaultHotelState } from "../hotel";
 import { createInitialRestaurantState } from "../restaurant/restaurantState";
 import { createReplayLog } from "../scenario/scenarioReplay";

@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import TfeForecast from "./TfeForecast";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 
-jest.mock("../hooks/useTfeEngine");
+vi.mock("../hooks/useTfeEngine");
 
 function forecast() {
   return {

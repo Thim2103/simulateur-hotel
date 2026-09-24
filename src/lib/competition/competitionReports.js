@@ -1,7 +1,7 @@
 // Shapes a player's run into the reports the match view and the final
 // review actually read: the daily cycle-by-cycle history (from the
 // scenario's own replay log) plus a compact summary of current standing.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { buildReplay } from "../scenario/scenarioReplay";
 
 export function collectDailyReports(runState) {

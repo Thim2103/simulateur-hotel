@@ -4,10 +4,10 @@ import GmDesk from "./GmDesk";
 import { useGmDesk } from "./GmDeskProvider";
 import { openRadialNav } from "../radialNav/radialNavBus";
 
-jest.mock("../radialNav/radialNavBus", () => ({ openRadialNav: jest.fn() }));
+vi.mock("../radialNav/radialNavBus", () => ({ openRadialNav: jest.fn() }));
 
-jest.mock("./GmDeskProvider", () => ({
-  ...jest.requireActual("./GmDeskProvider"),
+vi.mock("./GmDeskProvider", async (importOriginal) => ({
+  ...(await importOriginal()),
   useGmDesk: jest.fn(),
 }));
 

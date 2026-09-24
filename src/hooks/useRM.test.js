@@ -13,11 +13,11 @@ const mockRunRMEngine = jest.fn();
 const mockListRooms = jest.fn();
 const mockListReservations = jest.fn();
 
-jest.mock("../lib/rm", () => ({
+vi.mock("../lib/rm", () => ({
   runRM: (...args) => mockRunRMEngine(...args),
 }));
 
-jest.mock("../lib/pmsRepository", () => ({
+vi.mock("../lib/pmsRepository", () => ({
   listRooms: (...args) => mockListRooms(...args),
   listReservations: (...args) => mockListReservations(...args),
 }));

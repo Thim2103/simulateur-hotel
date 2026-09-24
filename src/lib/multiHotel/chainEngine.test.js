@@ -1,6 +1,6 @@
 const mockRunDailyCycle = jest.fn();
 
-jest.mock("../dailyCycle/runDailyCycle", () => ({
+vi.mock("../dailyCycle/runDailyCycle", () => ({
   runDailyCycle: (...args) => mockRunDailyCycle(...args),
 }));
 

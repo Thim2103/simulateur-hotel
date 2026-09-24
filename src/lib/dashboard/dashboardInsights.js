@@ -3,7 +3,7 @@
 // useCareer.js's nextDay() and stored as careerState.lastAnalysis) --
 // the Dashboard's "Insights" section shows diagnostics + recommendations
 // straight from Analytics, it doesn't recompute anything.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 export function buildInsights(analysis) {
   if (!analysis) {

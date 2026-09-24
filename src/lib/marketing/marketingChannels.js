@@ -3,7 +3,7 @@
 // hotelState.marketing.channels array the old Marketing.jsx page already
 // edited (see lib/hotel.js's hotelMarketing.channels), so an existing
 // hotel's channels keep working unchanged.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 export const CHANNEL_CATALOG = [
   { id: "ota", name: "OTA", defaultReach: 65, commissionRate: 0.18 },

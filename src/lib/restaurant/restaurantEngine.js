@@ -13,7 +13,7 @@
 // lib/staffMulti/ (multi-site transfers/training/promotions), so this
 // engine's output folds in additively without double-counting money or
 // moving staff on its own.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { simulateOperations, resolveOperationsTasks } from "./restaurantOperations";
 import { computeRestaurantFinanceSummary } from "./restaurantFinance";
 import { topPerformers, underperformers } from "./restaurantMenu";

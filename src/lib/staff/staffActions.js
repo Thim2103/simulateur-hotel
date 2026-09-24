@@ -5,7 +5,7 @@
 // lib/dashboard/dashboardActions.js's applyQuickAction() use, so
 // useStaffEngine.js can drive it through useCareer.js's
 // applyHotelAdjustment() exactly the way Finance/Dashboard already do.
-import { safeArray, safeNumber, safeObject, safeString } from "../safe";
+import { safeArray, safeNumber, safeObject, safeString } from "../safe.js";
 
 const AVERAGE_HOTEL_STAFF_SALARY = 2600; // €/month, same assumption as staffCalculations.js
 const NEW_HIRE_SALARY = 2200;

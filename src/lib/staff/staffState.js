@@ -5,7 +5,7 @@
 // moral/productivité/absentéisme/surcharge/turnover/payroll/diagnostics/
 // forecast on top, then persists that layer (via lib/staffRepository.js)
 // plus its own replay log of past cycles.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createStaffState(overrides = {}) {

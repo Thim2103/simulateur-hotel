@@ -1,4 +1,15 @@
-import { reconcileIncidents, advanceIncidentRepairs, payForRepair, REPAIR_COST, REPAIR_DELAY_DAYS, EMERGENCY_COST_MULTIPLIER } from "./incidentEngine";
+import {
+  reconcileIncidents,
+  advanceIncidentRepairs,
+  payForRepair,
+  assignTechnicians,
+  repairTerms,
+  REPAIR_COST,
+  REPAIR_DELAY_DAYS,
+  EMERGENCY_COST_MULTIPLIER,
+  TECHNICIAN_EMERGENCY_MULTIPLIER,
+  TECHNICIAN_MATERIALS_RATIO,
+} from "./incidentEngine";
 
 describe("incidentEngine / reconcileIncidents", () => {
   it("creates a new active incident for a qualifying diagnostic with no existing match", () => {
@@ -191,7 +202,6 @@ describe("incidentEngine / daysOpen aging", () => {
 });
 
 describe("incidentEngine / in-house technicians", () => {
-  const { assignTechnicians, repairTerms, TECHNICIAN_EMERGENCY_MULTIPLIER, TECHNICIAN_MATERIALS_RATIO } = require("./incidentEngine");
   const tech = (overrides = {}) => ({ id: "t1", role: "maintenance", level: "experienced", fatigue: 10, morale: 70, training: null, ...overrides });
   const incident = (overrides = {}) => ({ id: "i1", zone: "laundry", severity: "minor", status: "active", repairCost: 150, ...overrides });
   const hotel = (roster, incidents) => ({ staffRoster: roster, activeIncidents: incidents, finance: { costs: [0, 1000] } });

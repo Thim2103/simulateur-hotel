@@ -1,7 +1,7 @@
 // Automatic leaderboard: ranks every registered player of a match by
 // their current (mid-match) or final score. Ties keep their relative
 // input order (Array#sort stability); rank is simply position + 1.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { currentScoreForPlayer } from "./competitionScoring";
 
 export function rankPlayers(players, runsByPlayerId) {

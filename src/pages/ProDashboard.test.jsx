@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import ProDashboard from "./ProDashboard";
 import { useProEngine } from "../hooks/useProEngine";
 
-jest.mock("../hooks/useProEngine");
+vi.mock("../hooks/useProEngine");
 
 function proState(overrides = {}) {
   return {

@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import CareerMissions from "./CareerMissions";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 function baseHook(overrides = {}) {
   return {

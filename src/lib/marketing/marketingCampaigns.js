@@ -3,7 +3,7 @@
 // hotelMarketing.campaigns), with the read-side helpers
 // pages/MarketingCampaigns.jsx needs (performance, ROI) and the
 // write-side helpers marketingActions.js's "lancer campagne" action uses.
-import { safeArray, safeNumber, safeObject, safeString } from "../safe";
+import { safeArray, safeNumber, safeObject, safeString } from "../safe.js";
 
 const CAMPAIGN_OBJECTIVES = ["Acquisition", "Fidélisation", "Notoriété"];
 const DEFAULT_CAMPAIGN_BUDGET = 1500;

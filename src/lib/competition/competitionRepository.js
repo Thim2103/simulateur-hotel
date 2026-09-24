@@ -5,9 +5,9 @@
 // scenario" and "automatic ranking" all imply an organizer's matches
 // survive a page reload. Every pure competition*.js file stays
 // storage-agnostic; only this file talks to Supabase.
-import { assertSupabaseConfigured, requireUserId } from "../supabase";
+import { assertSupabaseConfigured, requireUserId } from "../supabase.js";
 import { safeLoad } from "../safeLoad";
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { deserializeRunState, serializeRunState } from "./competitionState";
 
 async function select(table, query = (builder) => builder) {

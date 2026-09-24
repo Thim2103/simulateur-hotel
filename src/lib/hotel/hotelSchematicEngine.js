@@ -6,7 +6,7 @@
 // already has (see lib/clients/guestProfiles.js's vipGuestsInHouse() for
 // the same "reservation currently covering this night" pattern, done
 // here for every guest, not just V.I.P.s).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 const toDateOnly = (value) => String(value ?? "").slice(0, 10);
 const isCancelled = (reservation) => String(reservation.status || "").toLowerCase().includes("annul");

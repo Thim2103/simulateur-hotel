@@ -13,7 +13,7 @@
 // this module converts those scores, combined with real occupancy/
 // covers from PMS/Restaurant, into plausible physical units. Every
 // constant below is a deliberate, disclosed assumption.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 const BASE_ENERGY_KWH_PER_ROOM_NIGHT = 25;
 const BASE_ENERGY_KWH_PER_COVER = 3;

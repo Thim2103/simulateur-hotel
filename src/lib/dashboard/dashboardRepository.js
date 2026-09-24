@@ -7,7 +7,7 @@
 // dashboardEngine.js's buildDashboardState()) and are not stored here --
 // storing a derived snapshot would just go stale the moment the player
 // plays another day.
-import { assertSupabaseConfigured, requireUserId } from "../supabase";
+import { assertSupabaseConfigured, requireUserId } from "../supabase.js";
 import { safeLoad } from "../safeLoad";
 import { deserializeDashboardPreferences, serializeDashboardPreferences } from "./dashboardState";
 

@@ -28,7 +28,7 @@
 // State: `hotelState.banking` = { loans, nextId, cashAdjustment, overdraftDays,
 // missedPayments, repaidLoans, ledger, today, lastOutcome }. Pure and
 // deterministic; a hotel that never borrowed keeps no such state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { balanceOf, capitalOf, treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { toIsoDate } from "../hotelEvents/hotelEventsEngine";

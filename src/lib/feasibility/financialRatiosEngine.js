@@ -15,7 +15,7 @@
 // lib/dashboard/statusSummary.js's occupancyOf() already reads them --
 // reused here, not reimplemented, so "occupancy" always means the same
 // thing across every screen of the app.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { assetsOf, liabilitiesOf, incomeStatementOf } from "../accounting/accountingEngine";
 import { occupancyOf } from "../dashboard/statusSummary";
 

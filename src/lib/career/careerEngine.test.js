@@ -10,6 +10,7 @@ import {
   updateSkillPoints,
 } from "./careerEngine";
 import { createScenarioTemplate } from "../scenario/scenarioSchema";
+import { effectiveHotelFinance, rosterDailyPayroll, staffingSatisfactionPenalty, hireEmployee, createEmployee } from "../staff/staffRoster";
 
 const REFERENCE_DATE = new Date("2026-09-10T12:00:00Z");
 
@@ -209,8 +210,6 @@ test("a legacy career (no start date) is dated from its next played day, keeping
 });
 
 describe("career staff roster", () => {
-  const { effectiveHotelFinance, rosterDailyPayroll, staffingSatisfactionPenalty, hireEmployee, createEmployee } = require("../staff/staffRoster");
-
   function bigPayrollCareer() {
     const state = baseState();
     return {

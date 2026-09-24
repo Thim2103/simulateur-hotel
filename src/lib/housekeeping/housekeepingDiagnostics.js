@@ -4,7 +4,7 @@
 // use, applied to one HK cycle's own numbers. See
 // housekeepingEngine.js's housekeepingDiagnosticsToAnalytics() for how
 // these fold into the Analytics module's own diagnostics list.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

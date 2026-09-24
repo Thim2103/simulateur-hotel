@@ -4,43 +4,47 @@
 // own eventHandlers/*.test.js).
 import { generateEvents } from "./eventEngine";
 
-const fakeAlwaysFires = {
-  id: "always_fires",
-  name: "Always fires",
-  category: "test",
-  conditions: () => true,
-  // Not exactly 1: the "drop off" test needs a roll that fails once the
-  // event is no longer active, to tell "still ongoing" apart from
-  // "re-triggered the instant it expired".
-  probability: () => 0.9,
-  apply: () => ({ message: "It happened.", severity: "low" }),
-  impact: { revenue: 100, expenses: 10, staff: 1, reputation: 2 },
-  duration: 2,
-};
+const { fakeAlwaysFires, fakeNeverFires, fakeConditionGated } = vi.hoisted(() => {
+  const fakeAlwaysFires = {
+    id: "always_fires",
+    name: "Always fires",
+    category: "test",
+    conditions: () => true,
+    // Not exactly 1: the "drop off" test needs a roll that fails once the
+    // event is no longer active, to tell "still ongoing" apart from
+    // "re-triggered the instant it expired".
+    probability: () => 0.9,
+    apply: () => ({ message: "It happened.", severity: "low" }),
+    impact: { revenue: 100, expenses: 10, staff: 1, reputation: 2 },
+    duration: 2,
+  };
 
-const fakeNeverFires = {
-  id: "never_fires",
-  name: "Never fires",
-  category: "test",
-  conditions: () => true,
-  probability: () => 0,
-  apply: () => ({ message: "Should not happen." }),
-  impact: { revenue: 9999 },
-  duration: 1,
-};
+  const fakeNeverFires = {
+    id: "never_fires",
+    name: "Never fires",
+    category: "test",
+    conditions: () => true,
+    probability: () => 0,
+    apply: () => ({ message: "Should not happen." }),
+    impact: { revenue: 9999 },
+    duration: 1,
+  };
 
-const fakeConditionGated = {
-  id: "condition_gated",
-  name: "Condition gated",
-  category: "test",
-  conditions: ({ hotelState }) => Boolean(hotelState?.allowGatedEvent),
-  probability: () => 1,
-  apply: () => ({ message: "Gate was open." }),
-  impact: { reputation: 5 },
-  duration: 1,
-};
+  const fakeConditionGated = {
+    id: "condition_gated",
+    name: "Condition gated",
+    category: "test",
+    conditions: ({ hotelState }) => Boolean(hotelState?.allowGatedEvent),
+    probability: () => 1,
+    apply: () => ({ message: "Gate was open." }),
+    impact: { reputation: 5 },
+    duration: 1,
+  };
 
-jest.mock("./eventDefinitions", () => ({
+  return { fakeAlwaysFires, fakeNeverFires, fakeConditionGated };
+});
+
+vi.mock("./eventDefinitions", () => ({
   EVENT_DEFINITIONS: [fakeAlwaysFires, fakeNeverFires, fakeConditionGated],
 }));
 

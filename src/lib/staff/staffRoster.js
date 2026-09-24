@@ -19,7 +19,7 @@
 // SUBTRACTING its monthly total from the base `finance.payroll`, so
 // today's economics are unchanged the day it appears; hiring adds cost,
 // firing removes it.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";
 

@@ -7,7 +7,7 @@
 // one per month, and a same-month cost is folded into its last entry.
 // Shared by every one-off spend (incident repairs, recruitment fees,
 // severance, training) so they all land in the same place.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function debitCurrentMonth(hotelState, amount) {
   const state = safeObject(hotelState);

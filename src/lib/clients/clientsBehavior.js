@@ -2,7 +2,7 @@
 // and preferred segment from the hotel bundle (reservations + finance
 // revenue) and the satisfaction score. Same pure-function contract as
 // every other *Calculations.js in this app: no side effects, no I/O.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 // Estimates average revenue per guest-stay from Finance's own revenue
 // figures and the room occupancy count.

@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import FinanceForecast from "./FinanceForecast";
 import { useFinance } from "../hooks/useFinance";
 
-jest.mock("../hooks/useFinance");
+vi.mock("../hooks/useFinance");
 
 function scenario(profit) {
   return {

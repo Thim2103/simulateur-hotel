@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -52,7 +52,7 @@ describe("tfeRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getTfeState } = require("./tfeRepository");
+    const { getTfeState } = await import("./tfeRepository");
     const state = await getTfeState();
     expect(state.tfeId).toBe("tfe-1");
   });
@@ -62,7 +62,7 @@ describe("tfeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveTfeState } = require("./tfeRepository");
+    const { saveTfeState } = await import("./tfeRepository");
     await saveTfeState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -75,7 +75,7 @@ describe("tfeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveTfeReport } = require("./tfeRepository");
+    const { saveTfeReport } = await import("./tfeRepository");
     await saveTfeReport({ grade: "B", generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -87,7 +87,7 @@ describe("tfeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveTfeScore } = require("./tfeRepository");
+    const { saveTfeScore } = await import("./tfeRepository");
     await saveTfeScore({ total: 70, grade: "B" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -99,7 +99,7 @@ describe("tfeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveTfeForecast } = require("./tfeRepository");
+    const { saveTfeForecast } = await import("./tfeRepository");
     await saveTfeForecast({ horizonMonths: 36, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -116,13 +116,13 @@ describe("tfeRepository guest mode", () => {
   });
 
   test("getTfeState() returns null before anything has been saved", async () => {
-    const { getTfeState } = require("./tfeRepository");
+    const { getTfeState } = await import("./tfeRepository");
     await expect(getTfeState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveTfeState() persists to localStorage and getTfeState() reads it back", async () => {
-    const { getTfeState, saveTfeState } = require("./tfeRepository");
+    const { getTfeState, saveTfeState } = await import("./tfeRepository");
     await saveTfeState(sampleState());
     const reloaded = await getTfeState();
 
@@ -131,7 +131,7 @@ describe("tfeRepository guest mode", () => {
   });
 
   test("saveTfeReport()/saveTfeScore()/saveTfeForecast() are no-ops that never throw or touch Supabase", async () => {
-    const { saveTfeReport, saveTfeScore, saveTfeForecast } = require("./tfeRepository");
+    const { saveTfeReport, saveTfeScore, saveTfeForecast } = await import("./tfeRepository");
     await expect(saveTfeReport({ grade: "B" })).resolves.toBeUndefined();
     await expect(saveTfeScore({ total: 70 })).resolves.toBeUndefined();
     await expect(saveTfeForecast({ horizonMonths: 36 })).resolves.toBeUndefined();

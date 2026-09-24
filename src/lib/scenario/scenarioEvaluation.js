@@ -2,7 +2,7 @@
 // pass/fail, recommendations), and ranks several runs of the same
 // scenario against each other (used by Academy's group comparison and,
 // eventually, Competition's leaderboard).
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 function gradeFor(score, grading) {
   const tier = safeArray(grading).find((entry) => score >= safeNumber(entry.minScore, 0) && score <= safeNumber(entry.maxScore, 100));

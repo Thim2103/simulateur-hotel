@@ -24,7 +24,7 @@
 // agenda is public, so festivals, fairs and roadworks show up to 30 days
 // ahead; a heat or cold wave only in the few days its forecast is reliable;
 // a surprise audit never.
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 import { dayIndexOf, eventsBetween, eventsOn, EVENT_TYPES, seasonDemand, seasonOn } from "../hotelEvents/hotelEventsEngine";
 
 const DAY_MS = 86400000;

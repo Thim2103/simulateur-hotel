@@ -13,7 +13,7 @@
 // queryable copies of what's already inside it (same "one table per
 // module concept" convention every other module's migration already
 // establishes).
-import { assertSupabaseConfigured, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, requireUserId } from "./supabase.js";
 import { resolveSession } from "./sessionResolver";
 import { createGuestRepository } from "./guest/guestRepository";
 import { safeLoad } from "./safeLoad";

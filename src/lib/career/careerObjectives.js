@@ -2,7 +2,7 @@
 // just tracked every day) -- reuses lib/scenario/scenarioObjectives.js's
 // KPI-path/comparator format so a career objective, a scenario objective
 // and an Academy objective all read the same way.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { evaluateObjectives } from "../scenario/scenarioObjectives";
 
 export const DEFAULT_CAREER_OBJECTIVES = [

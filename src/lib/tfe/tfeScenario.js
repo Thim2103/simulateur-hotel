@@ -7,7 +7,7 @@
 import { createRoom } from "../pmsModels";
 import { seedReservations } from "../guest/guestPmsSeed";
 import { createGuestHotelBundle } from "../guest";
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { POSITIONING_TIERS } from "../marketing/marketingCalculations";
 
 const BASE_ROOM_COUNT = 6; // lib/guest/guestPmsSeed.js's own seedRooms() count -- the scale everything else is proportioned against

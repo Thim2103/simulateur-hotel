@@ -7,7 +7,7 @@
 // forecast), records it into the HK replay log, and exposes the
 // HOUSEKEEPING_ACTION_CATALOG a player can apply to their own hotel
 // bundle -- see housekeepingActions.js.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 import {
   computeCleaningTime,
   computeHousekeeperCount,

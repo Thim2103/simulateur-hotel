@@ -7,7 +7,7 @@
 // (additive, optional, with sensible fallbacks) -- the same "lazy
 // namespace" pattern lib/clients/clientsActions.js used for
 // hotelState.clients.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

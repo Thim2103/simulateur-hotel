@@ -4,7 +4,7 @@
 // lib/clients/clientsForecast.js and lib/restaurantAdvanced/
 // restaurantForecast.js use, with RM's own naming for the base scenario
 // (no change vs. today's numbers) requested for this module.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 

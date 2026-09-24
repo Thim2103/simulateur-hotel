@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import StaffForecast from "./StaffForecast";
 import { useStaffEngine } from "../hooks/useStaffEngine";
 
-jest.mock("../hooks/useStaffEngine");
+vi.mock("../hooks/useStaffEngine");
 
 function scenario({ avgMorale, endOverload, avgAbsenteeism = 10 }) {
   return {

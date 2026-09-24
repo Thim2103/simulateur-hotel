@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AnalyticsRun from "./AnalyticsRun";
 import { useAnalytics } from "../hooks/useAnalytics";
 
-jest.mock("../hooks/useAnalytics");
+vi.mock("../hooks/useAnalytics");
 
 function renderAtRun(runId = "academie-c1-g1") {
   return render(

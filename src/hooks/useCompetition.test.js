@@ -4,21 +4,27 @@ import competitionRepository from "../lib/competition/competitionRepository";
 import replayRepository from "../lib/replay/replayRepository";
 import { createScenarioTemplate } from "../lib/scenario/scenarioSchema";
 
-jest.mock("../lib/competition/competitionRepository", () => ({
-  createMatch: jest.fn(),
-  registerPlayer: jest.fn(),
-  saveMatchScenario: jest.fn(),
-  savePlayerRun: jest.fn(),
-  loadMatchBundle: jest.fn(),
-  loadPlayerRun: jest.fn(),
-  savePlayerReport: jest.fn(),
-  saveRanking: jest.fn(),
-  listMatches: jest.fn(),
-}));
+vi.mock("../lib/competition/competitionRepository", () => {
+  const mod = {
+    createMatch: jest.fn(),
+    registerPlayer: jest.fn(),
+    saveMatchScenario: jest.fn(),
+    savePlayerRun: jest.fn(),
+    loadMatchBundle: jest.fn(),
+    loadPlayerRun: jest.fn(),
+    savePlayerReport: jest.fn(),
+    saveRanking: jest.fn(),
+    listMatches: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
-jest.mock("../lib/replay/replayRepository", () => ({
-  saveReplayRun: jest.fn(),
-}));
+vi.mock("../lib/replay/replayRepository", () => {
+  const mod = {
+    saveReplayRun: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function scenario(overrides = {}) {
   return createScenarioTemplate("competition", {

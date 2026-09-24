@@ -2,7 +2,7 @@
 // pessimiste) -- extrapolates from the current cycle's own workload/
 // overload/quality run-rate, same "run-rate" approach every other
 // module's *Forecast.js already uses.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 const SCENARIOS = {

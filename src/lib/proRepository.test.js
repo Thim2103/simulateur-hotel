@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -55,7 +55,7 @@ describe("proRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getProState } = require("./proRepository");
+    const { getProState } = await import("./proRepository");
     const state = await getProState();
     expect(state.proId).toBe("pro-1");
     expect(state.month).toBe(3);
@@ -66,7 +66,7 @@ describe("proRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveProState } = require("./proRepository");
+    const { saveProState } = await import("./proRepository");
     await saveProState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -79,7 +79,7 @@ describe("proRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveProReport } = require("./proRepository");
+    const { saveProReport } = await import("./proRepository");
     await saveProReport({ finalScore: { total: 80 }, grade: "B" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -91,7 +91,7 @@ describe("proRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveProScore } = require("./proRepository");
+    const { saveProScore } = await import("./proRepository");
     await saveProScore({ total: 70, grade: "C" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -103,7 +103,7 @@ describe("proRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveProForecast } = require("./proRepository");
+    const { saveProForecast } = await import("./proRepository");
     await saveProForecast({ horizonMonths: 24, generatedAt: "2026-09-16" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -115,7 +115,7 @@ describe("proRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveProDiagnostics } = require("./proRepository");
+    const { saveProDiagnostics } = await import("./proRepository");
     await saveProDiagnostics([{ type: "opportunity", severity: "low", message: "Test" }]);
 
     expect(upserted.user_id).toBe("user-1");
@@ -132,13 +132,13 @@ describe("proRepository guest mode", () => {
   });
 
   test("getProState() returns null before anything has been saved", async () => {
-    const { getProState } = require("./proRepository");
+    const { getProState } = await import("./proRepository");
     await expect(getProState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveProState() persists to localStorage and getProState() reads it back", async () => {
-    const { getProState, saveProState } = require("./proRepository");
+    const { getProState, saveProState } = await import("./proRepository");
     await saveProState(sampleState());
     const reloaded = await getProState();
 
@@ -148,7 +148,7 @@ describe("proRepository guest mode", () => {
   });
 
   test("saveProReport()/saveProScore()/saveProForecast()/saveProDiagnostics() are no-ops that never throw or touch Supabase", async () => {
-    const { saveProReport, saveProScore, saveProForecast, saveProDiagnostics } = require("./proRepository");
+    const { saveProReport, saveProScore, saveProForecast, saveProDiagnostics } = await import("./proRepository");
     await expect(saveProReport({})).resolves.toBeUndefined();
     await expect(saveProScore({})).resolves.toBeUndefined();
     await expect(saveProForecast({})).resolves.toBeUndefined();

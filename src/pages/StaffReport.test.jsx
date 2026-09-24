@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import StaffReport from "./StaffReport";
 import { useStaffEngine } from "../hooks/useStaffEngine";
 
-jest.mock("../hooks/useStaffEngine");
+vi.mock("../hooks/useStaffEngine");
 
 function staffState(overrides = {}) {
   return {

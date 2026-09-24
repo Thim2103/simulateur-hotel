@@ -7,7 +7,7 @@
 // optional, with sensible fallbacks) -- the same "lazy namespace" pattern
 // lib/marketing/marketingActions.js used for hotelState.marketing and
 // lib/housekeeping/housekeepingActions.js used for hotelState.housekeeping.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

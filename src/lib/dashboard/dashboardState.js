@@ -5,7 +5,7 @@
 // preference and the last snapshot it computed (kpis/notifications/
 // insights/quickActions), so a reload shows something immediately while
 // loadDashboardState() recomputes a fresh one from the current CareerState.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { DEFAULT_VIEW_MODE, normalizeViewMode } from "./dashboardViewMode";
 
 export function createDashboardState(overrides = {}) {

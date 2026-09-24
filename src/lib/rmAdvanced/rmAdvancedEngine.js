@@ -13,7 +13,7 @@
 // careerEngine.js needing to know about this module -- same integration
 // pattern lib/clients/clientsEngine.js / lib/restaurantAdvanced/
 // restaurantAdvancedEngine.js already established.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { channelYield } from "../calculs/rm";
 import { computeCompression } from "./rmAdvancedCompression";
 import { computeDisplacement } from "./rmAdvancedDisplacement";

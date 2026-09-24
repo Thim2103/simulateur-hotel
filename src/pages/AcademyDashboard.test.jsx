@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import AcademyDashboard from "./AcademyDashboard";
 import { useAcademyContext } from "../context/AcademyContext";
 
-jest.mock("../context/AcademyContext");
+vi.mock("../context/AcademyContext");
 
 function baseHook(overrides = {}) {
   return {

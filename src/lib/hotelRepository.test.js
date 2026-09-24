@@ -5,7 +5,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -56,7 +56,7 @@ describe("hotelRepository Supabase mode", () => {
     mockEnsureAuthSession.mockResolvedValue("user-1");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getHotelState } = require("./hotelRepository");
+    const { getHotelState } = await import("./hotelRepository");
     const state = await getHotelState();
 
     expect(state.structure.name).toBe("Hôtel Test");
@@ -68,7 +68,7 @@ describe("hotelRepository Supabase mode", () => {
     mockRequireUserId.mockResolvedValue("user-1");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveHotelState } = require("./hotelRepository");
+    const { saveHotelState } = await import("./hotelRepository");
     await saveHotelState({ structure: { name: "Nouveau nom" } });
 
     const updateCall = calls.find((call) => call.op === "update" && call.table === "hotels");
@@ -85,7 +85,7 @@ describe("hotelRepository guest mode", () => {
   });
 
   test("getHotelState() seeds a ready-to-play hotel (marketing/esg/finance already populated), no Supabase call", async () => {
-    const { getHotelState } = require("./hotelRepository");
+    const { getHotelState } = await import("./hotelRepository");
     const state = await getHotelState();
 
     expect(state.marketing).toBeDefined();
@@ -94,7 +94,7 @@ describe("hotelRepository guest mode", () => {
   });
 
   test("saveHotelState() persists to localStorage and getHotelState() reads it back, without touching requireUserId()", async () => {
-    const { getHotelState, saveHotelState } = require("./hotelRepository");
+    const { getHotelState, saveHotelState } = await import("./hotelRepository");
     const seeded = await getHotelState();
 
     await saveHotelState({ ...seeded, marketing: { ...seeded.marketing, budget: 9999 } });
@@ -105,12 +105,12 @@ describe("hotelRepository guest mode", () => {
   });
 
   test("the seeded hotel is shared across separate module loads (one localStorage document, not reseeded)", async () => {
-    const { getHotelState: first } = require("./hotelRepository");
+    const { getHotelState: first } = await import("./hotelRepository");
     const seeded = await first();
 
     jest.resetModules();
     mockEnsureAuthSession.mockResolvedValue(null);
-    const { getHotelState: second } = require("./hotelRepository");
+    const { getHotelState: second } = await import("./hotelRepository");
     const reloaded = await second();
 
     expect(reloaded.marketing.budget).toBe(seeded.marketing.budget);

@@ -1,7 +1,7 @@
 // Compares every group in a class against each other, on their current
 // score (mid-run) or final score (once finished) -- the data
 // AcademyClass.jsx's comparison view and AcademyReview.jsx render.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { buildGroupReport } from "./academyReports";
 
 export function compareGroups(groups, runsByGroupId) {

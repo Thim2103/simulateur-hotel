@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import ProMenu from "./ProMenu";
 import { useProEngine } from "../hooks/useProEngine";
 
-jest.mock("../hooks/useProEngine");
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("../hooks/useProEngine");
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: jest.fn(),
 }));
 

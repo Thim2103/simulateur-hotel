@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -47,7 +47,7 @@ describe("restaurantAdvancedRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getRestaurantAdvancedState } = require("./restaurantAdvancedRepository");
+    const { getRestaurantAdvancedState } = await import("./restaurantAdvancedRepository");
     const state = await getRestaurantAdvancedState();
     expect(state.period).toBe("2026-09-16");
     expect(state.foodCost.overall).toBe(27.5);
@@ -58,7 +58,7 @@ describe("restaurantAdvancedRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRestaurantAdvancedState } = require("./restaurantAdvancedRepository");
+    const { saveRestaurantAdvancedState } = await import("./restaurantAdvancedRepository");
     await saveRestaurantAdvancedState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -71,7 +71,7 @@ describe("restaurantAdvancedRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRestaurantAdvancedForecast } = require("./restaurantAdvancedRepository");
+    const { saveRestaurantAdvancedForecast } = await import("./restaurantAdvancedRepository");
     await saveRestaurantAdvancedForecast({ horizonDays: 30, generatedAt: "2026-09-16" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -88,13 +88,13 @@ describe("restaurantAdvancedRepository guest mode", () => {
   });
 
   test("getRestaurantAdvancedState() returns null before anything has been saved", async () => {
-    const { getRestaurantAdvancedState } = require("./restaurantAdvancedRepository");
+    const { getRestaurantAdvancedState } = await import("./restaurantAdvancedRepository");
     await expect(getRestaurantAdvancedState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveRestaurantAdvancedState() persists to localStorage and getRestaurantAdvancedState() reads it back", async () => {
-    const { getRestaurantAdvancedState, saveRestaurantAdvancedState } = require("./restaurantAdvancedRepository");
+    const { getRestaurantAdvancedState, saveRestaurantAdvancedState } = await import("./restaurantAdvancedRepository");
     await saveRestaurantAdvancedState(sampleState());
     const reloaded = await getRestaurantAdvancedState();
 
@@ -104,7 +104,7 @@ describe("restaurantAdvancedRepository guest mode", () => {
   });
 
   test("saveRestaurantAdvancedForecast() is a no-op that never throws or touches Supabase", async () => {
-    const { saveRestaurantAdvancedForecast } = require("./restaurantAdvancedRepository");
+    const { saveRestaurantAdvancedForecast } = await import("./restaurantAdvancedRepository");
     await expect(saveRestaurantAdvancedForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });

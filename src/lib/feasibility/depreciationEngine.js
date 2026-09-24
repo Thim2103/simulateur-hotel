@@ -11,7 +11,7 @@
 // extra floor (lib/expansion/) are structural expansion, not the initial
 // fit-out a feasibility study's investment plan is about, so they stay out
 // of it (they still show, and still depreciate, in the Bilan itself).
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 import { immobilisationLots, depreciationOf } from "../accounting/accountingEngine";
 
 const YEAR_DAYS = 365;

@@ -23,7 +23,7 @@
 //   marketing  -- the targeted campaigns running today (lib/marketing/)
 //   incidents  -- unrepaired equipment incidents (lib/maintenance/) cut
 //                 the conversion rate on top of their reputation malus
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { createReservation, findReservationConflicts } from "../pmsModels";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { computeZoneEffects } from "../zones/zoneUpgradesEngine";

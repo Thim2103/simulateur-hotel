@@ -9,6 +9,7 @@ import {
   incidentSatisfactionPenalty,
   generateIncidentReviews,
   appendIncidentReviews,
+  buildIncidentReviewHistory,
 } from "./incidentImpact";
 
 function incident(overrides = {}) {
@@ -146,8 +147,6 @@ describe("incidentImpact / appendIncidentReviews", () => {
 });
 
 describe("incidentImpact / buildIncidentReviewHistory", () => {
-  const { buildIncidentReviewHistory } = require("./incidentImpact");
-
   it("lists stored reviews newest first, tagged with their incident's current status", () => {
     const hotelState = {
       activeIncidents: [

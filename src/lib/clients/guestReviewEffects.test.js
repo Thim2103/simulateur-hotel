@@ -3,8 +3,9 @@ import { computeDemand } from "../demand/demandEngine";
 import { startCareer, runCareerDay } from "../career/careerEngine";
 import { buildDailyReview } from "../dashboard/dailyReview";
 import { buildHotelSceneEntities } from "../../ui/hotelView/engine/EntityFactory";
-import { baseImpact, respondToReview, listReviews, pendingReputationDelta, unansweredNegativeReviews, reviewsPostedOn } from "./guestReviewEngine";
-import { isVip } from "./guestProfiles";
+import { baseImpact, respondToReview, listReviews, pendingReputationDelta, unansweredNegativeReviews, reviewsPostedOn, advanceGuestReviews, reviewsForDepartures, pressHighlights } from "./guestReviewEngine";
+import { isVip, mixedRandom, UNLUCKY_STAY_CHANCE } from "./guestProfiles";
+import { applyVipAction, vipSatisfaction, PRAISE_BONUS_MIN, PRAISE_BONUS_SPAN } from "./vipServiceEngine";
 import { eventsOn, seasonIdOn } from "../hotelEvents/hotelEventsEngine";
 
 const DAY = 86400000;
@@ -206,9 +207,6 @@ describe("guest reviews / through the career day", () => {
 });
 
 describe("guest reviews / V.I.P. attentions at departure", () => {
-  const { applyVipAction, vipSatisfaction, PRAISE_BONUS_MIN, PRAISE_BONUS_SPAN } = jest.requireActual("./vipServiceEngine");
-  const { advanceGuestReviews, reviewsForDepartures, pressHighlights } = jest.requireActual("./guestReviewEngine");
-  const { mixedRandom, UNLUCKY_STAY_CHANCE } = jest.requireActual("./guestProfiles");
 
   const rooms = [{ id: 1, number: "101", type: "standard", status: "occupée" }, { id: 2, number: "301", type: "suite", status: "libre" }];
   const stayOf = (id) => ({ id, room_id: 1, room: "101", room_type: "standard", client_name: `Client ${id}`, arrival: "2026-09-10", departure: "2026-09-12", status: "confirmée", segment: "leisure", price: 120 });

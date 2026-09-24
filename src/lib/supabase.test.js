@@ -8,7 +8,7 @@
 const mockGetSession = jest.fn();
 const mockSignInAnonymously = jest.fn();
 
-jest.mock("@supabase/supabase-js", () => ({
+vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({ auth: { getSession: mockGetSession, signInAnonymously: mockSignInAnonymously } }),
 }));
 
@@ -31,7 +31,7 @@ describe("ensureAuthSession / requireUserId", () => {
 
   test("reuses an existing session instead of signing in again", async () => {
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: "user-1" } } }, error: null });
-    const { ensureAuthSession } = require("./supabase");
+    const { ensureAuthSession } = await import("./supabase.js");
 
     await expect(ensureAuthSession()).resolves.toBe("user-1");
     expect(mockSignInAnonymously).not.toHaveBeenCalled();
@@ -40,7 +40,7 @@ describe("ensureAuthSession / requireUserId", () => {
   test("signs in anonymously when there is no existing session", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSignInAnonymously.mockResolvedValue({ data: { user: { id: "anon-1" } }, error: null });
-    const { ensureAuthSession } = require("./supabase");
+    const { ensureAuthSession } = await import("./supabase.js");
 
     await expect(ensureAuthSession()).resolves.toBe("anon-1");
   });
@@ -48,7 +48,7 @@ describe("ensureAuthSession / requireUserId", () => {
   test("resolves to null (never throws) when anonymous sign-in is unavailable", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSignInAnonymously.mockResolvedValue({ data: null, error: new Error("Anonymous sign-ins are disabled") });
-    const { ensureAuthSession } = require("./supabase");
+    const { ensureAuthSession } = await import("./supabase.js");
 
     await expect(ensureAuthSession()).resolves.toBeNull();
   });
@@ -64,7 +64,7 @@ describe("ensureAuthSession / requireUserId", () => {
 describe("requireUserId blocks unauthenticated writes", () => {
   test("rejects with a clear error when Supabase isn't configured at all", async () => {
     jest.resetModules();
-    const { requireUserId } = require("./supabase");
+    const { requireUserId } = await import("./supabase.js");
 
     await expect(requireUserId()).rejects.toThrow(/non authentifi/i);
   });
@@ -77,7 +77,7 @@ describe("requireUserId blocks unauthenticated writes", () => {
     mockSignInAnonymously.mockReset();
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSignInAnonymously.mockResolvedValue({ data: null, error: new Error("Anonymous sign-ins are disabled") });
-    const { requireUserId } = require("./supabase");
+    const { requireUserId } = await import("./supabase.js");
 
     await expect(requireUserId()).rejects.toThrow(/non authentifi/i);
   });
@@ -89,7 +89,7 @@ describe("requireUserId blocks unauthenticated writes", () => {
     mockGetSession.mockReset();
     mockSignInAnonymously.mockReset();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: "user-2" } } }, error: null });
-    const { requireUserId } = require("./supabase");
+    const { requireUserId } = await import("./supabase.js");
 
     await expect(requireUserId()).resolves.toBe("user-2");
   });

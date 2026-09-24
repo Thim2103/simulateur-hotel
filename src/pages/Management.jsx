@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useCareerContext } from "../context/CareerContext";
 import { hotelCondition, setMaintenanceLevel, WEAR_THRESHOLD } from "../lib/maintenance/maintenanceCostEngine";
 import { LEVELS, ROLES, getRoster, hasRoster, rosterDailyPayroll } from "../lib/staff/staffRoster";
-import { safeArray, safeNumber } from "../lib/safe";
+import { safeArray, safeNumber } from "../lib/safe.js";
 import MaintenanceLevelSelector from "../ui/hotelView/schematic/MaintenanceLevelSelector";
 import { ZONE_STYLES } from "../ui/hotelView/schematic/schematicTokens";
 import { BentoCard, MetricDonut, SoftButton, StatusBadge } from "../ui/bento";

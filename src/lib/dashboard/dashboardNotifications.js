@@ -2,7 +2,7 @@
 // career-so-far (see lib/analytics/analyticsDiagnostics.js) into the
 // three buckets the "À votre attention" section shows: problems (red),
 // alerts (orange), opportunities (green).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 // Analytics diagnostics already come typed as "error" | "anomaly" |
 // "opportunity" -- exactly the three buckets the Dashboard wants, so this

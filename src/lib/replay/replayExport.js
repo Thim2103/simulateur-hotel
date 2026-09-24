@@ -4,7 +4,7 @@
 // summary the browser's own print-to-PDF handles -- see
 // pages/ReplayExport.jsx, which renders buildSummaryHtml() and calls
 // window.print().
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { allKpiSeries } from "./replayKpis";
 import { eventFrequency } from "./replayEvents";
 

@@ -5,9 +5,9 @@
 // a durable final report both imply an analysis survives a page reload.
 // analyzeRun() itself stays a pure, cheap recomputation over an
 // already-loaded ReplayRun -- this file only caches/audits its output.
-import { assertSupabaseConfigured, requireUserId } from "../supabase";
+import { assertSupabaseConfigured, requireUserId } from "../supabase.js";
 import { safeLoad } from "../safeLoad";
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 async function select(table, query = (builder) => builder) {
   return safeLoad(

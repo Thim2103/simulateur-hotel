@@ -8,7 +8,7 @@
 // of what lib/tfe/tfeEngine.js already does for Finance/Staff/
 // Marketing/ESG/Housekeeping. Same architecture as tfeEngine.js, richer
 // integration surface.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { startCareer as startCareerEngine, runCareerDay } from "../career/careerEngine";
 import { buildReplayRunFromCareerRun } from "../replay/replayEngine";
 import { analyzeRun } from "../analytics/analyticsEngine";

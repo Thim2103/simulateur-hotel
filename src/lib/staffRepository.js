@@ -8,7 +8,7 @@
 // in-memory-only useStaff.js hook driving the /chain/staff page) -- this
 // repository is for the Career/Guest-Mode Staff module (see
 // hooks/useStaffEngine.js, pages/StaffDashboard.jsx).
-import { assertSupabaseConfigured, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, requireUserId } from "./supabase.js";
 import { resolveSession } from "./sessionResolver";
 import { createGuestRepository } from "./guest/guestRepository";
 import { safeLoad } from "./safeLoad";

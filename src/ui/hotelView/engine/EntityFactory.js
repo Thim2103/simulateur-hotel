@@ -14,7 +14,7 @@
 // object maps to *which* layout tile and *what generic state/activity* it
 // gets, never the coordinates themselves.
 import { tileToWorld } from "./IsoProjection";
-import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
+import { safeArray, safeNumber, safeObject } from "../../../lib/safe.js";
 import { FLOOR_COUNT, AMENITY_LAYOUT, roomTile, guestTile, staffTile, incidentTile } from "../scene/HotelSceneLayout";
 import { isExpansionRoom } from "../../../lib/expansion/hotelExpansionEngine";
 import { isMeetingRoom } from "../../../lib/mice/miceEngine";

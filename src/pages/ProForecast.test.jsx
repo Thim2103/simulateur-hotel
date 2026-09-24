@@ -3,11 +3,11 @@ import { MemoryRouter } from "react-router-dom";
 import ProForecast from "./ProForecast";
 import { useProEngine } from "../hooks/useProEngine";
 
-jest.mock("../hooks/useProEngine");
+vi.mock("../hooks/useProEngine");
 
 // Chart.js needs a real canvas context, which jsdom doesn't provide; these
 // tests only care about the surrounding text/DOM, not the rendered canvas.
-jest.mock("react-chartjs-2", () => ({
+vi.mock("react-chartjs-2", () => ({
   Line: () => <div data-testid="line-chart" />,
   Bar: () => <div data-testid="bar-chart" />,
   Pie: () => <div data-testid="pie-chart" />,

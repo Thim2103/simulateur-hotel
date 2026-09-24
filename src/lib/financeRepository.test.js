@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -46,7 +46,7 @@ describe("financeRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getFinanceState } = require("./financeRepository");
+    const { getFinanceState } = await import("./financeRepository");
     const state = await getFinanceState();
     expect(state.period).toBe("2026-09-10");
   });
@@ -56,7 +56,7 @@ describe("financeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveFinanceState } = require("./financeRepository");
+    const { saveFinanceState } = await import("./financeRepository");
     await saveFinanceState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -69,7 +69,7 @@ describe("financeRepository Supabase mode", () => {
     const client = { from: () => ({ insert: (payload) => { inserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { appendFinanceReport } = require("./financeRepository");
+    const { appendFinanceReport } = await import("./financeRepository");
     await appendFinanceReport(sampleState());
 
     expect(inserted.user_id).toBe("user-1");
@@ -81,7 +81,7 @@ describe("financeRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveFinanceForecast } = require("./financeRepository");
+    const { saveFinanceForecast } = await import("./financeRepository");
     await saveFinanceForecast({ horizonDays: 30, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -98,13 +98,13 @@ describe("financeRepository guest mode", () => {
   });
 
   test("getFinanceState() returns null before anything has been saved", async () => {
-    const { getFinanceState } = require("./financeRepository");
+    const { getFinanceState } = await import("./financeRepository");
     await expect(getFinanceState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveFinanceState() persists to localStorage and getFinanceState() reads it back", async () => {
-    const { getFinanceState, saveFinanceState } = require("./financeRepository");
+    const { getFinanceState, saveFinanceState } = await import("./financeRepository");
     await saveFinanceState(sampleState());
     const reloaded = await getFinanceState();
 
@@ -113,7 +113,7 @@ describe("financeRepository guest mode", () => {
   });
 
   test("appendFinanceReport()/saveFinanceForecast() are no-ops that never throw or touch Supabase", async () => {
-    const { appendFinanceReport, saveFinanceForecast } = require("./financeRepository");
+    const { appendFinanceReport, saveFinanceForecast } = await import("./financeRepository");
     await expect(appendFinanceReport(sampleState())).resolves.toBeUndefined();
     await expect(saveFinanceForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();

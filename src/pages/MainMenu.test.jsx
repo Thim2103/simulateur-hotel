@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import MainMenu from "./MainMenu";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 beforeEach(() => {
   useCareerContext.mockReturnValue({ careerState: null, loadCareerState: jest.fn().mockResolvedValue(null) });

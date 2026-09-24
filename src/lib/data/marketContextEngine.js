@@ -12,7 +12,7 @@
 // own wide test surface, left for a later pass so this one stays
 // additive and risk-free. Pure, deterministic (mixedRandom, no rng), no
 // new state written -- hotelState.market is only ever read here.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 import { seasonOn, seasonIdOn } from "../hotelEvents/hotelEventsEngine";
 import { mixedRandom } from "../clients/guestProfiles";
 import { DESTINATIONS, DEFAULT_DESTINATION_ID, destinationById } from "./destinations/destinations";

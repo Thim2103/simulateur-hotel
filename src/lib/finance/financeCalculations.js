@@ -15,7 +15,7 @@
 // + equity always holds by construction) seeded once and rolled forward
 // by each cycle's net income/cash-flow, not a claim of real-world
 // accounting precision.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const DAYS_PER_MONTH = 30;
 const ASSET_VALUE_PER_ROOM = 15000; // €, a plausible fixed-asset value per room (land+building+FF&E)

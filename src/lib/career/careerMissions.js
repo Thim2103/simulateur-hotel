@@ -3,7 +3,7 @@
 // (completed explicitly via completeMission()). Reuses
 // lib/scenario/scenarioObjectives.js's readKpi() for the KPI check, same
 // format as careerObjectives.js.
-import { safeArray, safeString } from "../safe";
+import { safeArray, safeString } from "../safe.js";
 import { readKpi } from "../scenario/scenarioObjectives";
 
 export const MISSION_CATALOG = [

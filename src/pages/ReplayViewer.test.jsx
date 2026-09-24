@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import ReplayViewer from "./ReplayViewer";
 import { useReplay } from "../hooks/useReplay";
 
-jest.mock("../hooks/useReplay");
+vi.mock("../hooks/useReplay");
 
 function renderAtViewer(runId = "academie-c1-g1") {
   return render(

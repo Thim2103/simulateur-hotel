@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AcademyClass from "./AcademyClass";
 import { useAcademyContext } from "../context/AcademyContext";
 
-jest.mock("../context/AcademyContext");
+vi.mock("../context/AcademyContext");
 
 function renderAtClass(classId = "c1") {
   return render(

@@ -1,7 +1,7 @@
 // Computes a scenario's weighted score for one cycle (or a whole run, when
 // called against the final state), from the report's own KPIs plus the
 // objectives already evaluated by scenarioObjectives.js.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { readKpi } from "./scenarioObjectives";
 
 const KPI_PATH_BY_CATEGORY = {

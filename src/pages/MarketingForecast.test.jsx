@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import MarketingForecast from "./MarketingForecast";
 import { useMarketingEngine } from "../hooks/useMarketingEngine";
 
-jest.mock("../hooks/useMarketingEngine");
+vi.mock("../hooks/useMarketingEngine");
 
 function scenario({ avgRoi, endReputation, avgConversion = 12 }) {
   return {

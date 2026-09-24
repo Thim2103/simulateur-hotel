@@ -1,7 +1,7 @@
 // Resolves a player's choice on a story event (see careerEvents.js's
 // catalog) into its actual consequences, and keeps the storyline's
 // history -- what happened, what the player chose, and why it mattered.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { findEventDefinition } from "./careerEvents";
 
 // Applies a choice's consequence to the hotel's finance (a one-off cash

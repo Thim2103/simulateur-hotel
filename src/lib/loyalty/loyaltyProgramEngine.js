@@ -27,7 +27,7 @@
 //
 // State: `hotelState.loyalty` = { launched, members, nextId, benefits, ledger,
 // today, lastOutcome }. Pure and deterministic.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { toIsoDate } from "../hotelEvents/hotelEventsEngine";

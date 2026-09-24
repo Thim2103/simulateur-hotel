@@ -2,7 +2,7 @@
 // staff management (transfers/training/promotions/morale across hotels) is
 // lib/staffMulti/ -- this file only reads a single restaurant.staff array,
 // the same one staffMulti moves people in and out of.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export function computeStaffProductivity(staff, { complaints = 0 } = {}) {
   const people = safeArray(staff, []);

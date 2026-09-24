@@ -3,7 +3,7 @@
 // health inspection, technical incidents -- see eventDefinitions.js's
 // `category`), and what they mean for complaints/maintenance/demand and the
 // operations task list.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 const RESTAURANT_RELEVANT_CATEGORIES = ["restaurant", "compliance", "facilities"];
 const SEVERITY_WEIGHT = { low: 1, medium: 2, high: 3 };

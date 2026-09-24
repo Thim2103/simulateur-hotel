@@ -8,7 +8,7 @@
 // the ESG sustainability score (durable/responsible reputation) and how
 // well the current campaigns are performing (a well-run campaign lifts
 // brand perception; an overspent, low-ROI one erodes it).
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

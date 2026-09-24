@@ -29,7 +29,7 @@
 // State: `hotelState.majorProjects` = { built: {id: {day, ...}}, works: {id:
 // {startedOnDay, completesOnDay, size}}, log }. Pure and deterministic; a hotel
 // that never built a project keeps no state, and every effect below is neutral.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { canAfford, payInvestment, treasuryOf } from "../finance/investmentFunding";
 import { createRoom } from "../pmsModels";
 

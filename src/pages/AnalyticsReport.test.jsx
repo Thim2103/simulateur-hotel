@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AnalyticsReport from "./AnalyticsReport";
 import { useAnalytics } from "../hooks/useAnalytics";
 
-jest.mock("../hooks/useAnalytics");
+vi.mock("../hooks/useAnalytics");
 
 function renderAtReport() {
   return render(

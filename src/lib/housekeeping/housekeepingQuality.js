@@ -5,7 +5,7 @@
 // what satisfaction measures, but it's the clearest external signal
 // available -- see lib/calculs/rm.js) -- "synchroniser avec RM (impact
 // satisfaction)" (section 5).
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 
 const BASELINE_MINUTES_PER_ROOM = 30; // a comfortable, unrushed clean
 

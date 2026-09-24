@@ -4,7 +4,7 @@
 // Housekeeping, Clients and storyline (missions/objectives) completion
 // -- "synchroniser avec tous les modules" -- plus a per-department
 // breakdown for the audits pages.
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

@@ -3,7 +3,7 @@
 // HTML export ("export HTML du rapport final") -- same "plain enough to
 // open in any browser or print-to-PDF" approach lib/tfe/tfeReport.js's
 // exportTfeReportHtml() already uses.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { scoreGrade } from "./proScore";
 import { activeCrises } from "./proCrises";
 import { availableOpportunities } from "./proOpportunities";

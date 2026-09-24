@@ -7,7 +7,7 @@
 // seasonEventEngine.js, every one of them already exported and pure) --
 // never recomputes the rating itself, only explains it after the fact.
 // No rng, no new state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { hotelCondition } from "../maintenance/maintenanceCostEngine";
 import { openIncidents } from "../maintenance/incidentImpact";
 import { ecoRatingBonus } from "../expansion/majorProjectsEngine";

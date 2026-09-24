@@ -3,8 +3,8 @@ import { useChain } from "./useChain";
 
 const mockRunChainCycleEngine = jest.fn();
 
-jest.mock("../lib/multiHotel", () => {
-  const actual = jest.requireActual("../lib/multiHotel");
+vi.mock("../lib/multiHotel", async (importOriginal) => {
+  const actual = await importOriginal();
   return { ...actual, runChainCycle: (...args) => mockRunChainCycleEngine(...args) };
 });
 

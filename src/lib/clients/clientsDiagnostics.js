@@ -3,7 +3,7 @@
 // to one clients cycle's numbers. See clientsEngine.js's
 // clientsDiagnosticsToAnalytics() for how these fold into the Analytics
 // module's own diagnostics list.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function diagnostic(type, severity, message) {
   const VALID = ["anomaly", "error", "opportunity"];

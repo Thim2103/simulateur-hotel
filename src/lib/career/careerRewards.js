@@ -2,7 +2,7 @@
 // explicitly by the player (claimReward() in useCareer.js) rather than
 // applied automatically -- so a reward always shows up as something the
 // player did, not a silent state change.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 export const REWARD_CATALOG = {
   "cash-500": { label: "Prime de 500 €", type: "cash", amount: 500 },

@@ -13,7 +13,7 @@
 // TIME, and it already has its own, entirely separate, business-logic
 // clock elsewhere in this codebase. Nothing in this file reads or writes
 // anything hotel-related.
-import { safeNumber } from "../../../lib/safe";
+import { safeNumber } from "../../../lib/safe.js";
 
 // A single very long frame (the tab was backgrounded, a breakpoint was
 // hit, the user alt-tabbed away for a while...) must never be handed to

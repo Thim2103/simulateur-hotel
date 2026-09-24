@@ -8,7 +8,7 @@
 // sheet/cash-flow/ratios/diagnostics/forecast this module adds on top,
 // then persists that layer (via lib/financeRepository.js) plus its own
 // replay log of past cycles.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createFinanceState(overrides = {}) {

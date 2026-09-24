@@ -1,4 +1,4 @@
-import { safeArray, safeJSON, safeNumber, safeObject, safeString } from "./safe";
+import { safeArray, safeJSON, safeNumber, safeObject, safeString } from "./safe.js";
 
 describe("safeArray", () => {
   test("returns arrays as-is", () => {

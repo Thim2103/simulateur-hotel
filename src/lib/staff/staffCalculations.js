@@ -15,7 +15,7 @@
 // against a plausible average salary, the same "seed a constant, document
 // it" approach financeCalculations.js uses for fixed assets/debt. Every
 // constant below is a deliberate, disclosed assumption.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 const AVERAGE_HOTEL_STAFF_SALARY = 2600; // €/month, plausible average for reception/housekeeping/maintenance roles not tracked per-person
 const HOUSEKEEPING_STAFF_SHARE = 0.4; // share of the (estimated) hotel-side headcount assumed to be housekeeping

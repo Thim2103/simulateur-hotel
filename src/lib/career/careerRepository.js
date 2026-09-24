@@ -5,7 +5,7 @@
 // writes the single career_state snapshot per user -- the other 6 tables
 // the migration creates exist for a future normalized audit trail (see
 // that migration's header) and aren't written here yet.
-import { assertSupabaseConfigured, requireUserId } from "../supabase";
+import { assertSupabaseConfigured, requireUserId } from "../supabase.js";
 import { safeLoad } from "../safeLoad";
 import { deserializeCareerState, serializeCareerState } from "./careerState";
 

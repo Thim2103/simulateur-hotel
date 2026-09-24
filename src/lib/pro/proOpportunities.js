@@ -2,7 +2,7 @@
 // triggers into rolling instances with an estimated ROI and a status,
 // so pages/ProOpportunities.jsx can show what's available to seize right
 // now. Symmetric to proCrises.js.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 // options:
 //   triggeredThisMonth: the "opportunity"-type entries from

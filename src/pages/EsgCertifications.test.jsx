@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import EsgCertifications from "./EsgCertifications";
 import { useEsgEngine } from "../hooks/useEsgEngine";
 
-jest.mock("../hooks/useEsgEngine");
+vi.mock("../hooks/useEsgEngine");
 
 function certificationsFixture() {
   return [

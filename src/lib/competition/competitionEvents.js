@@ -5,7 +5,7 @@
 // derives a fresh rng from (match seed, cycleIndex) for every single
 // runPlayerCycle() call instead of threading one shared, order-sensitive
 // rng object through every player.
-import { safeArray, safeObject, safeString } from "../safe";
+import { safeArray, safeObject, safeString } from "../safe.js";
 
 // A small, dependency-free deterministic PRNG (mulberry32) -- good enough
 // for gameplay randomness, not for cryptography. Two calls with the same

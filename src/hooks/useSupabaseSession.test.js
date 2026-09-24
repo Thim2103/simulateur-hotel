@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useSupabaseSession } from "./useSupabaseSession";
-import { ensureAuthSession } from "../lib/supabase";
+import { ensureAuthSession } from "../lib/supabase.js";
 
-jest.mock("../lib/supabase", () => ({ ensureAuthSession: jest.fn() }));
+vi.mock("../lib/supabase.js", () => ({ ensureAuthSession: jest.fn() }));
 
 beforeEach(() => {
   window.localStorage.clear();

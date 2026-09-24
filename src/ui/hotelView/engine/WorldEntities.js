@@ -12,7 +12,7 @@
 // SceneState.js's own `entities` field holds) -- nothing here owns state
 // itself, so a caller (a future HotelScene.jsx construction mode) stays
 // free to put this array wherever its own state already lives.
-import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
+import { safeArray, safeNumber, safeObject } from "../../../lib/safe.js";
 
 function toTile(tile) {
   const source = safeObject(tile);

@@ -4,7 +4,7 @@ import AcademyGroup from "./AcademyGroup";
 import { useAcademyContext } from "../context/AcademyContext";
 import { createReplayLog, recordCycle } from "../lib/scenario/scenarioReplay";
 
-jest.mock("../context/AcademyContext");
+vi.mock("../context/AcademyContext");
 
 function renderAtGroup() {
   return render(

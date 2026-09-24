@@ -3,7 +3,7 @@
 // a full Scenario Builder UI (see the Scenario Builder Blueprint); Academy
 // assigns scenarios built from createScenarioTemplate() or a hand-authored
 // object, both of which already satisfy scenarioSchema.
-import { safeObject } from "../safe";
+import { safeObject } from "../safe.js";
 import { createScenarioTemplate, validateScenario } from "./scenarioSchema";
 
 export function createDraft(mode = "solo") {

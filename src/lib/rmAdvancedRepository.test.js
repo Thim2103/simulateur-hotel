@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -48,7 +48,7 @@ describe("rmAdvancedRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getRmAdvancedState } = require("./rmAdvancedRepository");
+    const { getRmAdvancedState } = await import("./rmAdvancedRepository");
     const state = await getRmAdvancedState();
     expect(state.period).toBe("2026-09-16");
     expect(state.compression.avgCompression).toBe(68);
@@ -59,7 +59,7 @@ describe("rmAdvancedRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRmAdvancedState } = require("./rmAdvancedRepository");
+    const { saveRmAdvancedState } = await import("./rmAdvancedRepository");
     await saveRmAdvancedState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -72,7 +72,7 @@ describe("rmAdvancedRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRmAdvancedForecast } = require("./rmAdvancedRepository");
+    const { saveRmAdvancedForecast } = await import("./rmAdvancedRepository");
     await saveRmAdvancedForecast({ horizonDays: 30, generatedAt: "2026-09-16" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -84,7 +84,7 @@ describe("rmAdvancedRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRmAdvancedDiagnostics } = require("./rmAdvancedRepository");
+    const { saveRmAdvancedDiagnostics } = await import("./rmAdvancedRepository");
     await saveRmAdvancedDiagnostics([{ type: "opportunity", severity: "low", message: "Test" }]);
 
     expect(upserted.user_id).toBe("user-1");
@@ -101,13 +101,13 @@ describe("rmAdvancedRepository guest mode", () => {
   });
 
   test("getRmAdvancedState() returns null before anything has been saved", async () => {
-    const { getRmAdvancedState } = require("./rmAdvancedRepository");
+    const { getRmAdvancedState } = await import("./rmAdvancedRepository");
     await expect(getRmAdvancedState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveRmAdvancedState() persists to localStorage and getRmAdvancedState() reads it back", async () => {
-    const { getRmAdvancedState, saveRmAdvancedState } = require("./rmAdvancedRepository");
+    const { getRmAdvancedState, saveRmAdvancedState } = await import("./rmAdvancedRepository");
     await saveRmAdvancedState(sampleState());
     const reloaded = await getRmAdvancedState();
 
@@ -117,13 +117,13 @@ describe("rmAdvancedRepository guest mode", () => {
   });
 
   test("saveRmAdvancedForecast() is a no-op that never throws or touches Supabase", async () => {
-    const { saveRmAdvancedForecast } = require("./rmAdvancedRepository");
+    const { saveRmAdvancedForecast } = await import("./rmAdvancedRepository");
     await expect(saveRmAdvancedForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveRmAdvancedDiagnostics() is a no-op that never throws or touches Supabase", async () => {
-    const { saveRmAdvancedDiagnostics } = require("./rmAdvancedRepository");
+    const { saveRmAdvancedDiagnostics } = await import("./rmAdvancedRepository");
     await expect(saveRmAdvancedDiagnostics([])).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });

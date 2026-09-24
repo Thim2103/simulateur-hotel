@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import ChainDashboard from "./ChainDashboard";
 import { useChainContext } from "../context/ChainContext";
 
-jest.mock("../context/ChainContext");
+vi.mock("../context/ChainContext");
 
 function hotel(overrides = {}) {
   return {

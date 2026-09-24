@@ -4,7 +4,7 @@
 // re-derive anything the business modules' own engines already
 // computed -- reads the same "month snapshot" proEngine.js builds each
 // month and only synthesizes it into an audit vocabulary.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function grade(score) {
   const value = safeNumber(score, 0);

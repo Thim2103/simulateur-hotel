@@ -3,7 +3,7 @@
 // runs progressionEngine once per cycle and returns its result as
 // dailyReport.progressionReport -- this file only extracts a
 // career-friendly snapshot of it for CareerDashboard.jsx to display.
-import { safeObject } from "../safe";
+import { safeObject } from "../safe.js";
 
 export function progressionSnapshot(dailyReport) {
   const report = safeObject(dailyReport?.progressionReport);

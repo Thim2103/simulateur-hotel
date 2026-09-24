@@ -8,7 +8,7 @@
 // Cells are addressed in TILE space, `{col, row}` -- see IsoProjection.js's
 // own docstring for what that means; this grid is the thing
 // PathfindingService.js searches over.
-import { safeArray, safeNumber } from "../../../lib/safe";
+import { safeArray, safeNumber } from "../../../lib/safe.js";
 
 function cellKey(col, row) {
   return `${col},${row}`;

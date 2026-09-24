@@ -4,12 +4,12 @@ import RestaurantForecast from "./RestaurantForecast";
 import { useCareerContext } from "../context/CareerContext";
 import { useRestaurantAdvanced } from "../hooks/useRestaurantAdvanced";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useRestaurantAdvanced");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useRestaurantAdvanced");
 
 // Chart.js needs a real canvas context, which jsdom doesn't provide; these
 // tests only care about the surrounding text/DOM, not the rendered canvas.
-jest.mock("react-chartjs-2", () => ({
+vi.mock("react-chartjs-2", () => ({
   Line: () => <div data-testid="line-chart" />,
   Bar: () => <div data-testid="bar-chart" />,
   Pie: () => <div data-testid="pie-chart" />,

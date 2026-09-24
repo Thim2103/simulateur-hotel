@@ -28,7 +28,7 @@
 // State: `hotelState.vipService.stays[reservationId]` = { upgrade, gift,
 // personal } (what was given and when). Pure and deterministic (no rng), and
 // nothing is stored for a hotel that never gave an attention.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { findReservationConflicts } from "../pmsModels";

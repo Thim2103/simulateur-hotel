@@ -3,7 +3,7 @@
 // read of where the hotel stands right now, before the player dives into
 // MyHotel. Pure reshape of what dashboardEngine.js/useDashboard.js already
 // computed -- no new simulation, no persistence of its own.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { buildAttentionItems } from "./attentionItems";
 
 // A short, rule-based "what's going on" sentence -- not a full causal

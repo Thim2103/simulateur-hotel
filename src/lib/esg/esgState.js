@@ -6,7 +6,7 @@
 // waste/CO₂/score/certifications/diagnostics/forecast on top, then
 // persists that layer (via lib/esgRepository.js) plus its own replay log
 // of past cycles.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createEsgState(overrides = {}) {

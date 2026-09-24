@@ -3,7 +3,7 @@
 // score/EBITDA-margin run-rate, same "run-rate" approach every other
 // module's *Forecast.js already uses (see lib/tfe/tfeForecast.js for the
 // same 36-month analog), but over a 24-month horizon.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_MONTHS = 24;
 const SCENARIOS = {

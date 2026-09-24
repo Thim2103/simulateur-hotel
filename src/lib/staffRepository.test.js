@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -50,7 +50,7 @@ describe("staffRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getStaffState } = require("./staffRepository");
+    const { getStaffState } = await import("./staffRepository");
     const state = await getStaffState();
     expect(state.period).toBe("2026-09-10");
   });
@@ -60,7 +60,7 @@ describe("staffRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveStaffState } = require("./staffRepository");
+    const { saveStaffState } = await import("./staffRepository");
     await saveStaffState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -73,7 +73,7 @@ describe("staffRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveStaffForecast } = require("./staffRepository");
+    const { saveStaffForecast } = await import("./staffRepository");
     await saveStaffForecast({ horizonDays: 30, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -90,13 +90,13 @@ describe("staffRepository guest mode", () => {
   });
 
   test("getStaffState() returns null before anything has been saved", async () => {
-    const { getStaffState } = require("./staffRepository");
+    const { getStaffState } = await import("./staffRepository");
     await expect(getStaffState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveStaffState() persists to localStorage and getStaffState() reads it back", async () => {
-    const { getStaffState, saveStaffState } = require("./staffRepository");
+    const { getStaffState, saveStaffState } = await import("./staffRepository");
     await saveStaffState(sampleState());
     const reloaded = await getStaffState();
 
@@ -105,7 +105,7 @@ describe("staffRepository guest mode", () => {
   });
 
   test("saveStaffForecast() is a no-op that never throws or touches Supabase", async () => {
-    const { saveStaffForecast } = require("./staffRepository");
+    const { saveStaffForecast } = await import("./staffRepository");
     await expect(saveStaffForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });

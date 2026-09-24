@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import CompetitionDashboard from "./CompetitionDashboard";
 import { useCompetitionContext } from "../context/CompetitionContext";
 
-jest.mock("../context/CompetitionContext");
+vi.mock("../context/CompetitionContext");
 
 function baseHook(overrides = {}) {
   return {

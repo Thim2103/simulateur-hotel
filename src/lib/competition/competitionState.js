@@ -2,7 +2,7 @@
 // same ScenarioRunState <-> jsonb serialization boundary Academy uses
 // (see lib/academy/academyState.js): scenarioEngine's runState carries a
 // `triggeredEventIds` Set, which JSON.stringify silently drops.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function createCompetitionState(overrides = {}) {
   return {

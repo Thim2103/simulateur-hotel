@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import Management from "./Management";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 const rooms = [{ id: 1, number: "101", type: "standard", status: "libre", price: 120, capacity: 2 }];
 const career = (hotelState = {}) => ({ day: 1, startDate: "2026-09-14", hotel: { rooms, reservations: [], hotelState } });

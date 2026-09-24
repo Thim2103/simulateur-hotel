@@ -2,7 +2,7 @@
 // analyzeRun()) -- two strategies, regardless of which mode produced
 // them. Reuses lib/replay/replayComparison.js for the raw cycle-aligned
 // diff and adds a KPI-average/diagnostics-count comparison on top.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { compareScoring } from "../replay/replayComparison";
 
 export function compareKpiAverages(analysisA, analysisB) {

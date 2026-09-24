@@ -10,7 +10,7 @@
 // module one leg (one A -> B) at a time, exactly the shape it already
 // consumes -- see the step's own "NE PAS encore implémenter le
 // pathfinding" note.
-import { safeNumber, safeObject } from "../../../lib/safe";
+import { safeNumber, safeObject } from "../../../lib/safe.js";
 
 // A movement is frame-rate independent: it tracks *progress* (0..1 along
 // the straight-line distance from `previousPosition` to `targetPosition`),

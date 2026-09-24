@@ -3,7 +3,7 @@
 // .js already use, applied to one HR cycle's own numbers. See
 // staffEngine.js's staffDiagnosticsToAnalytics() for how these fold into
 // the Analytics module's own diagnostics list.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

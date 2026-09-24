@@ -2,7 +2,7 @@
 // into rolling instances with a remaining duration, so
 // pages/ProCrises.jsx can show what's actively impacting the
 // establishment right now, not just what happened once.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 const SEVERITY_BY_DEPARTMENT_DEFAULT = "medium";
 

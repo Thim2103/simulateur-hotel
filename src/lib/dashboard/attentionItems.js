@@ -3,7 +3,7 @@
 // "MyHotel" (pages/Dashboard.jsx) shows under "Ce qui demande votre
 // attention aujourd'hui": at most a handful of items, most severe first,
 // each pointing at the module page that can actually address it.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 const SEVERITY_BY_BUCKET = { problems: "high", alerts: "medium", opportunities: "low" };
 const BUCKET_LABEL = { problems: "Problème", alerts: "Alerte", opportunities: "Opportunité" };

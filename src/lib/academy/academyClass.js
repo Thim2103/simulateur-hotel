@@ -1,6 +1,6 @@
 // Pure, immutable helpers for managing the teacher's classes within the
 // Academy state (see academyState.js for the overall shape).
-import { safeArray, safeString } from "../safe";
+import { safeArray, safeString } from "../safe.js";
 import { groupsForClass } from "./academyState";
 
 export function createClass({ id, name, teacherId }) {

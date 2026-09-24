@@ -1,7 +1,7 @@
 // Cycle-by-cycle navigation over a ReplayRun's cycles -- the scrubber
 // AtoZ, and the state/decisions reconstruction for whichever cycle is
 // currently selected.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 // A compact summary per cycle, for the timeline scrubber: no need to ship
 // the full state snapshot just to draw a row of dots.

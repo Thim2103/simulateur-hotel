@@ -1,4 +1,4 @@
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { treasuryOf } from "../finance/investmentFunding";
 import { careerReferenceDate } from "../career/careerEngine";
 import { describeCalendar } from "../hotelEvents/hotelEventsEngine";

@@ -10,7 +10,7 @@
 // choice, so an absolute EBITDA target would be trivial for a large
 // hotel and unreachable for a small one -- ratios stay fair regardless
 // of size (same reasoning as tfeStoryline.js's own objectives).
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { evaluateObjectives } from "../scenario/scenarioObjectives";
 
 export const PRO_OBJECTIVE_CATALOG = [

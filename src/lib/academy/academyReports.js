@@ -1,7 +1,7 @@
 // Shapes a group's run into the reports a teacher/student actually reads:
 // the daily cycle-by-cycle history (from the scenario's own replay log)
 // and a compact summary of where the group currently stands.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { buildReplay } from "../scenario/scenarioReplay";
 
 export function collectDailyReports(runState) {

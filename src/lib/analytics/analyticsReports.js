@@ -2,7 +2,7 @@
 // the final report a player/teacher/organizer reads, and aggregates
 // several analyses into a class-wide (Academy) or match-wide
 // (Competition) report.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { topRecommendations } from "./analyticsRecommendations";
 
 export function buildFinalReport(analysis) {

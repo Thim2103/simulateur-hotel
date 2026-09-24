@@ -5,15 +5,18 @@ import { useSupabaseSession } from "./useSupabaseSession";
 import marketingRepository from "../lib/marketingRepository";
 import { createGuestHotelBundle } from "../lib/guest";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/marketingRepository", () => ({
-  getMarketingState: jest.fn(),
-  saveMarketingState: jest.fn(),
-  saveMarketingCampaigns: jest.fn(),
-  saveMarketingChannels: jest.fn(),
-  saveMarketingForecast: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/marketingRepository", () => {
+  const mod = {
+    getMarketingState: jest.fn(),
+    saveMarketingState: jest.fn(),
+    saveMarketingCampaigns: jest.fn(),
+    saveMarketingChannels: jest.fn(),
+    saveMarketingForecast: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function careerFixture(overrides = {}) {
   return {

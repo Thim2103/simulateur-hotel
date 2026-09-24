@@ -1,7 +1,7 @@
 // Applies/checks a scenario's Constraints (budget, staffing, pricing,
 // forbidden actions) against the current state, before a decision is
 // allowed to run through the engine.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 // decisions: a free-form object describing the player's intended actions
 // this cycle -- whatever fields the caller cares to check (e.g.

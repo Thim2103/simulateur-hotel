@@ -15,7 +15,7 @@
 // (translate) + zoom (scale), centered on the viewport. `worldToScreen()`/
 // `screenToWorld()` below chain both stages so a caller never has to.
 import { worldToScreen as projectWorldToScreen, screenToWorld as unprojectScreenToWorld } from "./IsoProjection";
-import { safeNumber, safeObject } from "../../../lib/safe";
+import { safeNumber, safeObject } from "../../../lib/safe.js";
 
 export const DEFAULT_CAMERA_CONFIG = {
   minZoom: 0.5,

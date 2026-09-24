@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import CareerDashboard from "./CareerDashboard";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 function careerState(overrides = {}) {
   return {

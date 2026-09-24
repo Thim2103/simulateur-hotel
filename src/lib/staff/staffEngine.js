@@ -8,7 +8,7 @@
 // turnover -> coûts RH -> diagnostics -> forecast), records it into the HR
 // replay log, and exposes the STAFF_ACTION_CATALOG a player can apply to
 // their own hotel bundle -- see staffActions.js.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import {
   computeAbsenteeism,
   computeHeadcount,

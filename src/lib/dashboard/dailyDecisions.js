@@ -4,7 +4,7 @@
 // (RM, Staff, Marketing, Restaurant, ESG modules). Every action here still
 // runs through the exact same applyQuickAction() as before; this is only a
 // presentation grouping, not a new action system.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 export const DECISION_THEMES = [
   { id: "pricing", label: "Pricing", categories: ["pricing"], moduleLink: "/rm-dashboard" },

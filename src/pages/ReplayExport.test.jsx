@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import ReplayExport from "./ReplayExport";
 import { useReplay } from "../hooks/useReplay";
 
-jest.mock("../hooks/useReplay");
+vi.mock("../hooks/useReplay");
 
 function renderAtExport() {
   return render(

@@ -12,7 +12,7 @@
 // folding in every other module's own computed values without
 // careerEngine.js needing to know about this module -- same integration
 // pattern lib/clients/clientsEngine.js already established.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { computeFoodCost } from "./restaurantFoodCost";
 import { computePopularity } from "./restaurantPopularity";
 import { computeProfitability } from "./restaurantProfitability";

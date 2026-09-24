@@ -3,7 +3,7 @@
 // (groups/OTA) instead of a higher-ADR one (corporate/direct) that could
 // have taken the same room. Classic RM concept: on a near-full date,
 // every low-ADR booking "displaces" a potential higher-ADR one.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 function isConfirmed(reservation) {
   const status = String(reservation?.status || "").toLowerCase();

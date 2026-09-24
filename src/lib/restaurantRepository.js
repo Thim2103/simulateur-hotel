@@ -1,6 +1,6 @@
-import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase.js";
 import { safeLoad } from "./safeLoad";
-import { safeArray, safeNumber, safeObject } from "./safe";
+import { safeArray, safeNumber, safeObject } from "./safe.js";
 import { resolveSession } from "./sessionResolver";
 import { createGuestHotelBundle, createGuestRepository } from "./guest";
 

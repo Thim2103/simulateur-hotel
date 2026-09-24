@@ -3,7 +3,7 @@
 // (folds in the "campagne plats signature" action bonus, see
 // restaurantActions.js, and the clients module's satisfaction/review
 // signal when available).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 // options:
 //   menu: the restaurant's menu array.

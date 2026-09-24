@@ -3,8 +3,8 @@ import ChainStaffDashboard from "./ChainStaffDashboard";
 import { useChainContext } from "../context/ChainContext";
 import { useStaff } from "../hooks/useStaff";
 
-jest.mock("../context/ChainContext");
-jest.mock("../hooks/useStaff");
+vi.mock("../context/ChainContext");
+vi.mock("../hooks/useStaff");
 
 function hotel(overrides = {}) {
   return { id: "a", name: "Riviera Palace", city: "Nice", restaurantState: { staff: [] }, ...overrides };

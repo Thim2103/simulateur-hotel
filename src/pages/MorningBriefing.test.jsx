@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import MorningBriefing from "./MorningBriefing";
 import { useMorningBriefing } from "../hooks/useMorningBriefing";
 
-jest.mock("../hooks/useMorningBriefing");
+vi.mock("../hooks/useMorningBriefing");
 
 test("shows a loading state before the briefing is ready", () => {
   useMorningBriefing.mockReturnValue({ briefing: null, isRunning: true, error: null, loadBriefing: jest.fn().mockResolvedValue(null) });

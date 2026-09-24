@@ -30,7 +30,7 @@
 // State: `hotelState.mice` = { requests, events, nextId, lastOutcome }. Pure
 // and deterministic; a hotel with no meeting room, or that never got a
 // request, keeps no MICE state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { createReservation, findReservationConflicts } from "../pmsModels";
 import { dayIndexOf, toIsoDate } from "../hotelEvents/hotelEventsEngine";
 import { mixedRandom } from "../clients/guestProfiles";

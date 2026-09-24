@@ -1,6 +1,6 @@
 // Menu-level metrics: popularity, best/worst sellers, average ticket. Pure
 // functions over a menu array (see restaurantRepository.js's shape).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export function computeMenuPopularity(menu) {
   const items = safeArray(menu, []);

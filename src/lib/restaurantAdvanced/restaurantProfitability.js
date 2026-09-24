@@ -1,7 +1,7 @@
 // Per-dish profitability -- gross margin per item, plus the menu's own
 // gross/net margin (net = gross minus a fixed operating-cost share,
 // eased by the "repositionner les prix" action bonus).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 // A rough, deliberately simple estimate of non-food operating costs
 // (staff, energy, rent share) as a percentage of F&B revenue -- net

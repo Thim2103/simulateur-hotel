@@ -6,7 +6,7 @@
 // -> cross-selling -> diagnostics -> forecast), records it into the
 // marketing replay log, and exposes the MARKETING_ACTION_CATALOG a player
 // can apply to their own hotel bundle -- see marketingActions.js.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { computeBudget, computeConversion, computeROI, computeSegments, resolvePositioningTier } from "./marketingCalculations";
 import { computeChannelPerformance, totalChannelReach } from "./marketingChannels";
 import { computeCampaignPerformance } from "./marketingCampaigns";

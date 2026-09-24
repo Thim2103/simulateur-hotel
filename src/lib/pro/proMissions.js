@@ -3,7 +3,7 @@
 // lib/scenario/scenarioObjectives.js's readKpi() against the same month
 // snapshot proObjectives.js reads -- same reuse pattern
 // lib/tfe/tfeStoryline.js already established.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { readKpi } from "../scenario/scenarioObjectives";
 
 export const PRO_PHASE_CATALOG = [

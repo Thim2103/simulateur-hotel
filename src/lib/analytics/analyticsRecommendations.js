@@ -1,7 +1,7 @@
 // Turns diagnostics (see analyticsDiagnostics.js) into short, actionable
 // recommendations -- the text a player/teacher actually reads, ranked so
 // the highest-severity issues come first.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 const SEVERITY_WEIGHT = { high: 3, medium: 2, low: 1 };
 

@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import CareerNextDay from "./CareerNextDay";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 function dayOutcome(overrides = {}) {
   return {

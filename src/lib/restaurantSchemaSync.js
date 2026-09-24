@@ -1,4 +1,4 @@
-import { assertSupabaseConfigured, supabase } from "./supabase";
+import { assertSupabaseConfigured, supabase } from "./supabase.js";
 
 const RESTAURANT_ID = "00000000-0000-0000-0000-000000000001";
 

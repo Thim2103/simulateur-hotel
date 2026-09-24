@@ -13,7 +13,7 @@
 // computed values without careerEngine.js needing to know about this
 // module -- same integration pattern housekeepingEngine.js,
 // esgEngine.js, etc. already established.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { computeSegments, dominantSegment } from "./clientsSegments";
 import { computeSatisfaction, restaurantRatingToScore } from "./clientsSatisfaction";
 import { computeBehaviors } from "./clientsBehavior";

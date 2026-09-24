@@ -1,6 +1,6 @@
 // Event-focused views over a ReplayRun's cycles: what happened on one
 // cycle, and the full timeline of every event across the whole run.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 export function eventsForCycle(cycle) {
   return safeArray(cycle?.scenarioEvents);

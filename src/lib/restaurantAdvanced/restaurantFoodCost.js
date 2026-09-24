@@ -2,7 +2,7 @@
 // overall and per category, plus a waste share (fed by ESG) and a
 // volatility index (fed by a supplier-negotiation action bonus, see
 // restaurantActions.js's `renegocier-fournisseurs`).
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 // options:
 //   menu: the restaurant's menu array (see restaurantState.js -- each

@@ -3,7 +3,7 @@
 // that doesn't look like the others), errors (a blocked cycle or a missed
 // required objective), and opportunities (a lever that was never pulled,
 // or an objective that was nearly met).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { kpisForCycle } from "../replay/replayKpis";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];

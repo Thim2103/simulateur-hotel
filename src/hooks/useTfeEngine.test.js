@@ -3,14 +3,17 @@ import { useTfeEngine } from "./useTfeEngine";
 import { useSupabaseSession } from "./useSupabaseSession";
 import tfeRepository from "../lib/tfeRepository";
 
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/tfeRepository", () => ({
-  getTfeState: jest.fn(),
-  saveTfeState: jest.fn(),
-  saveTfeReport: jest.fn(),
-  saveTfeScore: jest.fn(),
-  saveTfeForecast: jest.fn(),
-}));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/tfeRepository", () => {
+  const mod = {
+    getTfeState: jest.fn(),
+    saveTfeState: jest.fn(),
+    saveTfeReport: jest.fn(),
+    saveTfeScore: jest.fn(),
+    saveTfeForecast: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function hotelConfig(overrides = {}) {
   return { roomCount: 30, positioningTier: "midscale", strategy: "rentabilite", segments: ["leisure"], ...overrides };

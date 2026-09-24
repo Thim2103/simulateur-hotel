@@ -5,11 +5,11 @@ const mockRunDailyCycle = jest.fn();
 const mockListRooms = jest.fn();
 const mockListReservations = jest.fn();
 
-jest.mock("../lib/dailyCycle", () => ({
+vi.mock("../lib/dailyCycle", () => ({
   runDailyCycle: (...args) => mockRunDailyCycle(...args),
 }));
 
-jest.mock("../lib/pmsRepository", () => ({
+vi.mock("../lib/pmsRepository", () => ({
   listRooms: (...args) => mockListRooms(...args),
   listReservations: (...args) => mockListReservations(...args),
 }));

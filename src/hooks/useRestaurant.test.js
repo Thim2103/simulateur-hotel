@@ -4,12 +4,12 @@ import { getRestaurantState, saveRestaurantState } from "../lib/restaurantReposi
 import { createInitialRestaurantState } from "../lib/restaurant";
 import { useSupabaseSession } from "./useSupabaseSession";
 
-jest.mock("../lib/restaurantRepository", () => ({
+vi.mock("../lib/restaurantRepository", () => ({
   getRestaurantState: jest.fn(),
   saveRestaurantState: jest.fn(),
 }));
 
-jest.mock("./useSupabaseSession");
+vi.mock("./useSupabaseSession");
 
 function validStructure(overrides = {}) {
   return { name: "Le Central", concept: "Bistro", location: "Lyon", capacity: 40, ...overrides };

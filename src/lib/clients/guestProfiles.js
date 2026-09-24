@@ -13,7 +13,7 @@
 //
 // A V.I.P. present in the hotel is flagged to the player (schematic view,
 // reception), so they can make sure the stay goes well.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { pseudoRandom } from "../staff/staffEventsEngine";
 
 const DAY_MS = 86400000;

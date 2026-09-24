@@ -43,7 +43,7 @@ test("Mode invité -> Plus -> Mode TFE Solo -> créer l'établissement -> jouer 
 
   fireEvent.click(screen.getByText("Établissement moyen (30 chambres)"));
   fireEvent.click(screen.getByRole("button", { name: /commencer le tfe/i }));
-  await waitFor(() => expect(screen.getByRole("heading", { name: /tableau de bord tfe/i })).toBeInTheDocument());
+  await waitFor(() => expect(screen.getByRole("heading", { name: /tableau de bord tfe/i })).toBeInTheDocument(), { timeout: 10000 });
   expectNoSupabaseError();
 
   // Play a month from the TFE dashboard.

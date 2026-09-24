@@ -68,7 +68,10 @@ test(
     await waitFor(() => expect(screen.getByRole("button", { name: /jouer la journée/i })).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: /jouer la journée/i }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: /que s'est-il passé/i })).toBeInTheDocument());
+    // "Jouer la journée" simulates the whole day, reloads the dashboard, then
+    // DailyReview reloads it again on mount -- well past waitFor's 1s default
+    // when the suite runs in parallel.
+    await waitFor(() => expect(screen.getByRole("heading", { name: /que s'est-il passé/i })).toBeInTheDocument(), { timeout: 10000 });
     expectNoSupabaseError();
     expect(screen.getByRole("heading", { name: /messages reçus aujourd'hui/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /voir tous les messages/i })).toHaveAttribute("href", "/gm-desk");

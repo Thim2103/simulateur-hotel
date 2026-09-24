@@ -2,7 +2,7 @@
 // never has its own notion of a "run" -- it always analyzes a ReplayRun
 // (see lib/replay/replayState.js), so there is no separate serialization
 // boundary to worry about here (no Sets, nothing non-JSON-safe).
-import { safeObject } from "../safe";
+import { safeObject } from "../safe.js";
 
 export function createAnalyticsState(overrides = {}) {
   return { analysesById: {}, comparisonsById: {}, currentRunId: null, ...overrides };

@@ -5,7 +5,7 @@
 // other modules' outputs and layers food cost/popularity/profitability/
 // menu engineering/diagnostics/forecast on top, then persists that layer
 // (via lib/restaurantAdvancedRepository.js) plus its own replay log.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createRestaurantAdvancedState(overrides = {}) {

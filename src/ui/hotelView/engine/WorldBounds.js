@@ -12,7 +12,7 @@
 // anything is placed outside (or straddling the edge of) the nominal grid.
 // `getWorldBounds()` is the one place that aggregates "everything the
 // camera should be able to see" into a single rectangle.
-import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
+import { safeArray, safeNumber, safeObject } from "../../../lib/safe.js";
 
 // Returns `{minX, maxX, minY, maxY}` in WORLD units -- the exact shape
 // Camera.js's own `worldBounds`/`fitWorldToViewport()` already expect.

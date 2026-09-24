@@ -7,7 +7,7 @@
 // this module only adds its own professional strategy flavor and its
 // own, richer 24-month timeline.
 import { createTfeHotelBundle, HOTEL_SIZE_OPTIONS, SEGMENT_OPTIONS, POSITIONING_TIERS } from "../tfe/tfeScenario";
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 export { HOTEL_SIZE_OPTIONS, SEGMENT_OPTIONS, POSITIONING_TIERS };
 

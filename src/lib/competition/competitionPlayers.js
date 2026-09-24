@@ -1,5 +1,5 @@
 // Pure, immutable helpers for registering players (or teams) into a match.
-import { safeArray, safeString } from "../safe";
+import { safeArray, safeString } from "../safe.js";
 
 export function createPlayer({ id, matchId, name }) {
   return { id, matchId, name: safeString(name, "Nouveau joueur"), registeredAt: new Date().toISOString() };

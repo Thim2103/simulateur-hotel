@@ -6,7 +6,7 @@
 // layers workload/productivity/cleaningTime/overload/understaffing/
 // quality/diagnostics/forecast on top, then persists that layer (via
 // lib/housekeepingRepository.js) plus its own replay log of past cycles.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createHousekeepingState(overrides = {}) {

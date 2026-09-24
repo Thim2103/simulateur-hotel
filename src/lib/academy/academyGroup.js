@@ -1,6 +1,6 @@
 // Pure, immutable helpers for managing a class's groups (each group is one
 // team of students, playing its own sandboxed scenario run).
-import { safeArray, safeString } from "../safe";
+import { safeArray, safeString } from "../safe.js";
 
 export function createGroup({ id, classId, name, memberNames = [] }) {
   return { id, classId, name: safeString(name, "Nouveau groupe"), memberNames: safeArray(memberNames), createdAt: new Date().toISOString() };

@@ -4,7 +4,7 @@ import FinanceBanking from "./FinanceBanking";
 import { useCareerContext } from "../context/CareerContext";
 import { takeLoan, activeLoans } from "../lib/banking/bankingLoanEngine";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 const rich = () => ({ finance: { revenue: [100000], costs: [20000] }, structure: { starRating: 4 }, progression: { player: { reputation: 60 } } });
 const career = (hotelState) => ({ day: 4, startDate: "2026-09-14", hotel: { rooms: [], reservations: [], hotelState } });

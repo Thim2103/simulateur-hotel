@@ -2,7 +2,7 @@
 // complaints, maintenance risk -- fed by menu popularity (restaurantMenu.js),
 // staff productivity (restaurantStaff.js), the hotel's RM signal
 // (restaurantRM.js) and today's relevant events (restaurantEvents.js).
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { computeMenuPopularity } from "./restaurantMenu";
 import { computeStaffProductivity } from "./restaurantStaff";
 

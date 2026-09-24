@@ -4,8 +4,8 @@ import RmAdvancedDashboard from "./RmAdvancedDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useRmAdvancedEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useRmAdvancedEngine");
 
 function careerState(overrides = {}) {
   return { day: 5, status: "active", hotel: { hotelState: {}, rooms: [], reservations: [] }, missions: [], objectives: [], rewardsInbox: [], ...overrides };

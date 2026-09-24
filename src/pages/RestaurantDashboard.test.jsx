@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import RestaurantDashboard from "./RestaurantDashboard";
 import { useRestaurant } from "../hooks/useRestaurant";
 
-jest.mock("../hooks/useRestaurant");
+vi.mock("../hooks/useRestaurant");
 
 function restaurantState(overrides = {}) {
   return {

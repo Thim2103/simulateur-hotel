@@ -23,7 +23,7 @@
 // not change on its own across the projection). Charges financières (650)
 // decay: this simulator's loans run at most 180 days, so what is owed today
 // is mostly repaid well before a 5-year horizon closes.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { incomeStatementOf, assetsOf, liabilitiesOf } from "../accounting/accountingEngine";
 import { describeDepreciationPlan } from "./depreciationEngine";
 import { loanInterestOn } from "../banking/bankingLoanEngine";

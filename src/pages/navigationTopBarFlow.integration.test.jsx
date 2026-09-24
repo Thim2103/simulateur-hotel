@@ -6,7 +6,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../App";
 
-jest.mock("../lib/calculs/rm", () => ({
+vi.mock("../lib/calculs/rm", () => ({
   getRooms: jest.fn(async () => []),
   getReservations: jest.fn(async () => []),
   occupationRate: jest.fn(() => 0),

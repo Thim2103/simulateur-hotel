@@ -4,20 +4,26 @@ import academyRepository from "../lib/academy/academyRepository";
 import replayRepository from "../lib/replay/replayRepository";
 import { createScenarioTemplate } from "../lib/scenario/scenarioSchema";
 
-jest.mock("../lib/academy/academyRepository", () => ({
-  createClass: jest.fn(),
-  createGroup: jest.fn(),
-  createAssignment: jest.fn(),
-  saveGroupRun: jest.fn(),
-  loadClassBundle: jest.fn(),
-  loadGroupRun: jest.fn(),
-  saveGroupReport: jest.fn(),
-  listClasses: jest.fn(),
-}));
+vi.mock("../lib/academy/academyRepository", () => {
+  const mod = {
+    createClass: jest.fn(),
+    createGroup: jest.fn(),
+    createAssignment: jest.fn(),
+    saveGroupRun: jest.fn(),
+    loadClassBundle: jest.fn(),
+    loadGroupRun: jest.fn(),
+    saveGroupReport: jest.fn(),
+    listClasses: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
-jest.mock("../lib/replay/replayRepository", () => ({
-  saveReplayRun: jest.fn(),
-}));
+vi.mock("../lib/replay/replayRepository", () => {
+  const mod = {
+    saveReplayRun: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function scenario(overrides = {}) {
   return createScenarioTemplate("academie", {

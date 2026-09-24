@@ -27,7 +27,7 @@
 // below -- for a 2:1 iso camera, an object's vertical extent changes how
 // much of it is visible, not whether it's in front of or behind another
 // object at a different (x, y).
-import { safeArray, safeNumber, safeObject } from "../../../lib/safe";
+import { safeArray, safeNumber, safeObject } from "../../../lib/safe.js";
 
 // The scalar sort key: the world-space coordinate of the entity's own
 // FRONT corner (the corner closest to the camera -- `x + width`,

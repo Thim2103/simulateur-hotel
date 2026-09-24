@@ -21,7 +21,7 @@
 // State lives at `hotelState.yieldManagement` = the rules' configuration
 // (see DEFAULT_YIELD); a hotel that never switched it on has none, and
 // every price stays exactly as before. Pure and deterministic.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { calendarEffects, dayIndexOf } from "../hotelEvents/hotelEventsEngine";
 import { isMeetingRoom } from "../mice/miceEngine";
 

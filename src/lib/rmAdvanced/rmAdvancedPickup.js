@@ -3,7 +3,7 @@
 // (J-30, J-21, J-14, J-7, J-3, J-1, J-0). A curve front-loaded toward
 // J-30 means guests book early (predictable, easier to price); one
 // loaded toward J-0 means late, harder-to-forecast demand.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 const LEAD_TIME_BUCKETS = [30, 21, 14, 7, 3, 1, 0];
 

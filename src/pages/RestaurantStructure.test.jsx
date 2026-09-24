@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import RestaurantStructure from "./RestaurantStructure";
 import { useRestaurant } from "../hooks/useRestaurant";
 
-jest.mock("../hooks/useRestaurant");
+vi.mock("../hooks/useRestaurant");
 
 function baseHook(overrides = {}) {
   return {

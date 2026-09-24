@@ -3,7 +3,7 @@
 // score run-rate, same "run-rate" approach lib/finance/financeForecast
 // .js/lib/staff/staffForecast.js/lib/marketing/marketingForecast.js
 // already use.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 const SCENARIOS = {

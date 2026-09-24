@@ -17,7 +17,7 @@
 // little guest satisfaction. Pure, deterministic (no rng), and inert for a
 // hotel that never expanded. Paid through finance/investmentFunding.js
 // (capital first, then treasury).
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { canAfford, payInvestment } from "../finance/investmentFunding";
 import { createRoom } from "../pmsModels";
 

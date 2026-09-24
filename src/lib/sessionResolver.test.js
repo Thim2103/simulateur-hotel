@@ -1,7 +1,7 @@
 const mockGetSession = jest.fn();
 const mockSignInAnonymously = jest.fn();
 
-jest.mock("@supabase/supabase-js", () => ({
+vi.mock("@supabase/supabase-js", () => ({
   createClient: () => ({ auth: { getSession: mockGetSession, signInAnonymously: mockSignInAnonymously } }),
 }));
 
@@ -25,7 +25,7 @@ describe("resolveSession / isGuestSession", () => {
 
   test("resolves to a Supabase session when a real session is available", async () => {
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: "user-1" } } }, error: null });
-    const { resolveSession, isGuestSession } = require("./sessionResolver");
+    const { resolveSession, isGuestSession } = await import("./sessionResolver");
 
     await expect(resolveSession()).resolves.toEqual({ user: { id: "user-1" }, mode: "supabase" });
     await expect(isGuestSession()).resolves.toBe(false);
@@ -34,7 +34,7 @@ describe("resolveSession / isGuestSession", () => {
   test("falls back to a guest session when there is no Supabase session", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSignInAnonymously.mockResolvedValue({ data: null, error: new Error("Anonymous sign-ins are disabled") });
-    const { resolveSession, isGuestSession } = require("./sessionResolver");
+    const { resolveSession, isGuestSession } = await import("./sessionResolver");
 
     const session = await resolveSession();
     expect(session.mode).toBe("guest");
@@ -45,7 +45,7 @@ describe("resolveSession / isGuestSession", () => {
   test("reuses the same guest session across calls instead of creating a new one each time", async () => {
     mockGetSession.mockResolvedValue({ data: { session: null }, error: null });
     mockSignInAnonymously.mockResolvedValue({ data: null, error: new Error("disabled") });
-    const { resolveSession } = require("./sessionResolver");
+    const { resolveSession } = await import("./sessionResolver");
 
     const first = await resolveSession();
     const second = await resolveSession();
@@ -56,7 +56,7 @@ describe("resolveSession / isGuestSession", () => {
     delete process.env.REACT_APP_SUPABASE_URL;
     delete process.env.REACT_APP_SUPABASE_ANON_KEY;
     jest.resetModules();
-    const { resolveSession } = require("./sessionResolver");
+    const { resolveSession } = await import("./sessionResolver");
 
     const session = await resolveSession();
     expect(session.mode).toBe("guest");

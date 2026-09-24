@@ -5,7 +5,7 @@
 // action here is a pure function -- applying it just returns a new hotel
 // bundle; useCareer.js's applyHotelAdjustment() (see hooks/useCareer.js)
 // is what actually stores and persists the result.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));

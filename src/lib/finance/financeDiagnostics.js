@@ -3,7 +3,7 @@
 // applied to one finance cycle's own numbers instead of a whole replay's
 // worth of cycles. See financeReports.js's financeDiagnosticsToAnalytics()
 // for how these fold into the Analytics module's own diagnostics list.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

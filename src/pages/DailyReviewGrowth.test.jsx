@@ -4,9 +4,9 @@ import DailyReview from "./DailyReview";
 import { useDailyReview } from "../hooks/useDailyReview";
 import { useGmDesk } from "../ui/gmDesk/GmDeskProvider";
 
-jest.mock("../hooks/useDailyReview");
-jest.mock("../ui/gmDesk/GmDeskProvider", () => ({
-  ...jest.requireActual("../ui/gmDesk/GmDeskProvider"),
+vi.mock("../hooks/useDailyReview");
+vi.mock("../ui/gmDesk/GmDeskProvider", async (importOriginal) => ({
+  ...(await importOriginal()),
   useGmDesk: jest.fn(),
 }));
 

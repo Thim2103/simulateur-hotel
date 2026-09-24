@@ -18,7 +18,7 @@
 // All six inputs are optional (null = unavailable); the score is
 // computed from whichever are present so the module works on day 1
 // (Guest Mode, first day of career) before all modules have fired.
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 
 export const SATISFACTION_WEIGHTS = {
   housekeeping: 0.30,

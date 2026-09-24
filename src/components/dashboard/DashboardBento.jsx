@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { BentoCard, MetricDonut, SoftButton, Sparkline, StatusBadge } from "../../ui/bento";
 import SeasonEventsBanner from "./SeasonEventsBanner";
 import { occupancyOf } from "../../lib/dashboard/statusSummary";
-import { safeArray, safeNumber } from "../../lib/safe";
+import { safeArray, safeNumber } from "../../lib/safe.js";
 
 const euro = (value) => `${Math.round(safeNumber(value, 0)).toLocaleString("fr-FR")} €`;
 const CHAIN_LINES = 4;

@@ -4,7 +4,7 @@
 // objectives, storyline and skill bonuses on top, and records the day
 // into a replay log the Replay Engine can read back (see
 // lib/replay/replayEngine.js's buildReplayRunFromCareerRun()).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { runDailyCycle } from "../dailyCycle/runDailyCycle";
 import { initScenarioRun, playScenarioCycle } from "../scenario/scenarioEngine";
 import { recordCycle } from "../scenario/scenarioReplay";

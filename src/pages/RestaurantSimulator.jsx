@@ -46,7 +46,7 @@ export default function RestaurantSimulator() {
   // instead of leaving them stranded on the now-redundant Étape 1 screen.
   const handleStructureValidated = async () => {
     await reload();
-    navigate("menu");
+    navigate("/restaurant/menu");
   };
 
   if (loading) return <div className="flex min-h-48 items-center justify-center text-sm text-slate-500"><span className="inline-flex items-center gap-2" role="status"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-amber-500" />Chargement des données restaurant…</span></div>;
@@ -142,7 +142,7 @@ export default function RestaurantSimulator() {
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
-            to={tab.to}
+            to={`/restaurant/${tab.to}`}
             end={tab.to === "overview"}
             className={({ isActive }) =>
               `shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors duration-200 ${

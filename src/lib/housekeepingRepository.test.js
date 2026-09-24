@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -51,7 +51,7 @@ describe("housekeepingRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getHousekeepingState } = require("./housekeepingRepository");
+    const { getHousekeepingState } = await import("./housekeepingRepository");
     const state = await getHousekeepingState();
     expect(state.period).toBe("2026-09-10");
   });
@@ -61,7 +61,7 @@ describe("housekeepingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveHousekeepingState } = require("./housekeepingRepository");
+    const { saveHousekeepingState } = await import("./housekeepingRepository");
     await saveHousekeepingState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -74,7 +74,7 @@ describe("housekeepingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveHousekeepingForecast } = require("./housekeepingRepository");
+    const { saveHousekeepingForecast } = await import("./housekeepingRepository");
     await saveHousekeepingForecast({ horizonDays: 30, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -91,13 +91,13 @@ describe("housekeepingRepository guest mode", () => {
   });
 
   test("getHousekeepingState() returns null before anything has been saved", async () => {
-    const { getHousekeepingState } = require("./housekeepingRepository");
+    const { getHousekeepingState } = await import("./housekeepingRepository");
     await expect(getHousekeepingState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveHousekeepingState() persists to localStorage and getHousekeepingState() reads it back", async () => {
-    const { getHousekeepingState, saveHousekeepingState } = require("./housekeepingRepository");
+    const { getHousekeepingState, saveHousekeepingState } = await import("./housekeepingRepository");
     await saveHousekeepingState(sampleState());
     const reloaded = await getHousekeepingState();
 
@@ -106,7 +106,7 @@ describe("housekeepingRepository guest mode", () => {
   });
 
   test("saveHousekeepingForecast() is a no-op that never throws or touches Supabase", async () => {
-    const { saveHousekeepingForecast } = require("./housekeepingRepository");
+    const { saveHousekeepingForecast } = await import("./housekeepingRepository");
     await expect(saveHousekeepingForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });

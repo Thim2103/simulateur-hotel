@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import MarketingReport from "./MarketingReport";
 import { useMarketingEngine } from "../hooks/useMarketingEngine";
 
-jest.mock("../hooks/useMarketingEngine");
+vi.mock("../hooks/useMarketingEngine");
 
 function marketingState(overrides = {}) {
   return {

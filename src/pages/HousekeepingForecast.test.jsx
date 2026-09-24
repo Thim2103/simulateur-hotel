@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import HousekeepingForecast from "./HousekeepingForecast";
 import { useHousekeepingEngine } from "../hooks/useHousekeepingEngine";
 
-jest.mock("../hooks/useHousekeepingEngine");
+vi.mock("../hooks/useHousekeepingEngine");
 
 function scenario({ avgOverload, endOverload, endQuality, avgQuality = 60 }) {
   return {

@@ -4,7 +4,7 @@ import Management from "./Management";
 import { useCareerContext } from "../context/CareerContext";
 import { createEmployee } from "../lib/staff/staffRoster";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 const rooms = [{ id: 1, number: "101", type: "standard", status: "libre", price: 120, capacity: 2 }];
 const employee = (id, extra = {}) => ({ ...createEmployee({ id, name: `Agent ${id}`, role: "housekeeping", level: "experienced" }), ...extra });

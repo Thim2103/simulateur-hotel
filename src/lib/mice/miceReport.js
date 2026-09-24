@@ -2,7 +2,7 @@
 // quotes that arrived, the events under way, those starting soon and those
 // that ended, plus how many quotes still wait for an answer. Null when there
 // is nothing to report. See miceEngine.js.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { toIsoDate } from "../hotelEvents/hotelEventsEngine";
 import { eventsOnDate, eventsStartingSoon, miceEvents, pendingRequests } from "./miceEngine";
 

@@ -4,7 +4,7 @@ import ClientsLoyalty from "./ClientsLoyalty";
 import { useCareerContext } from "../context/CareerContext";
 import { launchProgram } from "../lib/loyalty/loyaltyProgramEngine";
 
-jest.mock("../context/CareerContext");
+vi.mock("../context/CareerContext");
 
 const career = (hotelState) => ({ day: 4, startDate: "2026-09-14", hotel: { rooms: [], reservations: [], hotelState } });
 const rich = (treasury = 50000) => ({ finance: { revenue: [treasury], costs: [0] }, progression: { player: { reputation: 70 } } });

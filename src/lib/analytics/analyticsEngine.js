@@ -2,7 +2,7 @@
 // (see lib/replay/replayEngine.js -- Analytics never talks to Supabase or
 // re-simulates anything itself) and runs every analysis pass over it,
 // producing one Analysis object the rest of the module and the UI share.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { getCycleForRun } from "../replay/replayEngine";
 import { kpisForCycle } from "../replay/replayKpis";
 import { eventsForCycle } from "../replay/replayEvents";

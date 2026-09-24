@@ -2,7 +2,7 @@
 // came from -- two Academy groups, two Competition players, or a solo
 // scenario against a TFE import. Comparison is purely cycle-index-aligned
 // and KPI-based; it never assumes the two runs share a scenario.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { eventsForCycle } from "./replayEvents";
 import { kpisForCycle } from "./replayKpis";
 import { decisionsForCycle } from "./replayTimeline";

@@ -7,8 +7,8 @@ import { useOptionalGmDesk } from "../gmDesk/GmDeskProvider";
 import { buildStatusSummary, urgentItems } from "../../lib/dashboard/statusSummary";
 import { advanceMediaCrisis, respondToCrisis } from "../../lib/mediaCrisis/mediaCrisisEngine";
 
-jest.mock("../../context/CareerContext");
-jest.mock("../gmDesk/GmDeskProvider", () => ({ ...jest.requireActual("../gmDesk/GmDeskProvider"), useOptionalGmDesk: jest.fn() }));
+vi.mock("../../context/CareerContext");
+vi.mock("../gmDesk/GmDeskProvider", async (importOriginal) => ({ ...(await importOriginal()), useOptionalGmDesk: jest.fn() }));
 
 const ONSET = "2026-09-24";
 const baseHotel = () => ({

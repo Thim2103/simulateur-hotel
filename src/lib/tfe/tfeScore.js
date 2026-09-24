@@ -4,7 +4,7 @@
 // (Marketing), ESG score, housekeeping quality, and storyline
 // completion -- "synchroniser avec Finance/PMS/RM/Staff/Marketing/ESG/
 // Housekeeping" (section 5).
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

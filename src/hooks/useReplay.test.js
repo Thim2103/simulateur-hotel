@@ -2,10 +2,13 @@ import { renderHook, act } from "@testing-library/react";
 import { useReplay } from "./useReplay";
 import replayRepository from "../lib/replay/replayRepository";
 
-jest.mock("../lib/replay/replayRepository", () => ({
-  loadReplayRun: jest.fn(),
-  listReplayRuns: jest.fn(),
-}));
+vi.mock("../lib/replay/replayRepository", () => {
+  const mod = {
+    loadReplayRun: jest.fn(),
+    listReplayRuns: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function run(overrides = {}) {
   return {

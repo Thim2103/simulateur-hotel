@@ -7,14 +7,17 @@ import { listRooms, listReservations } from "../lib/pmsRepository";
 import { useSupabaseSession } from "./useSupabaseSession";
 import * as analyticsEngine from "../lib/analytics/analyticsEngine";
 
-jest.mock("../lib/career/careerRepository", () => ({
-  saveCareerState: jest.fn(),
-  loadCareerState: jest.fn(),
-}));
-jest.mock("../lib/hotelRepository", () => ({ getHotelState: jest.fn() }));
-jest.mock("../lib/restaurantRepository", () => ({ getRestaurantState: jest.fn() }));
-jest.mock("../lib/pmsRepository", () => ({ listRooms: jest.fn(), listReservations: jest.fn() }));
-jest.mock("./useSupabaseSession");
+vi.mock("../lib/career/careerRepository", () => {
+  const mod = {
+    saveCareerState: jest.fn(),
+    loadCareerState: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
+vi.mock("../lib/hotelRepository", () => ({ getHotelState: jest.fn() }));
+vi.mock("../lib/restaurantRepository", () => ({ getRestaurantState: jest.fn() }));
+vi.mock("../lib/pmsRepository", () => ({ listRooms: jest.fn(), listReservations: jest.fn() }));
+vi.mock("./useSupabaseSession");
 
 const REFERENCE_DATE = new Date("2026-09-10T12:00:00Z");
 

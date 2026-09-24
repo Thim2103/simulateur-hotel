@@ -5,14 +5,17 @@ import { useSupabaseSession } from "./useSupabaseSession";
 import rmAdvancedRepository from "../lib/rmAdvancedRepository";
 import { createGuestHotelBundle } from "../lib/guest";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/rmAdvancedRepository", () => ({
-  getRmAdvancedState: jest.fn(),
-  saveRmAdvancedState: jest.fn(),
-  saveRmAdvancedForecast: jest.fn(),
-  saveRmAdvancedDiagnostics: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/rmAdvancedRepository", () => {
+  const mod = {
+    getRmAdvancedState: jest.fn(),
+    saveRmAdvancedState: jest.fn(),
+    saveRmAdvancedForecast: jest.fn(),
+    saveRmAdvancedDiagnostics: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function careerFixture(overrides = {}) {
   return {

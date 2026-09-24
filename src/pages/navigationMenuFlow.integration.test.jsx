@@ -12,7 +12,7 @@ import App from "../App";
 // module; without a mock the real (network-backed) implementation would
 // run in every test that happens to render one of them while clicking
 // through the app.
-jest.mock("../lib/calculs/rm", () => ({
+vi.mock("../lib/calculs/rm", () => ({
   getRooms: jest.fn(async () => []),
   getReservations: jest.fn(async () => []),
   occupationRate: jest.fn(() => 0),

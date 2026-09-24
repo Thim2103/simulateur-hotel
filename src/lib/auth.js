@@ -4,7 +4,7 @@
 // session every repository silently falls back to; this file is only
 // exercised by a user who deliberately chooses to create a real account
 // instead of playing as a guest.
-import { assertSupabaseConfigured } from "./supabase";
+import { assertSupabaseConfigured } from "./supabase.js";
 
 // Resolves to { session } on success. Supabase returns a session
 // immediately when email confirmation is disabled on the project; when

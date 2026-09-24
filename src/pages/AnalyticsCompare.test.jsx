@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AnalyticsCompare from "./AnalyticsCompare";
 import { useAnalytics } from "../hooks/useAnalytics";
 
-jest.mock("../hooks/useAnalytics");
+vi.mock("../hooks/useAnalytics");
 
 function renderAtCompare() {
   return render(

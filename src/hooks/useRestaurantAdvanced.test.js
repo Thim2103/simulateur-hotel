@@ -5,13 +5,16 @@ import { useSupabaseSession } from "./useSupabaseSession";
 import restaurantAdvancedRepository from "../lib/restaurantAdvancedRepository";
 import { createGuestHotelBundle } from "../lib/guest";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/restaurantAdvancedRepository", () => ({
-  getRestaurantAdvancedState: jest.fn(),
-  saveRestaurantAdvancedState: jest.fn(),
-  saveRestaurantAdvancedForecast: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/restaurantAdvancedRepository", () => {
+  const mod = {
+    getRestaurantAdvancedState: jest.fn(),
+    saveRestaurantAdvancedState: jest.fn(),
+    saveRestaurantAdvancedForecast: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function careerFixture(overrides = {}) {
   return {

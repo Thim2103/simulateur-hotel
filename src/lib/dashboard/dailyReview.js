@@ -6,7 +6,7 @@
 // the most recent Analytics diagnostics/recommendations (see
 // lib/analytics/analyticsEngine.js -- already computed by useCareer.js's
 // nextDay() and stored as careerState.lastAnalysis).
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { buildAttentionItems } from "./attentionItems";
 import { describeDemand } from "../demand/demandEngine";
 import { todaysStaffEvents } from "../staff/staffEventsEngine";

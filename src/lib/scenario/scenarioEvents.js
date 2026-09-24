@@ -1,6 +1,6 @@
 // Resolves a scenario's own programmed/conditional events for the current
 // cycle, on top of whatever eventEngine.generateEvents() already rolled.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 function evaluateCondition(condition, state) {
   if (typeof condition !== "function") return false;

@@ -5,14 +5,17 @@ import { useSupabaseSession } from "./useSupabaseSession";
 import financeRepository from "../lib/financeRepository";
 import { createGuestHotelBundle } from "../lib/guest";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/financeRepository", () => ({
-  getFinanceState: jest.fn(),
-  saveFinanceState: jest.fn(),
-  appendFinanceReport: jest.fn(),
-  saveFinanceForecast: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/financeRepository", () => {
+  const mod = {
+    getFinanceState: jest.fn(),
+    saveFinanceState: jest.fn(),
+    appendFinanceReport: jest.fn(),
+    saveFinanceForecast: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function careerFixture(overrides = {}) {
   return {

@@ -2,7 +2,7 @@
 // replayTimeline.decisionsForCycle()): how often each decision field was
 // touched, how much it swung cycle to cycle, and whether changing it
 // tended to precede a better or worse score next cycle.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { decisionsForCycle } from "../replay/replayTimeline";
 
 function decisionFields(cycles) {

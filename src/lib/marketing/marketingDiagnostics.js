@@ -3,7 +3,7 @@
 // use, applied to one marketing cycle's own numbers. See
 // marketingEngine.js's marketingDiagnosticsToAnalytics() for how these
 // fold into the Analytics module's own diagnostics list.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

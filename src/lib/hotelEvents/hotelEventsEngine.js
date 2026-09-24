@@ -35,7 +35,7 @@
 // The played day's situation is snapshotted by advanceHotelEvents() at
 // `hotelState.hotelEvents.today` (housekeeping and wear read it), along with
 // the audit results (`hotelEvents.audits`).
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { pseudoRandom } from "../staff/staffEventsEngine";
 import { maintenanceLevel, hotelCondition } from "../maintenance/maintenanceCostEngine";
 import { openIncidents } from "../maintenance/incidentImpact";

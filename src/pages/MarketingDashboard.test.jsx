@@ -4,8 +4,8 @@ import MarketingDashboard from "./MarketingDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useMarketingEngine } from "../hooks/useMarketingEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useMarketingEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useMarketingEngine");
 
 function careerState(overrides = {}) {
   return {

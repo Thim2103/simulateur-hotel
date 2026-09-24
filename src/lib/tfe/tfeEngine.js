@@ -8,7 +8,7 @@
 // financeFromCareerState()/staffFromCareerState()/
 // marketingFromCareerState()/esgFromCareerState()/
 // housekeepingFromCareerState(), all reused unchanged).
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { startCareer as startCareerEngine, runCareerDay } from "../career/careerEngine";
 import { buildReplayRunFromCareerRun } from "../replay/replayEngine";
 import { analyzeRun } from "../analytics/analyticsEngine";

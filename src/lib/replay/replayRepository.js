@@ -5,9 +5,9 @@
 // to survive a page reload before it can be "replayed" at all. Every pure
 // replay*.js file stays storage-agnostic; only this file talks to
 // Supabase.
-import { assertSupabaseConfigured, requireUserId } from "../supabase";
+import { assertSupabaseConfigured, requireUserId } from "../supabase.js";
 import { safeLoad } from "../safeLoad";
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { kpisForCycle } from "./replayKpis";
 
 async function select(table, query = (builder) => builder) {

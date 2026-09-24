@@ -7,7 +7,7 @@
 // dailyReview.js's buildStaffingChain() already reads). Nothing here
 // recomputes the simulation; it only reads it and narrates the links a
 // non-hotelier player wouldn't otherwise connect. Pure and deterministic.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function driverFactor(demand, key) {
   return demand?.drivers?.find((driver) => driver.key === key)?.factor ?? null;

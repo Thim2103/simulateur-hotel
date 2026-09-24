@@ -1,7 +1,7 @@
 // Extracts a normalized, chart-friendly set of KPIs from a cycle's
 // DailyReport (see lib/dailyCycle/runDailyCycle.js's return shape) plus
 // the scenario's own score for that cycle.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export function kpisForCycle(cycle) {
   const report = cycle?.baseReport || {};

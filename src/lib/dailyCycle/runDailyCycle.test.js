@@ -1,6 +1,6 @@
 const mockSaveDailyState = jest.fn().mockResolvedValue({ hotel: null, restaurant: null, pms: { rooms: [], reservations: [] } });
 
-jest.mock("./saveDailyState", () => ({
+vi.mock("./saveDailyState", () => ({
   saveDailyState: (...args) => mockSaveDailyState(...args),
 }));
 

@@ -1,7 +1,7 @@
 // A simple append-only log of every cycle played during a scenario run,
 // plus the lookups needed to scrub through it afterwards (see
 // pages/ScenarioReview.jsx and, for Academy, pages/AcademyReview.jsx).
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 
 export function createReplayLog() {
   return { entries: [] };

@@ -17,7 +17,7 @@
 // construction project. Pure and deterministic; inert (no axis active)
 // for a hotel that never invested, so existing saves/fixtures read
 // exactly as before.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { canAfford, payInvestment } from "../finance/investmentFunding";
 
 export const AXES = {

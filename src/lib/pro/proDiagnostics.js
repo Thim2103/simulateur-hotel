@@ -5,7 +5,7 @@
 // this file only adds Pro-scoped, cross-module diagnostics (phase
 // pacing, bankruptcy risk, active crises, audit failures, overall
 // trajectory) that no single business module could produce on its own.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

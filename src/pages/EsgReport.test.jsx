@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import EsgReport from "./EsgReport";
 import { useEsgEngine } from "../hooks/useEsgEngine";
 
-jest.mock("../hooks/useEsgEngine");
+vi.mock("../hooks/useEsgEngine");
 
 function esgState(overrides = {}) {
   return {

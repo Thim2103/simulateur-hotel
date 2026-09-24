@@ -33,7 +33,7 @@
 // of equity, so Total Actif = Total Passif by construction, whatever was
 // bought, borrowed or earned. describeAccounting()'s `isBalanced` re-checks
 // it anyway (to 1 cent, for rounding), as a safety net.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 import { capitalOf, balanceOf } from "../finance/investmentFunding";
 import { outstandingDebt, describeBanking } from "../banking/bankingLoanEngine";
 import { purchaseHistory, ledgerOf as supplierLedgerOf } from "../suppliers/suppliersEngine";

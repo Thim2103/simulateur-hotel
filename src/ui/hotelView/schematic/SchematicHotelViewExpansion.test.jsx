@@ -4,8 +4,8 @@ import SchematicHotelView from "./SchematicHotelView";
 import { startFloorConstruction, advanceExpansion, fitOutRooms, CONSTRUCTION_DAYS, BASE_FLOORS } from "../../../lib/expansion/hotelExpansionEngine";
 
 const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: () => mockNavigate,
 }));
 

@@ -1,6 +1,8 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import SchematicHotelView from "./SchematicHotelView";
+import { isVip, mixedRandom, UNLUCKY_STAY_CHANCE } from "../../../lib/clients/guestProfiles";
+import { describeVipGuests } from "../../../lib/clients/vipServiceEngine";
 
 const rooms = [
   { id: 1, number: "101", status: "occupée", housekeeping_status: "clean" },
@@ -62,9 +64,6 @@ describe("SchematicHotelView / V.I.P. alert", () => {
 });
 
 describe("SchematicHotelView / V.I.P. welcome modal", () => {
-  const { isVip, mixedRandom, UNLUCKY_STAY_CHANCE } = jest.requireActual("../../../lib/clients/guestProfiles");
-  const { describeVipGuests } = jest.requireActual("../../../lib/clients/vipServiceEngine");
-  const { fireEvent } = jest.requireActual("@testing-library/react");
 
   const roomList = [
     { id: 1, number: "101", type: "standard", status: "occupée", housekeeping_status: "clean" },

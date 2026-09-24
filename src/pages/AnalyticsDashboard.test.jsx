@@ -3,9 +3,9 @@ import { MemoryRouter } from "react-router-dom";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import { useAnalytics } from "../hooks/useAnalytics";
 
-jest.mock("../hooks/useAnalytics");
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("../hooks/useAnalytics");
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: () => jest.fn(),
 }));
 

@@ -6,7 +6,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -111,7 +111,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockEnsureAuthSession.mockResolvedValue("user-1");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { listRooms } = require("./pmsRepository");
+    const { listRooms } = await import("./pmsRepository");
     const rooms = await listRooms();
 
     const claim = calls.find((call) => call.table === "rooms" && call.op === "update");
@@ -128,7 +128,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockEnsureAuthSession.mockResolvedValue("user-1");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { listRooms } = require("./pmsRepository");
+    const { listRooms } = await import("./pmsRepository");
     await listRooms();
 
     expect(calls.some((call) => call.op === "update")).toBe(false);
@@ -141,7 +141,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockEnsureAuthSession.mockResolvedValue("user-1");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { listRooms } = require("./pmsRepository");
+    const { listRooms } = await import("./pmsRepository");
     // Nothing to claim (the only row already belongs to someone else) and
     // the final select is scoped to user-1, so the result is empty.
     await expect(listRooms()).resolves.toEqual([]);
@@ -152,7 +152,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockRequireUserId.mockResolvedValue("user-2");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRoom } = require("./pmsRepository");
+    const { saveRoom } = await import("./pmsRepository");
     await saveRoom({ number: "202", type: "suite", price: 220, status: "libre" });
 
     const insertCall = calls.find((call) => call.op === "insert");
@@ -164,7 +164,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockRequireUserId.mockRejectedValue(new Error("Session Supabase non authentifiee."));
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRoom } = require("./pmsRepository");
+    const { saveRoom } = await import("./pmsRepository");
     await expect(saveRoom({ number: "303" })).rejects.toThrow(/non authentifi/i);
     expect(calls).toHaveLength(0);
   });
@@ -179,7 +179,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockEnsureAuthSession.mockResolvedValue(null);
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveRoom } = require("./pmsRepository");
+    const { saveRoom } = await import("./pmsRepository");
     const saved = await saveRoom({ number: "303", type: "standard", price: 100, status: "libre" });
 
     expect(saved.number).toBe("303");
@@ -192,7 +192,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockRequireUserId.mockResolvedValue("user-3");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { deleteRoom } = require("./pmsRepository");
+    const { deleteRoom } = await import("./pmsRepository");
     await deleteRoom(7);
 
     const deleteCall = calls.find((call) => call.op === "delete");
@@ -204,7 +204,7 @@ describe("pmsRepository user scoping and legacy-row claiming", () => {
     mockRequireUserId.mockResolvedValue("user-3");
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { deleteRoom } = require("./pmsRepository");
+    const { deleteRoom } = await import("./pmsRepository");
     await deleteRoom(7);
 
     // The delete call was scoped to user-3, so the row (owned by someone
@@ -231,14 +231,14 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("listRooms() seeds the same ready-to-play rooms Career/Restaurant use, on first access", async () => {
-    const { listRooms } = require("./pmsRepository");
+    const { listRooms } = await import("./pmsRepository");
     const rooms = await listRooms();
     expect(rooms.length).toBeGreaterThan(0);
     expect(rooms[0]).toHaveProperty("number");
   });
 
   test("saveRoom() assigns a new id and persists it across calls", async () => {
-    const { saveRoom, listRooms } = require("./pmsRepository");
+    const { saveRoom, listRooms } = await import("./pmsRepository");
     const saved = await saveRoom({ number: "999", type: "standard", price: 100, status: "libre" });
     expect(saved.id).toBeDefined();
 
@@ -247,7 +247,7 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("saveRoom() updates an existing room in place instead of duplicating it", async () => {
-    const { saveRoom, listRooms } = require("./pmsRepository");
+    const { saveRoom, listRooms } = await import("./pmsRepository");
     const rooms = await listRooms();
     const existing = rooms[0];
 
@@ -259,7 +259,7 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("deleteRoom() removes the room from the guest collection", async () => {
-    const { listRooms, deleteRoom } = require("./pmsRepository");
+    const { listRooms, deleteRoom } = await import("./pmsRepository");
     const rooms = await listRooms();
     await deleteRoom(rooms[0].id);
 
@@ -268,7 +268,7 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("listReservations()/saveReservation()/deleteReservation() round-trip through the guest collection", async () => {
-    const { listReservations, saveReservation, deleteReservation } = require("./pmsRepository");
+    const { listReservations, saveReservation, deleteReservation } = await import("./pmsRepository");
     const seeded = await listReservations();
     expect(seeded.length).toBeGreaterThan(0);
 
@@ -281,7 +281,7 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("listClients()/saveClient()/deleteClient() round-trip through the guest collection, starting empty", async () => {
-    const { listClients, saveClient, deleteClient } = require("./pmsRepository");
+    const { listClients, saveClient, deleteClient } = await import("./pmsRepository");
     await expect(listClients()).resolves.toEqual([]);
 
     const created = await saveClient({ name: "Ada Lovelace", email: "ada@example.com" });
@@ -293,24 +293,24 @@ describe("pmsRepository guest mode", () => {
   });
 
   test("the same seeded rooms/reservations are shared across separate calls (one localStorage document, not reseeded each time)", async () => {
-    const { listRooms: listRoomsFirst } = require("./pmsRepository");
+    const { listRooms: listRoomsFirst } = await import("./pmsRepository");
     const first = await listRoomsFirst();
 
     jest.resetModules();
     mockEnsureAuthSession.mockResolvedValue(null);
-    const { listRooms: listRoomsSecond } = require("./pmsRepository");
+    const { listRooms: listRoomsSecond } = await import("./pmsRepository");
     const second = await listRoomsSecond();
 
     expect(second.map((room) => room.id)).toEqual(first.map((room) => room.id));
   });
 
   test("saveDailyState() persists both rooms and reservations through the guest branch", async () => {
-    const { listRooms, saveDailyState } = require("./pmsRepository");
+    const { listRooms, saveDailyState } = await import("./pmsRepository");
     const rooms = await listRooms();
 
     await saveDailyState({ rooms: [{ ...rooms[0], status: "occupée" }], reservations: [] });
 
-    const { listRooms: reload } = require("./pmsRepository");
+    const { listRooms: reload } = await import("./pmsRepository");
     const reloaded = await reload();
     expect(reloaded.find((room) => String(room.id) === String(rooms[0].id)).status).toBe("occupée");
   });

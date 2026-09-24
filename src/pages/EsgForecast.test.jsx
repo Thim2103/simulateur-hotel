@@ -3,7 +3,7 @@ import { MemoryRouter } from "react-router-dom";
 import EsgForecast from "./EsgForecast";
 import { useEsgEngine } from "../hooks/useEsgEngine";
 
-jest.mock("../hooks/useEsgEngine");
+vi.mock("../hooks/useEsgEngine");
 
 function scenario({ avgEnergy, endCo2, endScore, avgCo2 = 150 }) {
   return {

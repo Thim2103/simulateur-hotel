@@ -3,15 +3,18 @@ import { useProEngine } from "./useProEngine";
 import { useSupabaseSession } from "./useSupabaseSession";
 import proRepository from "../lib/proRepository";
 
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/proRepository", () => ({
-  getProState: jest.fn(),
-  saveProState: jest.fn(),
-  saveProReport: jest.fn(),
-  saveProScore: jest.fn(),
-  saveProForecast: jest.fn(),
-  saveProDiagnostics: jest.fn(),
-}));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/proRepository", () => {
+  const mod = {
+    getProState: jest.fn(),
+    saveProState: jest.fn(),
+    saveProReport: jest.fn(),
+    saveProScore: jest.fn(),
+    saveProForecast: jest.fn(),
+    saveProDiagnostics: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 function hotelConfig(overrides = {}) {
   return { roomCount: 30, positioningTier: "midscale", strategy: "optimisation", segments: ["leisure"], ...overrides };

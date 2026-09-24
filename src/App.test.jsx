@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import PMS from './pages/PMS';
 
-jest.mock('./lib/calculs/rm', () => ({
+vi.mock('./lib/calculs/rm', () => ({
   getRooms: jest.fn(async () => [
     { id: 1, number: '101', type: 'standard' },
     { id: 2, number: '102', type: 'deluxe' },

@@ -1,7 +1,7 @@
 // Normalizers repair unreliable/malformed data (nulls, JSON strings, arrays
 // where objects are expected, objects where arrays are expected, etc.) into
 // the shapes consumed by useRestaurantSimulator and the Restaurant* pages.
-import { safeArray, safeNumber, safeObject, safeString } from "./safe";
+import { safeArray, safeNumber, safeObject, safeString } from "./safe.js";
 import { normalizeFinanceMonths, normalizeTaxes } from "./restaurantRepository";
 import {
   restaurantStructure,

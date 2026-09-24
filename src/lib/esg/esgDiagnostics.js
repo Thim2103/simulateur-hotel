@@ -3,7 +3,7 @@
 // lib/marketing/marketingDiagnostics.js already use, applied to one ESG
 // cycle's own numbers. See esgEngine.js's esgDiagnosticsToAnalytics() for
 // how these fold into the Analytics module's own diagnostics list.
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 
 const DIAGNOSTIC_TYPES = ["anomaly", "error", "opportunity"];
 

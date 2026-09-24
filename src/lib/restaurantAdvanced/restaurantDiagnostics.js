@@ -2,7 +2,7 @@
 // Advanced module -- same shape lib/analytics/analyticsDiagnostics.js and
 // every other module's own diagnostics generator already uses (see
 // lib/clients/clientsDiagnostics.js).
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 export function generateRestaurantDiagnostics({
   foodCost = {},

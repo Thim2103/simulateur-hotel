@@ -4,12 +4,15 @@ import { useCareerContext } from "../context/CareerContext";
 import { useSupabaseSession } from "./useSupabaseSession";
 import dashboardRepository from "../lib/dashboard/dashboardRepository";
 
-jest.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
-jest.mock("./useSupabaseSession");
-jest.mock("../lib/dashboard/dashboardRepository", () => ({
-  saveDashboardPreferences: jest.fn(),
-  loadDashboardPreferences: jest.fn(),
-}));
+vi.mock("../context/CareerContext", () => ({ useCareerContext: jest.fn() }));
+vi.mock("./useSupabaseSession");
+vi.mock("../lib/dashboard/dashboardRepository", () => {
+  const mod = {
+    saveDashboardPreferences: jest.fn(),
+    loadDashboardPreferences: jest.fn(),
+  };
+  return { ...mod, default: mod };
+});
 
 const REFERENCE_DATE = new Date("2026-09-10T12:00:00Z");
 

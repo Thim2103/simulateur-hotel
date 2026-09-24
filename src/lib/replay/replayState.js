@@ -4,7 +4,7 @@
 // Every source's own ScenarioRunState (see lib/scenario/scenarioEngine.js)
 // already carries a `replayLog` -- this file just wraps that plus a
 // little identifying metadata into one consistent object.
-import { safeArray, safeObject, safeString } from "../safe";
+import { safeArray, safeObject, safeString } from "../safe.js";
 import { buildReplay } from "../scenario/scenarioReplay";
 
 export const REPLAY_SOURCES = ["scenario", "academie", "competition", "tfe", "career"];

@@ -2,7 +2,7 @@
 // trigger, given how many days the player has been on the job and their
 // current level. See careerStoryline.js for resolving a player's *choice*
 // on one of these events into actual consequences.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 export const STORY_EVENT_CATALOG = [
   {

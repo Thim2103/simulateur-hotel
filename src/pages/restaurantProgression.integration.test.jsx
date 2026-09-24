@@ -26,12 +26,12 @@ import RestaurantSimulator from "./RestaurantSimulator";
 import { useRestaurantSimulator } from "../hooks/useRestaurantSimulator";
 import { useRestaurant } from "../hooks/useRestaurant";
 
-jest.mock("../hooks/useRestaurantSimulator");
-jest.mock("../hooks/useRestaurant");
+vi.mock("../hooks/useRestaurantSimulator");
+vi.mock("../hooks/useRestaurant");
 
 const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: () => mockNavigate,
 }));
 
@@ -79,7 +79,7 @@ test("validating the establishment reloads RestaurantSimulator's own progression
   // player straight to the Menu tab instead of leaving them stranded.
   await waitFor(() => expect(submitStructure).toHaveBeenCalled());
   await waitFor(() => expect(reload).toHaveBeenCalled());
-  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("menu"));
+  await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/restaurant/menu"));
 });
 
 test("submitStructure() alone never touches RestaurantSimulator's own state (documents why the explicit reload() wiring was the fix)", async () => {

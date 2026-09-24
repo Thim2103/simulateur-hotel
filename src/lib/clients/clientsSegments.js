@@ -2,7 +2,7 @@
 // (business / leisure / famille / premium) from the RM segmentation
 // already embedded in the hotel bundle plus the room-type mix and
 // current pricing tier. Feeds clientsEngine.js's runClientsCycle().
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

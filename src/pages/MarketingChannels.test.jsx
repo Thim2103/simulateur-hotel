@@ -4,8 +4,8 @@ import MarketingChannels from "./MarketingChannels";
 import { useMarketingEngine } from "../hooks/useMarketingEngine";
 import { useCareerContext } from "../context/CareerContext";
 
-jest.mock("../hooks/useMarketingEngine");
-jest.mock("../context/CareerContext");
+vi.mock("../hooks/useMarketingEngine");
+vi.mock("../context/CareerContext");
 
 function channelsFixture() {
   return [

@@ -4,7 +4,7 @@ import AcademyReview from "./AcademyReview";
 import { useAcademyContext } from "../context/AcademyContext";
 import { createReplayLog, recordCycle } from "../lib/scenario/scenarioReplay";
 
-jest.mock("../context/AcademyContext");
+vi.mock("../context/AcademyContext");
 
 function renderAtReview() {
   return render(

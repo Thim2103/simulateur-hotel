@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -50,7 +50,7 @@ describe("esgRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getEsgState } = require("./esgRepository");
+    const { getEsgState } = await import("./esgRepository");
     const state = await getEsgState();
     expect(state.period).toBe("2026-09-10");
   });
@@ -60,7 +60,7 @@ describe("esgRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveEsgState } = require("./esgRepository");
+    const { saveEsgState } = await import("./esgRepository");
     await saveEsgState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -73,7 +73,7 @@ describe("esgRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveEsgForecast } = require("./esgRepository");
+    const { saveEsgForecast } = await import("./esgRepository");
     await saveEsgForecast({ horizonDays: 30, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -85,7 +85,7 @@ describe("esgRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveEsgCertifications } = require("./esgRepository");
+    const { saveEsgCertifications } = await import("./esgRepository");
     await saveEsgCertifications([
       { id: "green-key", name: "Green Key", obtained: true, progress: 100 },
       { id: "earthcheck", name: "EarthCheck", obtained: false, progress: 40 },
@@ -99,7 +99,7 @@ describe("esgRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: jest.fn() }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveEsgCertifications } = require("./esgRepository");
+    const { saveEsgCertifications } = await import("./esgRepository");
     await expect(saveEsgCertifications([{ id: "green-key", obtained: false }])).resolves.toBeUndefined();
   });
 });
@@ -113,13 +113,13 @@ describe("esgRepository guest mode", () => {
   });
 
   test("getEsgState() returns null before anything has been saved", async () => {
-    const { getEsgState } = require("./esgRepository");
+    const { getEsgState } = await import("./esgRepository");
     await expect(getEsgState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveEsgState() persists to localStorage and getEsgState() reads it back", async () => {
-    const { getEsgState, saveEsgState } = require("./esgRepository");
+    const { getEsgState, saveEsgState } = await import("./esgRepository");
     await saveEsgState(sampleState());
     const reloaded = await getEsgState();
 
@@ -128,7 +128,7 @@ describe("esgRepository guest mode", () => {
   });
 
   test("saveEsgForecast()/saveEsgCertifications() are no-ops that never throw or touch Supabase", async () => {
-    const { saveEsgForecast, saveEsgCertifications } = require("./esgRepository");
+    const { saveEsgForecast, saveEsgCertifications } = await import("./esgRepository");
     await expect(saveEsgForecast({ horizonDays: 30 })).resolves.toBeUndefined();
     await expect(saveEsgCertifications(sampleState().certifications)).resolves.toBeUndefined();
     expect(mockRequireUserId).not.toHaveBeenCalled();

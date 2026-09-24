@@ -3,7 +3,7 @@
 // (income statement ÷ 30) rather than re-simulating anything, the same
 // "run-rate" approach lib/rm/forecast.js's forecastAdvanced() uses for
 // revenue alone.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 const SCENARIOS = {

@@ -3,7 +3,7 @@
 // computation (displacement, special pricing) builds on. Flags
 // surbooking-risk dates (near-full) and under-occupancy dates (needing
 // stimulation) so the diagnostics/actions layers can react to them.
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 const HIGH_COMPRESSION_THRESHOLD = 90;
 const LOW_OCCUPANCY_THRESHOLD = 35;

@@ -4,8 +4,8 @@ import FinanceDashboard from "./FinanceDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useFinance } from "../hooks/useFinance";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useFinance");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useFinance");
 
 function careerState(overrides = {}) {
   return {

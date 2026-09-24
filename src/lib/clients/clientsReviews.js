@@ -3,7 +3,7 @@
 // score and the previous cycle's review snapshot. Mirrors the event
 // handler in lib/events/eventHandlers/customerReviews.js (which fires
 // on specific events) but operates continuously on each cycle.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 // Maps a 0-100 satisfaction score to a 1-5 average rating.
 function scoreToRating(score) {

@@ -11,7 +11,7 @@
 // reach, demandUplift), not a ground-truth "this booking came from this
 // campaign" trace. Every constant below is a deliberate, disclosed
 // assumption.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 
 const LEAD_PER_REACH_POINT = 0.6; // plausible leads generated per reach point per day
 const POSITIONING_TIERS = ["budget", "midscale", "upscale", "luxury"];

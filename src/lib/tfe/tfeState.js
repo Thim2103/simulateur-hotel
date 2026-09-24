@@ -4,7 +4,7 @@
 // tfeEngine.js rather than through the shared context/CareerContext.jsx
 // the regular Solo/Carrière mode uses) so a TFE run never mixes with, or
 // gets mixed up with, the player's regular career.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function createTfeState(overrides = {}) {
   const source = safeObject(overrides);

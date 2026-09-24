@@ -1,6 +1,6 @@
 // Evaluates a scenario's Objectives against a DailyReport/ChainReport-shaped
 // state, by walking a dotted KPI path (e.g. "finance.totalProfit").
-import { safeArray, safeNumber } from "../safe";
+import { safeArray, safeNumber } from "../safe.js";
 
 const COMPARATORS = {
   gte: (value, target) => value >= target,

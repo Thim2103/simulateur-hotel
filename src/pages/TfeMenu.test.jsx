@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import TfeMenu from "./TfeMenu";
 import { useTfeEngine } from "../hooks/useTfeEngine";
 
-jest.mock("../hooks/useTfeEngine");
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+vi.mock("../hooks/useTfeEngine");
+vi.mock("react-router-dom", async (importOriginal) => ({
+  ...(await importOriginal()),
   useNavigate: jest.fn(),
 }));
 

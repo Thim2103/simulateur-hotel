@@ -2,7 +2,7 @@
 // extrapolates from the current cycle's food cost, gross margin and
 // average popularity run-rate. Same approach lib/clients/clientsForecast.js
 // and lib/housekeeping/housekeepingForecast.js use.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 

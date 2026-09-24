@@ -7,7 +7,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -30,7 +30,7 @@ beforeEach(() => {
 
 describe("restaurantRepository guest mode", () => {
   test("getRestaurantState() seeds a ready-to-play restaurant, no Supabase call", async () => {
-    const { getRestaurantState } = require("./restaurantRepository");
+    const { getRestaurantState } = await import("./restaurantRepository");
     const state = await getRestaurantState();
 
     expect(state.staff.length).toBeGreaterThan(0);
@@ -39,7 +39,7 @@ describe("restaurantRepository guest mode", () => {
   });
 
   test("saveRestaurantState() persists to localStorage and getRestaurantState() reads it back", async () => {
-    const { getRestaurantState, saveRestaurantState } = require("./restaurantRepository");
+    const { getRestaurantState, saveRestaurantState } = await import("./restaurantRepository");
     const seeded = await getRestaurantState();
 
     await saveRestaurantState({ ...seeded, marketing: { ...seeded.marketing, budget: 12345 } });
@@ -49,10 +49,10 @@ describe("restaurantRepository guest mode", () => {
   });
 
   test("shares the same guest namespace ('restaurant') useRestaurant.js's own guest bypass already uses", async () => {
-    const { createGuestRepository } = require("./guest/guestRepository");
+    const { createGuestRepository } = await import("./guest/guestRepository");
     const sharedRepository = createGuestRepository("restaurant", { defaultState: null });
 
-    const { getRestaurantState, saveRestaurantState } = require("./restaurantRepository");
+    const { getRestaurantState, saveRestaurantState } = await import("./restaurantRepository");
     await getRestaurantState(); // seeds it
     await saveRestaurantState({ marketing: { budget: 555 } });
 
@@ -60,12 +60,12 @@ describe("restaurantRepository guest mode", () => {
   });
 
   test("the seeded restaurant is shared across separate module loads (one localStorage document, not reseeded)", async () => {
-    const { getRestaurantState: first } = require("./restaurantRepository");
+    const { getRestaurantState: first } = await import("./restaurantRepository");
     const seeded = await first();
 
     jest.resetModules();
     mockEnsureAuthSession.mockResolvedValue(null);
-    const { getRestaurantState: second } = require("./restaurantRepository");
+    const { getRestaurantState: second } = await import("./restaurantRepository");
     const reloaded = await second();
 
     expect(reloaded.staff.length).toBe(seeded.staff.length);

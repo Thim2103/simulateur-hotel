@@ -75,7 +75,10 @@ test(
     // clicking it by its resting name.
     await waitFor(() => expect(screen.getByRole("button", { name: /avancer la journée/i })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: /avancer la journée/i }));
-    await waitFor(() => expect(screen.getByRole("heading", { name: /que s'est-il passé/i })).toBeInTheDocument());
+    // "Jouer la journée" simulates the whole day, reloads the dashboard, then
+    // DailyReview reloads it again on mount -- well past waitFor's 1s default
+    // when the suite runs in parallel.
+    await waitFor(() => expect(screen.getByRole("heading", { name: /que s'est-il passé/i })).toBeInTheDocument(), { timeout: 10000 });
     expectNoSupabaseError();
   },
   20000

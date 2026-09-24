@@ -6,19 +6,19 @@ const mockGetHotelState = jest.fn();
 const mockGetRestaurantState = jest.fn();
 const mockListRooms = jest.fn();
 
-jest.mock("../lib/progression", () => ({
+vi.mock("../lib/progression", () => ({
   runProgression: (...args) => mockRunProgressionEngine(...args),
 }));
 
-jest.mock("../lib/hotelRepository", () => ({
+vi.mock("../lib/hotelRepository", () => ({
   getHotelState: (...args) => mockGetHotelState(...args),
 }));
 
-jest.mock("../lib/restaurantRepository", () => ({
+vi.mock("../lib/restaurantRepository", () => ({
   getRestaurantState: (...args) => mockGetRestaurantState(...args),
 }));
 
-jest.mock("../lib/pmsRepository", () => ({
+vi.mock("../lib/pmsRepository", () => ({
   listRooms: (...args) => mockListRooms(...args),
 }));
 

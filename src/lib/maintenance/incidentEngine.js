@@ -22,7 +22,7 @@
 // ()` hook (the same pure-bundle-transform primitive
 // lib/dashboard/dashboardActions.js's own quick actions already persist
 // through).
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { getRoster, employeeEfficiency, TECHNICIAN_MAX_SEVERITY, LEVELS } from "../staff/staffRoster";
 import { pseudoRandom } from "../staff/staffEventsEngine";

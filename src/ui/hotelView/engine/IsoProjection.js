@@ -38,7 +38,7 @@
 // shifts it straight up on screen, scaled by `elevationHeight` (a
 // separate px-per-unit so vertical storeys don't have to be the same
 // visual size as a tile's footprint).
-import { safeNumber, safeObject } from "../../../lib/safe";
+import { safeNumber, safeObject } from "../../../lib/safe.js";
 
 // Centralised, named parameters -- nothing in this module has a magic
 // number baked in outside of these defaults. Every call below accepts an

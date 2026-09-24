@@ -13,7 +13,7 @@
 // post), a hotel-wide satisfaction penalty (clientsSatisfaction.js), and a
 // daily reputation malus (progression/reputation.js -- which feeds
 // marketing reputation and client segments downstream).
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 // Reputation only starts to suffer once an incident has stayed open this
 // many full days (incidentEngine.advanceIncidentRepairs() increments

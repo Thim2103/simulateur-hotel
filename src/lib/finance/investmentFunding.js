@@ -9,7 +9,7 @@
 // The treasury share is booked as a one-off cost of the current month (see
 // oneOffCosts.debitCurrentMonth), so it really lowers the treasury and shows
 // in the finance pages, exactly like a repair or a recruitment fee.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { debitCurrentMonth } from "./oneOffCosts";
 
 const sum = (values) => safeArray(values).reduce((total, value) => total + safeNumber(value, 0), 0);

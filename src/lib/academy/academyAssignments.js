@@ -2,7 +2,7 @@
 // existing group in that class its own sandboxed ScenarioRunState (see
 // lib/scenario/scenarioEngine.js's initScenarioRun()) -- one run per group,
 // entirely independent of the others.
-import { safeArray } from "../safe";
+import { safeArray } from "../safe.js";
 import { initScenarioRun } from "../scenario/scenarioEngine";
 import { groupsForClass } from "./academyState";
 

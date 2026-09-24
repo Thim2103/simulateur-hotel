@@ -5,10 +5,10 @@ import { useCareerContext } from "../context/CareerContext";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 import { baseImpact, respondToReview } from "../lib/clients/guestReviewEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useClientsEngine");
-jest.mock("../components/charts/LineChart", () => () => null);
-jest.mock("../components/charts/AreaChart", () => () => null);
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useClientsEngine");
+vi.mock("../components/charts/LineChart", () => ({ default: () => null }));
+vi.mock("../components/charts/AreaChart", () => ({ default: () => null }));
 
 const review = (id, rating, extra = {}) => ({
   id: `stay:${id}`, source: "stay", reservationId: id, guestName: `Client ${id}`, profile: "family", weight: 1, roomNumber: `10${id}`, nights: 2, nightPrice: 110,

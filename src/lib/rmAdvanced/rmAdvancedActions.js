@@ -7,7 +7,7 @@
 // These actions seed a new hotelState.rmAdvanced namespace (additive,
 // optional, with sensible fallbacks) -- the same "lazy namespace"
 // pattern already established for hotelState.clients/hotelState.restaurantAdvanced.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);

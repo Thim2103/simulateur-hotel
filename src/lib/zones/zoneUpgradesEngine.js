@@ -27,7 +27,7 @@
 // and deterministic (no rng), and inert for a hotel that never upgraded:
 // every effect below is its neutral value (x1 / +0), so saved careers and
 // existing fixtures are untouched.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { canAfford, payInvestment } from "../finance/investmentFunding";
 
 export const MAX_STANDING = 0.25;

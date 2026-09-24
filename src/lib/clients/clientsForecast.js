@@ -2,7 +2,7 @@
 // pessimiste) -- extrapolates from the current cycle's satisfaction,
 // loyalty and review rating run-rate. Same approach
 // lib/housekeeping/housekeepingForecast.js uses.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const HORIZON_DAYS = 30;
 

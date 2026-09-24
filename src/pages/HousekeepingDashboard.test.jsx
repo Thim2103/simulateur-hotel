@@ -4,8 +4,8 @@ import HousekeepingDashboard from "./HousekeepingDashboard";
 import { useCareerContext } from "../context/CareerContext";
 import { useHousekeepingEngine } from "../hooks/useHousekeepingEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useHousekeepingEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useHousekeepingEngine");
 
 function careerState(overrides = {}) {
   return {

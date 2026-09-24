@@ -5,7 +5,7 @@
 // applySkillEffectsToSummary()) -- deliberately not fed back into
 // runDailyCycle()'s own math, to avoid coupling Career to the core
 // engine's internals.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 export const SKILL_CATALOG = {
   leadership: { label: "Leadership", effectPerLevel: "Réduit les tensions RH (+1% de moral d'équipe par niveau)." },

@@ -17,7 +17,7 @@
 // lib/staff/staffCalculations.js's own HOUSEKEEPING_STAFF_SHARE
 // (documented there) so the two modules agree on how many of the
 // estimated hotel-side headcount are housekeepers.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 // Explicit ".js" extension: this directory (src/lib/housekeeping/) sits
 // alongside the pre-existing src/lib/housekeeping.js utility file --
 // Node/webpack resolution picks the flat file over the directory for a

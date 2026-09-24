@@ -3,7 +3,7 @@
 // scenarioEngine.playScenarioCycle(). This file only enforces the rule
 // that makes a leaderboard fair: every player's run must share the exact
 // same scoring formula, never a per-player override.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 
 export function validateCommonScoring(scenario) {
   const errors = [];

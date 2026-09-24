@@ -4,11 +4,11 @@ import ClientsReviews from "./ClientsReviews";
 import { useCareerContext } from "../context/CareerContext";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 
-jest.mock("../context/CareerContext");
-jest.mock("../hooks/useClientsEngine");
+vi.mock("../context/CareerContext");
+vi.mock("../hooks/useClientsEngine");
 // Chart.js needs a real <canvas>, which jsdom lacks: it survives one render but throws on the re-render a filter click triggers.
-jest.mock("../components/charts/LineChart", () => () => null);
-jest.mock("../components/charts/AreaChart", () => () => null);
+vi.mock("../components/charts/LineChart", () => ({ default: () => null }));
+vi.mock("../components/charts/AreaChart", () => ({ default: () => null }));
 
 function careerState(overrides = {}) {
   return { day: 3, status: "active", hotel: {}, missions: [], objectives: [], ...overrides };

@@ -6,7 +6,7 @@
 // compression/displacement/pickup curves/OTA strategy/special pricing/
 // diagnostics/forecast on top, then persists that layer (via
 // lib/rmAdvancedRepository.js) plus its own replay log.
-import { safeArray, safeObject } from "../safe";
+import { safeArray, safeObject } from "../safe.js";
 import { createReplayLog } from "../scenario/scenarioReplay";
 
 export function createRmAdvancedState(overrides = {}) {

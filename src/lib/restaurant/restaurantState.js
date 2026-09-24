@@ -2,7 +2,7 @@
 // in-memory contract every other file in this folder (and
 // restaurantRepository.js) reads and writes. Nothing here talks to
 // Supabase directly; see restaurantRepository.js for persistence.
-import { safeArray, safeNumber, safeObject, safeString } from "../safe";
+import { safeArray, safeNumber, safeObject, safeString } from "../safe.js";
 
 export const DEFAULT_RESTAURANT_STRUCTURE = {
   name: "",

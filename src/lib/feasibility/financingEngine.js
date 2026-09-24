@@ -27,7 +27,7 @@
 // Besoins' own three lines is the plan's opening cash cushion -- so Total
 // Actif (Besoins + this cash) = Total Passif (Ressources) by construction,
 // the same way accountingEngine.js's own Bilan always balances.
-import { safeNumber } from "../safe";
+import { safeNumber } from "../safe.js";
 import { liabilitiesOf } from "../accounting/accountingEngine";
 import { depreciationSummaryByClass } from "./depreciationEngine";
 

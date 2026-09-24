@@ -5,7 +5,7 @@
 // once (Finance/Staff/Marketing/ESG plus, unlike TFE, RM Advanced and
 // Restaurant Advanced), matching the "gérer crises et opportunités
 // stratégiques" framing of a professional playthrough.
-import { safeObject } from "../safe";
+import { safeObject } from "../safe.js";
 import { applyFinancialDecision } from "../finance/financeEngine";
 import { applyStaffDecision } from "../staff/staffEngine";
 import { applyMarketingDecision } from "../marketing/marketingEngine";

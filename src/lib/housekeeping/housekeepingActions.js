@@ -15,7 +15,7 @@
 // housekeepingCalculations.js's resolveHousekeepingSettings()), the same
 // "seed a new namespace lazily" approach lib/marketing/marketingActions
 // .js took for hotelState.marketing.positioningTier.
-import { safeNumber, safeObject } from "../safe";
+import { safeNumber, safeObject } from "../safe.js";
 
 const AVERAGE_HOTEL_STAFF_SALARY = 2600; // €/month, same assumption as lib/staff/staffCalculations.js
 

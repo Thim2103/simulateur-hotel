@@ -33,7 +33,7 @@
 //
 // Pure and deterministic (FNV hash, no rng). A hotel with no departures and
 // no answers keeps none of this state.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { treasuryOf } from "../finance/investmentFunding";
 import { debitCurrentMonth } from "../finance/oneOffCosts";
 import { hotelCondition } from "../maintenance/maintenanceCostEngine";

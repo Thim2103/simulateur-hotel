@@ -7,7 +7,7 @@
 // applyMarketingDecision() use, so useEsgEngine.js can drive it through
 // useCareer.js's applyHotelAdjustment() exactly the way Finance/Staff/
 // Marketing already do.
-import { safeArray, safeNumber, safeObject } from "../safe";
+import { safeArray, safeNumber, safeObject } from "../safe.js";
 import { nextEligibleCertification } from "./esgCertifications";
 
 const DEFAULT_INVESTMENT_STEP = 250;

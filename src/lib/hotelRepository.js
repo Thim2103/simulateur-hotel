@@ -1,8 +1,8 @@
 // Persistence layer for the hotel-level simulation, modeled on restaurantRepository.js.
 // Order of resilience: Supabase -> localStorage cache -> in-memory mock (see hotel.mock.js).
-import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase";
+import { assertSupabaseConfigured, ensureAuthSession, requireUserId } from "./supabase.js";
 import { safeLoad } from "./safeLoad";
-import { safeObject } from "./safe";
+import { safeObject } from "./safe.js";
 import { defaultHotelState } from "./hotel";
 import { resolveSession } from "./sessionResolver";
 import { createGuestHotelBundle, createGuestRepository } from "./guest";

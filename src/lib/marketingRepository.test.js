@@ -2,7 +2,7 @@ const mockRequireUserId = jest.fn();
 const mockEnsureAuthSession = jest.fn();
 const mockAssertSupabaseConfigured = jest.fn();
 
-jest.mock("./supabase", () => ({
+vi.mock("./supabase.js", () => ({
   requireUserId: (...args) => mockRequireUserId(...args),
   ensureAuthSession: (...args) => mockEnsureAuthSession(...args),
   assertSupabaseConfigured: (...args) => mockAssertSupabaseConfigured(...args),
@@ -51,7 +51,7 @@ describe("marketingRepository Supabase mode", () => {
     };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { getMarketingState } = require("./marketingRepository");
+    const { getMarketingState } = await import("./marketingRepository");
     const state = await getMarketingState();
     expect(state.period).toBe("2026-09-10");
   });
@@ -61,7 +61,7 @@ describe("marketingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveMarketingState } = require("./marketingRepository");
+    const { saveMarketingState } = await import("./marketingRepository");
     await saveMarketingState(sampleState());
 
     expect(upserted.user_id).toBe("user-1");
@@ -74,7 +74,7 @@ describe("marketingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveMarketingCampaigns } = require("./marketingRepository");
+    const { saveMarketingCampaigns } = await import("./marketingRepository");
     await saveMarketingCampaigns(sampleState().campaigns);
 
     expect(upserted).toHaveLength(1);
@@ -87,7 +87,7 @@ describe("marketingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveMarketingChannels } = require("./marketingRepository");
+    const { saveMarketingChannels } = await import("./marketingRepository");
     await saveMarketingChannels(sampleState().channels);
 
     expect(upserted).toHaveLength(1);
@@ -99,7 +99,7 @@ describe("marketingRepository Supabase mode", () => {
     const client = { from: () => ({ upsert: (payload) => { upserted = payload; return Promise.resolve({ error: null }); } }) };
     mockAssertSupabaseConfigured.mockReturnValue(client);
 
-    const { saveMarketingForecast } = require("./marketingRepository");
+    const { saveMarketingForecast } = await import("./marketingRepository");
     await saveMarketingForecast({ horizonDays: 30, generatedAt: "2026-09-10" });
 
     expect(upserted.user_id).toBe("user-1");
@@ -116,13 +116,13 @@ describe("marketingRepository guest mode", () => {
   });
 
   test("getMarketingState() returns null before anything has been saved", async () => {
-    const { getMarketingState } = require("./marketingRepository");
+    const { getMarketingState } = await import("./marketingRepository");
     await expect(getMarketingState()).resolves.toBeNull();
     expect(mockRequireUserId).not.toHaveBeenCalled();
   });
 
   test("saveMarketingState() persists to localStorage and getMarketingState() reads it back", async () => {
-    const { getMarketingState, saveMarketingState } = require("./marketingRepository");
+    const { getMarketingState, saveMarketingState } = await import("./marketingRepository");
     await saveMarketingState(sampleState());
     const reloaded = await getMarketingState();
 
@@ -131,7 +131,7 @@ describe("marketingRepository guest mode", () => {
   });
 
   test("saveMarketingCampaigns()/saveMarketingChannels()/saveMarketingForecast() are no-ops that never throw or touch Supabase", async () => {
-    const { saveMarketingCampaigns, saveMarketingChannels, saveMarketingForecast } = require("./marketingRepository");
+    const { saveMarketingCampaigns, saveMarketingChannels, saveMarketingForecast } = await import("./marketingRepository");
     await expect(saveMarketingCampaigns(sampleState().campaigns)).resolves.toBeUndefined();
     await expect(saveMarketingChannels(sampleState().channels)).resolves.toBeUndefined();
     await expect(saveMarketingForecast({ horizonDays: 30 })).resolves.toBeUndefined();
