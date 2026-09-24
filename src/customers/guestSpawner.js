@@ -13,6 +13,8 @@ export class GuestSpawner {
     this.reputation = options.reputation || null; // ReputationEngine (optionnel)
     this.onReview = options.onReview || (() => {});
     this.reviews = []; // Avis laissés par les clients au check-out
+    this.onReject = options.onReject || (() => {});
+    this.rejectedCount = 0; // Clients repartis car le prix de la chambre dépassait leur tolérance
   }
 
   /**
@@ -74,7 +76,10 @@ export class GuestSpawner {
 
   /**
    * Tente de générer un client et l'ajoute si les conditions sont réunies.
-   * @returns {Agent|null} L'agent client créé, ou null si aucune chambre n'est disponible.
+   * Avec un EconomyEngine, le client n'est retenu que si le prix de la chambre
+   * reste dans sa tolérance (budget x profil) ; sinon onReject est appelé.
+   * @returns {Agent|null} L'agent client créé, ou null si aucune chambre n'est disponible
+   * ou si le client refuse le prix.
    */
   trySpawn(hotel, world) {
     // Vérifier si l'hôtel a de la place (optionnel selon la logique du jeu)
@@ -88,6 +93,16 @@ export class GuestSpawner {
     });
 
     const guest = this.createGuestAgent(customer);
+    if (this.economy && !this.economy.acceptsRoomPrice(guest.getState())) {
+      this.rejectedCount += 1;
+      guest.setState({ status: 'rejected' });
+      this.onReject(guest, {
+        price: this.economy.baseRoomPrice,
+        maxPrice: this.economy.getMaxAcceptablePrice(guest.getState())
+      });
+      return null;
+    }
+
     this.guests.set(guest.id, guest);
     this.onSpawn(guest);
     return guest;
@@ -222,7 +237,9 @@ export class GuestSpawner {
   /**
    * Facture les chambres occupées et les extras consommés par les clients,
    * et impute les dépenses d'exploitation liées à l'occupation.
-   * Les extras (state.extras) sont remis à zéro une fois facturés.
+   * Chaque client dépense en plus, pour la nuit, des extras calculés par
+   * l'EconomyEngine selon son budget et son profil. Les extras (state.extras)
+   * sont remis à zéro une fois facturés.
    * @param {Object} [context={}]
    * @returns {Object|null}
    */
@@ -232,7 +249,8 @@ export class GuestSpawner {
     const guests = this.getGuests();
     let extraRevenue = 0;
     guests.forEach((guest) => {
-      const extras = guest.getState().extras || 0;
+      const state = guest.getState();
+      const extras = (state.extras || 0) + this.economy.calculateExtrasSpending(state);
       if (extras > 0) {
         extraRevenue += extras;
         guest.setState({ extras: 0 });

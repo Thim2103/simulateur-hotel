@@ -5,13 +5,15 @@ import { Agent } from '../agents/Agent.js';
 import { EconomyEngine } from '../economy/economyEngine.js';
 import { ReputationEngine } from '../reputation/reputationEngine.js';
 
-// Mock de la dépendance externe : ids uniques pour pouvoir suivre plusieurs clients
+// Mock de la dépendance externe : ids uniques pour pouvoir suivre plusieurs clients.
+// Budget égal au prix de chambre par défaut (100) : le client accepte le prix et
+// ne dépense aucun extra automatique, ce qui garde les calculs lisibles.
 let mockId = 0;
 vi.mock('./customerGenerator.js', () => ({
   generateCustomer: vi.fn((options) => ({
     id: `mock-customer-${++mockId}`,
     profile: 'tourist',
-    budget: 120,
+    budget: 100,
     nights: 3,
     ...options
   }))
@@ -55,6 +57,8 @@ describe('GuestSpawner', () => {
       expect(spawner.reputation).toBeNull();
       expect(typeof spawner.onReview).toBe('function');
       expect(spawner.reviews).toEqual([]);
+      expect(typeof spawner.onReject).toBe('function');
+      expect(spawner.rejectedCount).toBe(0);
     });
 
     it('devrait accepter des options personnalisées', () => {
@@ -121,7 +125,7 @@ describe('GuestSpawner', () => {
       expect(guest.id).toMatch(/^mock-customer-\d+$/);
       expect(guest.getState()).toEqual({
         profile: 'tourist',
-        budget: 120,
+        budget: 100,
         nights: 3,
         reputation: 50,
         season: 'normal',
@@ -308,6 +312,111 @@ describe('GuestSpawner', () => {
       expect(report.totalRevenue).toBe(0);
       expect(report.totalCosts).toBe(500);
       expect(economy.getTreasury()).toBe(4500);
+    });
+  });
+
+  describe('budget et profil des clients', () => {
+    let economy;
+
+    // Force le profil et le budget du prochain client généré
+    const nextCustomer = (profile, budget) => {
+      generateCustomer.mockImplementationOnce(() => ({
+        id: `mock-customer-${++mockId}`,
+        profile,
+        budget,
+        nights: 3
+      }));
+    };
+
+    beforeEach(() => {
+      economy = new EconomyEngine(); // prix chambre 100
+    });
+
+    it('devrait refuser un client dont le budget ne couvre pas le prix, selon son profil', () => {
+      const onReject = vi.fn();
+      const spawner = new GuestSpawner({ economy, onSpawn: onSpawnMock, onReject });
+
+      // Budget 90 : un VIP (x1.5 => 135) accepte, un client Budget (x1 => 90) refuse
+      nextCustomer('vip', 90);
+      const vip = spawner.trySpawn(hotel, world);
+      nextCustomer('budget', 90);
+      const budget = spawner.trySpawn(hotel, world);
+
+      expect(vip).toBeInstanceOf(Agent);
+      expect(budget).toBeNull();
+      expect(spawner.getGuests()).toEqual([vip]);
+      expect(onSpawnMock).toHaveBeenCalledTimes(1);
+      expect(spawner.rejectedCount).toBe(1);
+      expect(onReject).toHaveBeenCalledTimes(1);
+      const [rejected, details] = onReject.mock.calls[0];
+      expect(rejected.getState()).toMatchObject({ profile: 'budget', status: 'rejected' });
+      expect(details).toEqual({ price: 100, maxPrice: 90 });
+    });
+
+    it('devrait moduler la tolérance au prix selon le profil (VIP, Business, Family, Budget)', () => {
+      const spawner = new GuestSpawner({ economy });
+      // Budget 85 : tolérances 127.5 / 106.25 / 93.5 / 85 face à un prix de 100
+      const accepted = ['vip', 'business', 'family', 'budget'].map((profile) => {
+        nextCustomer(profile, 85);
+        return spawner.trySpawn(hotel, world) !== null;
+      });
+
+      expect(accepted).toEqual([true, true, false, false]);
+      expect(spawner.rejectedCount).toBe(2);
+    });
+
+    it('devrait accepter tout client sans EconomyEngine, quel que soit son budget', () => {
+      const spawner = new GuestSpawner();
+      nextCustomer('budget', 10);
+
+      expect(spawner.trySpawn(hotel, world)).toBeInstanceOf(Agent);
+      expect(spawner.rejectedCount).toBe(0);
+    });
+
+    it('devrait facturer des extras selon le budget restant et le profil', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      // Budget 200 => 100 restant après la chambre
+      ['vip', 'business', 'family', 'budget'].forEach((profile) => {
+        nextCustomer(profile, 200);
+        spawner.trySpawn(hotel, world);
+      });
+
+      const report = spawner.update({ hotel });
+
+      // 100 x (0.5 + 0.3 + 0.25 + 0.05) = 110
+      expect(report.extraRevenue).toBe(110);
+      expect(report.roomRevenue).toBe(400);
+    });
+
+    it('devrait refacturer les extras liés au budget à chaque nuit du séjour', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      nextCustomer('vip', 160); // 60 restant x 0.5 = 30 par nuit
+      spawner.trySpawn(hotel, world);
+
+      const extras = [1, 2, 3, 4].map(() => spawner.update({ hotel }).extraRevenue);
+
+      expect(extras).toEqual([30, 30, 30, 0]);
+    });
+
+    it('devrait cumuler extras manuels et extras liés au budget', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      nextCustomer('business', 150); // 50 x 0.3 = 15
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ extras: 40 });
+
+      expect(spawner.update({ hotel }).extraRevenue).toBe(55);
+      expect(guest.getState().extras).toBe(0);
+    });
+
+    it("ne devrait pas générer d'extras quand le prix dépasse le budget (client tolérant)", () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      nextCustomer('vip', 80); // accepte 100 (<= 120) mais n'a plus rien pour les extras
+      spawner.trySpawn(hotel, world);
+
+      const report = spawner.update({ hotel });
+
+      expect(report.roomRevenue).toBe(100);
+      expect(report.extraRevenue).toBe(0);
     });
   });
 

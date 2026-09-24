@@ -3,6 +3,21 @@
  * @description Gère les flux financiers, calcule le taux d'occupation et les revenus de l'hôtel.
  */
 
+/**
+ * Comportement de dépense par profil client, appliqué au budget individuel (par nuit) :
+ * - priceTolerance : multiplicateur du budget donnant le prix de chambre maximal accepté ;
+ * - extrasPropensity : part du budget restant après la chambre dépensée en extras chaque nuit.
+ * Les profils inconnus (ex: 'tourist') utilisent DEFAULT_SPENDING_PROFILE.
+ */
+export const SPENDING_PROFILES = Object.freeze({
+    vip: Object.freeze({ priceTolerance: 1.5, extrasPropensity: 0.5 }),
+    business: Object.freeze({ priceTolerance: 1.25, extrasPropensity: 0.3 }),
+    family: Object.freeze({ priceTolerance: 1.1, extrasPropensity: 0.25 }),
+    budget: Object.freeze({ priceTolerance: 1, extrasPropensity: 0.05 })
+});
+
+export const DEFAULT_SPENDING_PROFILE = Object.freeze({ priceTolerance: 1.1, extrasPropensity: 0.15 });
+
 export class EconomyEngine {
     /**
      * @param {Object} [config={}] - Configuration initiale de l'économie.
@@ -39,6 +54,50 @@ export class EconomyEngine {
     calculateRoomRevenue(occupiedRooms, customPrice = null) {
         const price = customPrice !== null ? customPrice : this.baseRoomPrice;
         return Math.max(0, occupiedRooms * price);
+    }
+
+    /**
+     * Comportement de dépense associé à un profil client (insensible à la casse).
+     * @param {string} [profile]
+     * @returns {{priceTolerance: number, extrasPropensity: number}}
+     */
+    getSpendingProfile(profile) {
+        const key = typeof profile === 'string' ? profile.toLowerCase() : '';
+        return SPENDING_PROFILES[key] || DEFAULT_SPENDING_PROFILE;
+    }
+
+    /**
+     * Prix de chambre maximal qu'un client accepte de payer : budget x tolérance du profil.
+     * @param {Object} guest - État du client ({ profile, budget }).
+     * @returns {number} Infinity si le budget n'est pas renseigné.
+     */
+    getMaxAcceptablePrice(guest = {}) {
+        if (!Number.isFinite(guest.budget)) return Infinity;
+        return guest.budget * this.getSpendingProfile(guest.profile).priceTolerance;
+    }
+
+    /**
+     * Indique si le client accepte le prix de la chambre.
+     * @param {Object} guest - État du client ({ profile, budget }).
+     * @param {number} [price] - Prix de la chambre (baseRoomPrice par défaut).
+     * @returns {boolean}
+     */
+    acceptsRoomPrice(guest, price = this.baseRoomPrice) {
+        return price <= this.getMaxAcceptablePrice(guest);
+    }
+
+    /**
+     * Montant d'extras dépensé par un client pour une nuit : part du budget restant
+     * après la chambre, selon la propension du profil. Nul si le budget est absent
+     * ou entièrement absorbé par le prix de la chambre.
+     * @param {Object} guest - État du client ({ profile, budget }).
+     * @param {number} [price] - Prix de la chambre (baseRoomPrice par défaut).
+     * @returns {number}
+     */
+    calculateExtrasSpending(guest = {}, price = this.baseRoomPrice) {
+        if (!Number.isFinite(guest.budget)) return 0;
+        const remaining = Math.max(0, guest.budget - price);
+        return Math.round(remaining * this.getSpendingProfile(guest.profile).extrasPropensity);
     }
 
     /**
