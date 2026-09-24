@@ -51,6 +51,8 @@ describe('GuestSpawner', () => {
       expect(typeof spawner.onSpawn).toBe('function');
       expect(spawner.economy).toBeNull();
       expect(spawner.costPerGuest).toBe(20);
+      expect(typeof spawner.onReview).toBe('function');
+      expect(spawner.reviews).toEqual([]);
     });
 
     it('devrait accepter des options personnalisées', () => {
@@ -304,6 +306,153 @@ describe('GuestSpawner', () => {
       expect(report.totalRevenue).toBe(0);
       expect(report.totalCosts).toBe(500);
       expect(economy.getTreasury()).toBe(4500);
+    });
+  });
+
+  describe('gestion des nuits et check-out', () => {
+    it('devrait décrémenter les nuits restantes à chaque cycle', () => {
+      const spawner = new GuestSpawner();
+      const guest = spawner.trySpawn(hotel, world); // 3 nuits
+
+      spawner.update({ hotel });
+      expect(guest.getState().nights).toBe(2);
+
+      spawner.update({ hotel });
+      expect(guest.getState().nights).toBe(1);
+      expect(spawner.getGuest(guest.id)).toBe(guest);
+    });
+
+    it('devrait faire partir le client quand ses nuits atteignent 0', () => {
+      const spawner = new GuestSpawner();
+      const guest = spawner.trySpawn(hotel, world);
+      const removeSpy = vi.spyOn(spawner, 'removeGuest');
+
+      spawner.update({ hotel });
+      spawner.update({ hotel });
+      expect(removeSpy).not.toHaveBeenCalled();
+
+      spawner.update({ hotel });
+
+      expect(removeSpy).toHaveBeenCalledWith(guest.id);
+      expect(spawner.getGuest(guest.id)).toBeUndefined();
+      expect(spawner.getGuests()).toEqual([]);
+      expect(guest.getState()).toMatchObject({ nights: 0, status: 'checked-out' });
+    });
+
+    it('devrait libérer la chambre du client au check-out', () => {
+      const spawner = new GuestSpawner();
+      hotel.releaseRoom = vi.fn();
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ nights: 1 });
+
+      spawner.update({ hotel });
+
+      expect(hotel.releaseRoom).toHaveBeenCalledTimes(1);
+      expect(hotel.releaseRoom).toHaveBeenCalledWith(guest);
+    });
+
+    it('ne devrait pas échouer si hotel.releaseRoom est absent', () => {
+      const spawner = new GuestSpawner();
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ nights: 1 });
+
+      expect(() => spawner.update()).not.toThrow();
+      expect(spawner.getGuests()).toEqual([]);
+    });
+
+    it('devrait calculer la satisfaction finale et émettre un avis', () => {
+      const onReview = vi.fn();
+      const spawner = new GuestSpawner({ onReview });
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ nights: 1, satisfaction: 72.6 });
+      const onCheckout = vi.fn();
+      guest.on('checkout', onCheckout);
+
+      const report = spawner.update({ hotel, tick: 7 });
+
+      const expected = {
+        guestId: guest.id,
+        profile: 'tourist',
+        satisfaction: 73,
+        rating: 4,
+        tick: 7
+      };
+      expect(report).toBeNull();
+      expect(spawner.reviews).toEqual([expected]);
+      expect(onReview).toHaveBeenCalledWith(expected, guest);
+      expect(onCheckout).toHaveBeenCalledWith(expected, guest);
+      expect(guest.getState().satisfaction).toBe(73);
+    });
+
+    it('devrait borner la satisfaction et utiliser 50 par défaut', () => {
+      const spawner = new GuestSpawner();
+      const [angry, delighted, neutral] = [0, 1, 2].map(() => spawner.trySpawn(hotel, world));
+      angry.setState({ nights: 1, satisfaction: -20 });
+      delighted.setState({ nights: 1, satisfaction: 150 });
+      neutral.setState({ nights: 1 }); // satisfaction absente
+
+      spawner.update({ hotel });
+
+      expect(spawner.reviews.map(({ satisfaction, rating }) => [satisfaction, rating])).toEqual([
+        [0, 1],
+        [100, 5],
+        [50, 3]
+      ]);
+    });
+
+    it('satisfactionToRating devrait convertir 0-100 en 1 à 5 étoiles', () => {
+      expect([0, 20, 21, 40, 60, 80, 81, 100].map(GuestSpawner.satisfactionToRating))
+        .toEqual([1, 1, 2, 2, 3, 4, 5, 5]);
+    });
+
+    it('ne devrait faire partir que les clients arrivés au bout de leur séjour', () => {
+      const spawner = new GuestSpawner();
+      const leaving = spawner.trySpawn(hotel, world);
+      const staying = spawner.trySpawn(hotel, world);
+      leaving.setState({ nights: 1 });
+
+      spawner.update({ hotel });
+
+      expect(spawner.getGuests()).toEqual([staying]);
+      expect(staying.getState().nights).toBe(2);
+      expect(spawner.reviews.map((r) => r.guestId)).toEqual([leaving.id]);
+    });
+
+    it('devrait ignorer les clients sans nombre de nuits valide', () => {
+      const spawner = new GuestSpawner();
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ nights: undefined });
+
+      spawner.update({ hotel });
+
+      expect(spawner.getGuest(guest.id)).toBe(guest);
+      expect(spawner.reviews).toEqual([]);
+    });
+
+    it('devrait facturer la dernière nuit avant le départ du client', () => {
+      const economy = new EconomyEngine();
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      const guest = spawner.trySpawn(hotel, world);
+      guest.setState({ nights: 1, extras: 30 });
+
+      const report = spawner.update({ hotel });
+      expect(report.roomRevenue).toBe(100);
+      expect(report.extraRevenue).toBe(30);
+      expect(spawner.getGuests()).toEqual([]);
+
+      const next = spawner.update({ hotel });
+      expect(next.roomRevenue).toBe(0);
+    });
+
+    it('un séjour de 3 nuits devrait être facturé exactement 3 fois', () => {
+      const economy = new EconomyEngine();
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      spawner.trySpawn(hotel, world);
+
+      const revenues = [1, 2, 3, 4].map(() => spawner.update({ hotel }).roomRevenue);
+
+      expect(revenues).toEqual([100, 100, 100, 0]);
+      expect(spawner.reviews).toHaveLength(1);
     });
   });
 
