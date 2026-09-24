@@ -1,10 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GuestSpawner } from './guestSpawner.js';
 import { generateCustomer } from './customerGenerator.js';
+import { Agent } from '../agents/Agent.js';
 
-// Mock de la dépendance externe
+// Mock de la dépendance externe : ids uniques pour pouvoir suivre plusieurs clients
+let mockId = 0;
 vi.mock('./customerGenerator.js', () => ({
-  generateCustomer: vi.fn((options) => ({ id: 'mock-customer', ...options }))
+  generateCustomer: vi.fn((options) => ({
+    id: `mock-customer-${++mockId}`,
+    profile: 'tourist',
+    budget: 120,
+    nights: 3,
+    ...options
+  }))
 }));
 
 describe('GuestSpawner', () => {
@@ -99,22 +107,42 @@ describe('GuestSpawner', () => {
         reputation: 50,
         season: 'normal'
       });
-      expect(onSpawnMock).toHaveBeenCalledWith({
-        id: 'mock-customer',
+      expect(onSpawnMock).toHaveBeenCalledTimes(1);
+      const guest = onSpawnMock.mock.calls[0][0];
+      expect(guest).toBeInstanceOf(Agent);
+      expect(guest.type).toBe('customer');
+      expect(guest.id).toMatch(/^mock-customer-\d+$/);
+      expect(guest.getState()).toEqual({
+        profile: 'tourist',
+        budget: 120,
+        nights: 3,
         reputation: 50,
-        season: 'normal'
+        season: 'normal',
+        status: 'arriving'
       });
+    });
+
+    it("devrait retourner l'agent créé et l'enregistrer parmi les clients actifs", () => {
+      const spawner = new GuestSpawner({ onSpawn: onSpawnMock });
+
+      const guest = spawner.trySpawn(hotel, world);
+
+      expect(guest).toBeInstanceOf(Agent);
+      expect(spawner.getGuest(guest.id)).toBe(guest);
+      expect(spawner.getGuests()).toEqual([guest]);
     });
 
     it('ne devrait PAS générer de client si l\'hôtel n\'a plus de chambres disponibles', () => {
       const spawner = new GuestSpawner({ onSpawn: onSpawnMock });
       hotel.hasAvailableRooms.mockReturnValue(false);
 
-      spawner.trySpawn(hotel, world);
+      const guest = spawner.trySpawn(hotel, world);
 
+      expect(guest).toBeNull();
       expect(hotel.hasAvailableRooms).toHaveBeenCalled();
       expect(generateCustomer).not.toHaveBeenCalled();
       expect(onSpawnMock).not.toHaveBeenCalled();
+      expect(spawner.getGuests()).toEqual([]);
     });
 
     it('devrait fonctionner même si hotel.hasAvailableRooms n\'est pas une fonction', () => {
@@ -128,6 +156,64 @@ describe('GuestSpawner', () => {
         season: 'normal'
       });
       expect(onSpawnMock).toHaveBeenCalled();
+    });
+  });
+
+  describe('gestion des clients', () => {
+    it('devrait gérer plusieurs clients distincts et permettre leur retrait', () => {
+      const spawner = new GuestSpawner();
+      const first = spawner.trySpawn(hotel, world);
+      const second = spawner.trySpawn(hotel, world);
+
+      expect(first.id).not.toBe(second.id);
+      expect(spawner.getGuests()).toEqual([first, second]);
+
+      expect(spawner.removeGuest(first.id)).toBe(true);
+      expect(spawner.removeGuest(first.id)).toBe(false);
+      expect(spawner.getGuest(first.id)).toBeUndefined();
+      expect(spawner.getGuests()).toEqual([second]);
+    });
+
+    it('update devrait faire avancer chaque agent client avec le contexte', () => {
+      const spawner = new GuestSpawner();
+      const guests = [spawner.trySpawn(hotel, world), spawner.trySpawn(hotel, world)];
+      const spies = guests.map((g) => vi.spyOn(g, 'update'));
+      const context = { hotel, world, tick: 1 };
+
+      spawner.update(context);
+
+      spies.forEach((spy) => expect(spy).toHaveBeenCalledWith(context));
+    });
+
+    it('les clients générés devraient être des agents réactifs (setState / change)', () => {
+      const spawner = new GuestSpawner();
+      const guest = spawner.trySpawn(hotel, world);
+      const onChange = vi.fn();
+      guest.on('change', onChange);
+
+      guest.setState({ status: 'checked-in' });
+
+      expect(onChange).toHaveBeenCalledTimes(1);
+      expect(spawner.getGuest(guest.id).getState().status).toBe('checked-in');
+    });
+  });
+
+  describe('intégration avec le vrai customerGenerator', () => {
+    it('devrait produire un agent client à partir de données réelles', async () => {
+      const actual = await vi.importActual('./customerGenerator.js');
+      generateCustomer.mockImplementationOnce(actual.generateCustomer);
+      const spawner = new GuestSpawner();
+
+      const guest = spawner.trySpawn({ reputation: 90 }, { currentSeason: 'high' });
+
+      expect(guest.id).toMatch(/^customer-\d+$/);
+      expect(guest.type).toBe('customer');
+      const state = guest.getState();
+      expect(['business', 'tourist']).toContain(state.profile);
+      expect(state.season).toBe('high');
+      expect(state.budget).toBeGreaterThan(0);
+      expect(state.nights).toBeGreaterThanOrEqual(1);
+      expect(state.status).toBe('arriving');
     });
   });
 
@@ -148,6 +234,7 @@ describe('GuestSpawner', () => {
       // Avancer à nouveau pour le deuxième spawn
       vi.advanceTimersByTime(10000);
       expect(onSpawnMock).toHaveBeenCalledTimes(2);
+      expect(spawner.getGuests()).toHaveLength(2);
 
       spawner.stop();
     });

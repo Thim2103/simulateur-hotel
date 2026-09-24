@@ -1,3 +1,4 @@
+import { Agent } from '../agents/Agent.js';
 import { generateCustomer } from './customerGenerator.js';
 
 export class GuestSpawner {
@@ -6,6 +7,7 @@ export class GuestSpawner {
     this.minSpawnRate = options.minSpawnRate || 2000;
     this.timer = null;
     this.onSpawn = options.onSpawn || (() => {});
+    this.guests = new Map(); // id -> Agent client actif
   }
 
   /**
@@ -15,12 +17,6 @@ export class GuestSpawner {
    */
   start(hotel, world) {
     if (this.timer) return;
-
-    const tick = () => {
-      this.trySpawn(hotel, world);
-      this.scheduleNextSpawn(hotel, world);
-    };
-
     this.scheduleNextSpawn(hotel, world);
   }
 
@@ -49,12 +45,23 @@ export class GuestSpawner {
   }
 
   /**
+   * Crée un agent client à partir des données produites par generateCustomer.
+   * @param {Object} customer - Données brutes du client.
+   * @returns {Agent}
+   */
+  createGuestAgent(customer) {
+    const { id, ...data } = customer;
+    return new Agent({ id, type: 'customer', state: { ...data, status: 'arriving' } });
+  }
+
+  /**
    * Tente de générer un client et l'ajoute si les conditions sont réunies.
+   * @returns {Agent|null} L'agent client créé, ou null si aucune chambre n'est disponible.
    */
   trySpawn(hotel, world) {
     // Vérifier si l'hôtel a de la place (optionnel selon la logique du jeu)
     if (hotel && typeof hotel.hasAvailableRooms === 'function' && !hotel.hasAvailableRooms()) {
-      return;
+      return null;
     }
 
     const customer = generateCustomer({
@@ -62,7 +69,43 @@ export class GuestSpawner {
       season: world?.currentSeason || 'normal'
     });
 
-    this.onSpawn(customer);
+    const guest = this.createGuestAgent(customer);
+    this.guests.set(guest.id, guest);
+    this.onSpawn(guest);
+    return guest;
+  }
+
+  /**
+   * Retourne la liste des agents clients actifs.
+   * @returns {Agent[]}
+   */
+  getGuests() {
+    return [...this.guests.values()];
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Agent|undefined}
+   */
+  getGuest(id) {
+    return this.guests.get(id);
+  }
+
+  /**
+   * Retire un client (départ, annulation...).
+   * @param {string} id
+   * @returns {boolean} true si le client existait.
+   */
+  removeGuest(id) {
+    return this.guests.delete(id);
+  }
+
+  /**
+   * Fait avancer tous les agents clients d'un pas de simulation.
+   * @param {Object} [context={}]
+   */
+  update(context = {}) {
+    this.guests.forEach((guest) => guest.update(context));
   }
 
   scheduleNextSpawn(hotel, world) {
