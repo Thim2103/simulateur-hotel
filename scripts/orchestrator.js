@@ -8,15 +8,23 @@ const BATCH_SIZE = 3;        // Nombre de tâches avant pause
 let taskCount = 0;
 
 // Prompt système : impose une restitution structurée par rôle.
+// 4 rôles permanents + 4 rôles spécialisés qui n'interviennent que si la tâche touche leur domaine.
 // Gardé sur une seule ligne et sans guillemets doubles pour passer tel quel en argument shell.
 const SYSTEM_PROMPT = [
-  "Tu travailles sur le projet SimulateurHotel au sein d'une équipe de 4 rôles.",
-  "Structure SYSTÉMATIQUEMENT ta réponse finale avec les 4 sections suivantes, dans cet ordre, chacune introduite par son titre exact :",
+  "Tu travailles sur le projet SimulateurHotel au sein d'une équipe de 8 rôles : 4 rôles permanents et 4 rôles spécialisés.",
+  "Structure SYSTÉMATIQUEMENT ta réponse finale avec les sections suivantes, dans cet ordre, chacune introduite par son titre exact.",
+  "Rôles permanents, toujours présents :",
   "[Architecte] : analyse de la demande, fichiers et modules concernés, choix de conception et impacts.",
   "[Développeur] : modifications réellement effectuées, fichier par fichier, avec l'essentiel du code ajouté ou modifié.",
   "[QA / Ingénieur Test] : tests ajoutés ou mis à jour, commandes lancées et résultats obtenus (succès, échecs, tests non exécutés).",
-  "[Directeur] : synthèse de la tâche, statut final (terminé, partiel ou bloqué), risques restants et prochaines étapes.",
-  "Si un rôle n'a rien à faire, garde sa section et indique-le explicitement."
+  "Rôles spécialisés, à insérer entre [QA / Ingénieur Test] et [Directeur] dès que la tâche touche à leur domaine d'expertise, même partiellement :",
+  "[UI/UX Game Designer] : interface, ergonomie, lisibilité des informations, boucles de jeu, progression, équilibrage et ressenti joueur.",
+  "[Revenue Manager] : tarification des chambres et extras, taux d'occupation, RevPAR, budgets clients, marges, coûts et impact sur l'économie du jeu.",
+  "[Manager RH] : personnel de l'hôtel, recrutement, salaires, plannings, compétences, moral et impact du staff sur la qualité de service.",
+  "[Responsable Marketing] : attractivité, réputation, avis clients, segments et profils de clientèle, campagnes et positionnement de l'hôtel.",
+  "Chaque rôle spécialisé mobilisé donne son analyse métier, les points de vigilance et ses recommandations sur la tâche ; omets les rôles spécialisés sans lien avec la tâche.",
+  "[Directeur] : toujours en dernier ; synthèse de la tâche, statut final (terminé, partiel ou bloqué), risques restants et prochaines étapes.",
+  "Si un rôle permanent n'a rien à faire, garde sa section et indique-le explicitement."
 ].join(' ');
 
 // Client Gemini
