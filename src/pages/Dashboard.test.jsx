@@ -116,6 +116,19 @@ test("shows the header, kpis, notifications, quick actions once a career is acti
   expect(screen.getByText("Augmenter les prix de 5 %")).toBeInTheDocument();
 });
 
+test("shows the guest flow panel with 'Aucun avis' before any guest has checked out", () => {
+  useCareerContext.mockReturnValue(careerHook({ careerState: careerState() }));
+  useDashboard.mockReturnValue(dashboardHook({ dashboardState: dashboardState() }));
+  render(<Dashboard />, { wrapper: MemoryRouter });
+
+  expect(screen.getByText("Clientèle accueillie")).toBeInTheDocument();
+  expect(screen.getByText("Note moyenne")).toBeInTheDocument();
+  expect(screen.getByText("Aucun avis")).toBeInTheDocument();
+  expect(screen.getByText("Normale (x1.00)")).toBeInTheDocument();
+  expect(screen.getByText("Clients refusés (prix)")).toBeInTheDocument();
+  expect(screen.getByText("Aucun client accueilli pour l'instant.")).toBeInTheDocument();
+});
+
 test("clicking 'Jouer la journée' calls nextDay and reloads the dashboard state with its fresh result", async () => {
   const freshState = careerState({ day: 4 });
   const nextDay = jest.fn().mockResolvedValue({ state: freshState });

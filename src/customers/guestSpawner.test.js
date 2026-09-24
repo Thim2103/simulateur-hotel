@@ -9,7 +9,8 @@ import { ReputationEngine } from '../reputation/reputationEngine.js';
 // Budget égal au prix de chambre par défaut (100) : le client accepte le prix et
 // ne dépense aucun extra automatique, ce qui garde les calculs lisibles.
 let mockId = 0;
-vi.mock('./customerGenerator.js', () => ({
+vi.mock('./customerGenerator.js', async (importOriginal) => ({
+  ...(await importOriginal()),
   generateCustomer: vi.fn((options) => ({
     id: `mock-customer-${++mockId}`,
     profile: 'tourist',
@@ -755,6 +756,65 @@ describe('GuestSpawner', () => {
       // Avancer le temps ne devrait déclencher aucun spawn après l'arrêt
       vi.advanceTimersByTime(20000);
       expect(onSpawnMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getStats', () => {
+    it('devrait renvoyer une note moyenne nulle et une répartition vide avant toute arrivée', () => {
+      const spawner = new GuestSpawner({ reputation: new ReputationEngine() });
+      const stats = spawner.getStats(hotel);
+
+      expect(stats.averageRating).toBeNull();
+      expect(stats.reviewCount).toBe(0);
+      expect(stats.attractiveness).toBe(1);
+      expect(stats.rejectedCount).toBe(0);
+      expect(stats.welcomedCount).toBe(0);
+      expect(stats.profileDistribution.map(({ key }) => key)).toEqual(['vip', 'business', 'family', 'tourist', 'budget']);
+      expect(stats.profileDistribution.every(({ count, share }) => count === 0 && share === 0)).toBe(true);
+    });
+
+    it('devrait compter les clients accueillis par profil, sans les refus', () => {
+      const economy = new EconomyEngine({ baseRoomPrice: 100 });
+      const spawner = new GuestSpawner({ economy });
+      generateCustomer
+        .mockReturnValueOnce({ id: 'a', profile: 'vip', budget: 300, nights: 2 })
+        .mockReturnValueOnce({ id: 'b', profile: 'business', budget: 160, nights: 2 })
+        .mockReturnValueOnce({ id: 'c', profile: 'vip', budget: 300, nights: 2 })
+        .mockReturnValueOnce({ id: 'd', profile: 'budget', budget: 50, nights: 2 }); // refuse 100 €
+
+      for (let i = 0; i < 4; i += 1) spawner.trySpawn(hotel, world);
+      const stats = spawner.getStats(hotel);
+      const byKey = Object.fromEntries(stats.profileDistribution.map((entry) => [entry.key, entry]));
+
+      expect(stats.rejectedCount).toBe(1);
+      expect(stats.welcomedCount).toBe(3);
+      expect(byKey.vip).toMatchObject({ label: 'VIP', count: 2 });
+      expect(byKey.vip.share).toBeCloseTo(2 / 3);
+      expect(byKey.business.count).toBe(1);
+      expect(byKey.budget.count).toBe(0);
+    });
+
+    it("devrait exposer la note moyenne et l'attractivité du ReputationEngine après les départs", () => {
+      const reputation = new ReputationEngine();
+      const spawner = new GuestSpawner({ reputation });
+      spawner.trySpawn(hotel, world).setState({ nights: 1, satisfaction: 95 }); // 5 étoiles
+      spawner.trySpawn(hotel, world).setState({ nights: 1, satisfaction: 70 }); // 4 étoiles
+      spawner.update({ hotel });
+
+      const stats = spawner.getStats(hotel);
+      expect(stats.averageRating).toBe(4.5);
+      expect(stats.reviewCount).toBe(2);
+      expect(stats.attractiveness).toBe(reputation.getAttractiveness());
+      expect(stats.attractiveness).toBeGreaterThan(1);
+    });
+
+    it('devrait calculer la note moyenne à partir de ses propres avis sans ReputationEngine', () => {
+      const spawner = new GuestSpawner();
+      spawner.trySpawn(hotel, world).setState({ nights: 1, satisfaction: 95 }); // 5 étoiles
+      spawner.trySpawn(hotel, world).setState({ nights: 1, satisfaction: 30 }); // 2 étoiles
+      spawner.update({ hotel });
+
+      expect(spawner.getStats(hotel)).toMatchObject({ averageRating: 3.5, reviewCount: 2, attractiveness: 1 });
     });
   });
 });

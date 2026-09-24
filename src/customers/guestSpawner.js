@@ -1,5 +1,5 @@
 import { Agent } from '../agents/Agent.js';
-import { generateCustomer } from './customerGenerator.js';
+import { generateCustomer, PROFILES } from './customerGenerator.js';
 
 export class GuestSpawner {
   constructor(options = {}) {
@@ -15,6 +15,7 @@ export class GuestSpawner {
     this.reviews = []; // Avis laissés par les clients au check-out
     this.onReject = options.onReject || (() => {});
     this.rejectedCount = 0; // Clients repartis car le prix de la chambre dépassait leur tolérance
+    this.profileCounts = {}; // Nombre de clients accueillis par clé de profil
   }
 
   /**
@@ -104,6 +105,8 @@ export class GuestSpawner {
     }
 
     this.guests.set(guest.id, guest);
+    const { profile } = guest.getState();
+    this.profileCounts[profile] = (this.profileCounts[profile] || 0) + 1;
     this.onSpawn(guest);
     return guest;
   }
@@ -269,6 +272,49 @@ export class GuestSpawner {
       extraRevenue,
       extraCosts: occupiedRooms * this.costPerGuest
     });
+  }
+
+  /**
+   * Note moyenne des avis (1 à 5, arrondie au centième) : celle du ReputationEngine
+   * s'il est configuré, sinon celle des avis collectés par le spawner.
+   * @returns {number|null} null tant qu'aucun avis n'a été reçu.
+   */
+  getAverageRating() {
+    if (this.reputation) return this.reputation.getAverageRating();
+    if (!this.reviews.length) return null;
+    const sum = this.reviews.reduce((total, review) => total + review.rating, 0);
+    return Math.round((sum / this.reviews.length) * 100) / 100;
+  }
+
+  /**
+   * Répartition des clients accueillis (hors refus) par profil, dans l'ordre fixe de PROFILES.
+   * @returns {Array<{key: string, label: string, count: number, share: number}>} share entre 0 et 1.
+   */
+  getProfileDistribution() {
+    const total = Object.values(this.profileCounts).reduce((sum, count) => sum + count, 0);
+    return Object.values(PROFILES).map(({ key, label }) => {
+      const count = this.profileCounts[key] || 0;
+      return { key, label, count, share: total ? count / total : 0 };
+    });
+  }
+
+  /**
+   * Instantané des indicateurs de clientèle pour le tableau de bord.
+   * @param {Object} [hotel]
+   * @returns {{averageRating: number|null, reviewCount: number, reputation: number, attractiveness: number, rejectedCount: number, welcomedCount: number, profileDistribution: Array}}
+   */
+  getStats(hotel) {
+    const reputation = this.getReputation(hotel);
+    const profileDistribution = this.getProfileDistribution();
+    return {
+      averageRating: this.getAverageRating(),
+      reviewCount: this.reputation ? this.reputation.getReviewCount() : this.reviews.length,
+      reputation,
+      attractiveness: this.reputation ? this.reputation.getAttractiveness() : Math.max(0.1, reputation / 50),
+      rejectedCount: this.rejectedCount,
+      welcomedCount: profileDistribution.reduce((sum, { count }) => sum + count, 0),
+      profileDistribution
+    };
   }
 
   scheduleNextSpawn(hotel, world) {

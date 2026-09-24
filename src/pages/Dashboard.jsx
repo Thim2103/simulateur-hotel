@@ -9,6 +9,7 @@ import { useTfeEngine } from "../hooks/useTfeEngine";
 import { useClientsEngine } from "../hooks/useClientsEngine";
 import { useRmAdvancedEngine } from "../hooks/useRmAdvancedEngine";
 import { useProEngine } from "../hooks/useProEngine";
+import { useGuestFlow } from "../hooks/useGuestFlow";
 import { skillLabel } from "../lib/career/careerSkills";
 import { buildAttentionItems } from "../lib/dashboard/attentionItems";
 import { buildDecisionGroups } from "../lib/dashboard/dailyDecisions";
@@ -48,6 +49,7 @@ import DashboardKpis from "../components/dashboard/DashboardKpis";
 import DashboardNotifications from "../components/dashboard/DashboardNotifications";
 import DashboardReplaySummary from "../components/dashboard/DashboardReplaySummary";
 import DashboardInsights from "../components/dashboard/DashboardInsights";
+import GuestFlowPanel from "../components/dashboard/GuestFlowPanel";
 import HotelView2DAnimated from "../ui/hotelView/v2/HotelView2DAnimated";
 import HotelScene from "../ui/hotelView/scene/HotelScene";
 import SchematicHotelView from "../ui/hotelView/schematic/SchematicHotelView";
@@ -128,6 +130,16 @@ export default function Dashboard() {
   // See hooks/useProEngine.js's own docstring for why this is kept
   // separate from useDashboard.js.
   const { proState, loadProState } = useProEngine();
+
+  // The agent-based guest flow (customers/guestSpawner.js + ReputationEngine):
+  // average review rating, attractiveness, price refusals and the profile
+  // mix of welcomed guests. Stays advanced by the career day, priced at the
+  // player's own average price. See hooks/useGuestFlow.js.
+  const guestFlowStats = useGuestFlow({
+    day: careerState?.day,
+    totalRooms: careerState?.hotel?.rooms?.length ?? 0,
+    roomPrice: dashboardState?.kpis?.averagePrice,
+  });
 
   // HotelView2D v2's visual feedback for the player's last decision (see
   // ui/hotelView/v2/decisionFeedback.js/HotelView2DAnimated.jsx) -- purely
@@ -635,6 +647,8 @@ export default function Dashboard() {
         viewMode={viewMode}
         appMode={appMode}
       />
+
+      <GuestFlowPanel stats={guestFlowStats} />
 
       <div id="hotel-plan" className="scroll-mt-32">
       {appMode === "normal" ? (
