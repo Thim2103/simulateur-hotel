@@ -8,6 +8,8 @@ export class GuestSpawner {
     this.timer = null;
     this.onSpawn = options.onSpawn || (() => {});
     this.guests = new Map(); // id -> Agent client actif
+    this.economy = options.economy || null; // EconomyEngine (optionnel)
+    this.costPerGuest = options.costPerGuest ?? 20; // Coût d'exploitation par chambre occupée et par cycle
   }
 
   /**
@@ -101,11 +103,43 @@ export class GuestSpawner {
   }
 
   /**
-   * Fait avancer tous les agents clients d'un pas de simulation.
+   * Fait avancer tous les agents clients d'un pas de simulation, puis enregistre
+   * le cycle financier dans l'EconomyEngine s'il est configuré.
    * @param {Object} [context={}]
+   * @returns {Object|null} Le bilan financier du cycle, ou null sans EconomyEngine.
    */
   update(context = {}) {
     this.guests.forEach((guest) => guest.update(context));
+    return this.recordEconomy(context);
+  }
+
+  /**
+   * Facture les chambres occupées et les extras consommés par les clients,
+   * et impute les dépenses d'exploitation liées à l'occupation.
+   * Les extras (state.extras) sont remis à zéro une fois facturés.
+   * @param {Object} [context={}]
+   * @returns {Object|null}
+   */
+  recordEconomy(context = {}) {
+    if (!this.economy) return null;
+
+    const guests = this.getGuests();
+    let extraRevenue = 0;
+    guests.forEach((guest) => {
+      const extras = guest.getState().extras || 0;
+      if (extras > 0) {
+        extraRevenue += extras;
+        guest.setState({ extras: 0 });
+      }
+    });
+
+    const occupiedRooms = guests.length;
+    return this.economy.processDailyTick({
+      totalRooms: context.hotel?.totalRooms || 0,
+      occupiedRooms,
+      extraRevenue,
+      extraCosts: occupiedRooms * this.costPerGuest
+    });
   }
 
   scheduleNextSpawn(hotel, world) {

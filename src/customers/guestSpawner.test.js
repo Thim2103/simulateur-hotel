@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { GuestSpawner } from './guestSpawner.js';
 import { generateCustomer } from './customerGenerator.js';
 import { Agent } from '../agents/Agent.js';
+import { EconomyEngine } from '../economy/economyEngine.js';
 
 // Mock de la dépendance externe : ids uniques pour pouvoir suivre plusieurs clients
 let mockId = 0;
@@ -48,6 +49,8 @@ describe('GuestSpawner', () => {
       expect(spawner.minSpawnRate).toBe(2000);
       expect(spawner.timer).toBeNull();
       expect(typeof spawner.onSpawn).toBe('function');
+      expect(spawner.economy).toBeNull();
+      expect(spawner.costPerGuest).toBe(20);
     });
 
     it('devrait accepter des options personnalisées', () => {
@@ -214,6 +217,93 @@ describe('GuestSpawner', () => {
       expect(state.budget).toBeGreaterThan(0);
       expect(state.nights).toBeGreaterThanOrEqual(1);
       expect(state.status).toBe('arriving');
+    });
+  });
+
+  describe('intégration avec EconomyEngine', () => {
+    let economy;
+
+    beforeEach(() => {
+      // Prix chambre 100, coûts fixes 500, trésorerie 5000
+      economy = new EconomyEngine();
+    });
+
+    it("update ne devrait rien enregistrer sans EconomyEngine", () => {
+      const spawner = new GuestSpawner();
+      spawner.trySpawn(hotel, world);
+
+      expect(spawner.update({ hotel })).toBeNull();
+    });
+
+    it('devrait enregistrer le CA des chambres et les dépenses à chaque cycle', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 30 });
+      hotel.totalRooms = 10;
+      spawner.trySpawn(hotel, world);
+      spawner.trySpawn(hotel, world);
+
+      const report = spawner.update({ hotel });
+
+      // CA : 2 x 100 = 200 ; dépenses : 500 + 2 x 30 = 560 ; net : -360
+      expect(report.occupancyRate).toBe(20);
+      expect(report.roomRevenue).toBe(200);
+      expect(report.extraRevenue).toBe(0);
+      expect(report.extraCosts).toBe(60);
+      expect(report.totalCosts).toBe(560);
+      expect(report.netIncome).toBe(-360);
+      expect(economy.getTreasury()).toBe(4640);
+      expect(economy.history).toEqual([report]);
+    });
+
+    it('devrait facturer les extras des clients une seule fois', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      const first = spawner.trySpawn(hotel, world);
+      const second = spawner.trySpawn(hotel, world);
+      first.setState({ extras: 45 });
+      second.setState({ extras: 15 });
+
+      const report = spawner.update({ hotel });
+
+      expect(report.extraRevenue).toBe(60);
+      expect(report.totalRevenue).toBe(260);
+      expect(first.getState().extras).toBe(0);
+      expect(second.getState().extras).toBe(0);
+
+      const next = spawner.update({ hotel });
+      expect(next.extraRevenue).toBe(0);
+      expect(economy.history).toHaveLength(2);
+    });
+
+    it('devrait prendre en compte les extras ajoutés par les agents pendant le cycle', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 0 });
+      const guest = spawner.trySpawn(hotel, world);
+      guest.update = () => guest.setState({ extras: 25 });
+
+      const report = spawner.update({ hotel });
+
+      expect(report.extraRevenue).toBe(25);
+    });
+
+    it('ne devrait plus facturer un client retiré', () => {
+      const spawner = new GuestSpawner({ economy, costPerGuest: 10 });
+      const guest = spawner.trySpawn(hotel, world);
+      spawner.trySpawn(hotel, world);
+      spawner.removeGuest(guest.id);
+
+      const report = spawner.update({ hotel });
+
+      expect(report.roomRevenue).toBe(100);
+      expect(report.extraCosts).toBe(10);
+    });
+
+    it("devrait imputer les coûts fixes même sans client", () => {
+      const spawner = new GuestSpawner({ economy });
+
+      const report = spawner.update();
+
+      expect(report.occupancyRate).toBe(0);
+      expect(report.totalRevenue).toBe(0);
+      expect(report.totalCosts).toBe(500);
+      expect(economy.getTreasury()).toBe(4500);
     });
   });
 
